@@ -2,7 +2,9 @@ services:
 
   # ─── Unified App (Next.js + Express) ──────────────────────────
   app:
-    image: o4ainnovations/yotop10:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: yotop10_app
     restart: unless-stopped
     environment:
