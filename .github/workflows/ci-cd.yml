@@ -24,7 +24,6 @@ jobs:
         with:
           node-version: '20'
           cache: 'pnpm'
-          cache-dependency-path: frontend/pnpm-lock.yaml
 
       - name: Install dependencies
         working-directory: ./frontend
@@ -51,24 +50,28 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: backend/package-lock.json
+          cache: 'pnpm'
 
       - name: Install dependencies
         working-directory: ./backend
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Lint
         working-directory: ./backend
-        run: npm run lint
+        run: pnpm lint
 
       - name: Build
         working-directory: ./backend
-        run: npm run build
+        run: pnpm build
 
   # ─── Docker ────────────────────────────────────────────────────
   docker:
