@@ -35,6 +35,5 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: |
             docker pull ${{ secrets.DOCKER_USER }}/yotop10:${{ github.sha }}
-            docker stop yotop10_app || true
-            docker rm yotop10_app || true
-            docker run -d --name yotop10_app -p 3100:3000 -p 8100:8000 ${{ secrets.DOCKER_USER }}/yotop10:${{ github.sha }}
+            docker compose down
+            docker compose up -d
