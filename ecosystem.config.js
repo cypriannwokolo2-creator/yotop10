@@ -2,18 +2,17 @@ module.exports = {
   apps: [
     {
       name: 'frontend',
-      script: 'pnpm',
-      args: 'start -- -H 0.0.0.0 -p 3000',
+      script: 'server.js',
       cwd: './frontend',
       env: {
         NODE_ENV: 'production',
-        PORT: '3000'
+        PORT: '3000',
+        HOSTNAME: '0.0.0.0'
       }
     },
     {
       name: 'backend',
-      script: 'pnpm',
-      args: 'start',
+      script: 'dist/server.js',
       cwd: './backend',
       env: {
         NODE_ENV: 'production',
