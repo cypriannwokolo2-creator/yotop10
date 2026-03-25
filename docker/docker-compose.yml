@@ -1,0 +1,142 @@
+services:
+
+  # ─── Frontend (Next.js) ──────────────────────────────────────────
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: yotop10_frontend
+    restart: unless-stopped
+    environment:
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - NEXTAUTH_URL=${NEXTAUTH_URL}
+      - AUTH_SECRET=${NEXTAUTH_SECRET}
+      - AUTH_URL=https://yotop10.com/nextauth
+      - AUTH_TRUST_HOST=1
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+      - NEXT_PUBLIC_CDN_URL=${NEXT_PUBLIC_CDN_URL}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+    networks:
+      - yotop10_net
+      - traefik-public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.yotop10-frontend.rule=Host(`yotop10.com`) && !PathPrefix(`/api`)"
+      - "traefik.http.routers.yotop10-frontend.entrypoints=websecure"
+      - "traefik.http.routers.yotop10-frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.yotop10-frontend.loadbalancer.server.port=3000"
+    depends_on:
+      - backend
+
+  # ─── Backend (Express.js) ─────────────────────────────────────────
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: yotop10_backend
+    restart: unless-stopped
+    environment:
+      - PORT=8000
+      - MONGODB_URI=mongodb://mongodb:27017/yotop10
+      - REDIS_URL=redis://redis:6379
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - JWT_SECRET=${JWT_SECRET}
+      - CORS_ORIGINS=${CORS_ORIGINS}
+      - BREVO_API_KEY=${BREVO_API_KEY}
+      - EMAIL_FROM=${EMAIL_FROM}
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      - MINIO_BUCKET=${MINIO_BUCKET}
+      - MINIO_SECURE=false
+    networks:
+      - yotop10_net
+      - traefik-public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.yotop10-backend.rule=Host(`yotop10.com`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.yotop10-backend.entrypoints=websecure"
+      - "traefik.http.routers.yotop10-backend.tls.certresolver=letsencrypt"
+      - "traefik.http.middlewares.yotop10-strip-api.stripprefix.prefixes=/api"
+      - "traefik.http.routers.yotop10-backend.middlewares=yotop10-strip-api"
+      - "traefik.http.services.yotop10-backend.loadbalancer.server.port=8000"
+    depends_on:
+      - mongodb
+      - redis
+      - elasticsearch
+
+  # ─── MongoDB ─────────────────────────────────────────────────────
+  mongodb:
+    image: mongo:7
+    container_name: yotop10_mongodb
+    restart: unless-stopped
+    environment:
+      - MONGO_INITDB_DATABASE=yotop10
+      - MONGO_INITDB_ROOT_USERNAME=${MONGODB_USER}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_PASSWORD}
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - yotop10_net
+
+  # ─── Redis ───────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: yotop10_redis
+    restart: unless-stopped
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redis_data:/data
+    networks:
+      - yotop10_net
+
+  # ─── Elasticsearch ────────────────────────────────────────────────
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: yotop10_elasticsearch
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - yotop10_net
+
+  # ─── MinIO (Image Storage → cdn.yotop10.com) ─────────────────────
+  minio:
+    image: minio/minio:latest
+    container_name: yotop10_minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ACCESS_KEY}
+      - MINIO_ROOT_PASSWORD=${MINIO_SECRET_KEY}
+      - MINIO_BROWSER_REDIRECT_URL=https://cdn.yotop10.com/minio-console
+    volumes:
+      - minio_data:/data
+    networks:
+      - yotop10_net
+      - traefik-public
+    labels:
+      - "traefik.enable=true"
+      # Public image serving on cdn.yotop10.com (S3 API port 9000)
+      - "traefik.http.routers.yotop10-cdn.rule=Host(`cdn.yotop10.com`)"
+      - "traefik.http.routers.yotop10-cdn.entrypoints=websecure"
+      - "traefik.http.routers.yotop10-cdn.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.yotop10-cdn.service=yotop10-cdn-svc"
+      - "traefik.http.services.yotop10-cdn-svc.loadbalancer.server.port=9000"
+
+volumes:
+  mongodb_data:
+  redis_data:
+  elasticsearch_data:
+  minio_data:
+
+networks:
+  yotop10_net:
+    internal: true        # Completely isolated — no outside access
+  traefik-public:
+    external: true        # Shared Traefik network — all apps connect here
