@@ -16,8 +16,6 @@ WORKDIR /app
 COPY --from=deps /app/frontend/node_modules ./frontend/node_modules
 COPY --from=deps /app/backend/node_modules ./backend/node_modules
 COPY . .
-# Explicitly verify the file exists before building
-RUN ls -la ecosystem.config.js
 RUN cd frontend && pnpm build
 RUN cd backend && pnpm build
 
