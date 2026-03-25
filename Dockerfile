@@ -28,6 +28,7 @@ COPY --from=base /app/frontend/public ./frontend/public
 COPY --from=base /app/backend/dist ./backend/dist
 COPY --from=base /app/backend/node_modules ./backend/node_modules
 COPY --from=base /app/backend/package.json ./backend/
+COPY ecosystem.config.js ./
 
 # Start command
 CMD ["pm2-runtime", "start", "ecosystem.config.js"]
