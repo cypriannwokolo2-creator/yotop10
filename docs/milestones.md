@@ -14,7 +14,7 @@ This is the simplified roadmap based on the [revert.md](./revert.md) plan. The p
 - **Anyone** can comment with nested threading (up to 3 levels like Twitter/X)
 - **Categories** are fully organized (10 parents, 300 children)
 - **Only you** (admin) can approve/reject posts
-- **Smart rate limiting**: 20 comments/hour per user (device fingerprint)
+- **Smart rate limiting**: 50 comments/hour per user (device fingerprint)
 - **Shadow Trust Score**: Rewards "scholars" (2x limits), chokes "trolls"
 
 ---
@@ -44,7 +44,7 @@ Track anonymous users using:
 |-------|-------|
 | General Comments | 50 per hour per user |
 | Item-Anchored Comments | 45 per hour per user |
-| Posts | 3 posts per hour per user |
+| Posts | 4 posts per hour per user |
 | Burst Protection | Max 5 comments per 5 minutes |
 
 ### Shadow Trust Score
@@ -84,7 +84,7 @@ Track anonymous users using:
   - Body: `{ title, post_type, intro, category_id (EXACTLY 1), items, author_display_name }`
   - All posts default to `pending_review`
   - Generate `any_XXXX` username from device fingerprint
-  - Rate limit: 3 posts/hour per fingerprint
+  - Rate limit: 4 posts/hour per fingerprint
 
 ### M4 — Public Feed
 - [ ] `GET /api/posts` — Approved posts only
@@ -111,13 +111,13 @@ Track anonymous users using:
 - [ ] Admin CRUD for categories
 
 ### M7 — Comment System
-- [ ] `GET /api/posts/:id/comments` — Get comments
-- [ ] `POST /api/posts/:id/comments` — Add comment (anonymous)
+- [x] `GET /api/posts/:id/comments` — Get comments
+- [x] `POST /api/posts/:id/comments` — Add comment (anonymous)
   - Two modes: Full Post Comment OR Item-Anchored Comment
   - Nested replies (max 3 levels)
-- [ ] `PATCH /api/comments/:id` — Edit (within 2hr window)
-- [ ] `DELETE /api/comments/:id` — Delete own comment
-- [ ] Rate limit: 20 comments/hour per user
+- [x] `PATCH /api/comments/:id` — Edit (within 2hr window)
+- [x] `DELETE /api/comments/:id` — Delete own comment
+- [x] Rate limit: 50 comments/hour per user
 
 ### M8 — Fire Reactions
 - [ ] `POST /api/reactions` — Toggle fire
@@ -1035,7 +1035,7 @@ GET    /api/admin/audit-logs          # Audit logs
   - Rate Limiting section:
     - General comments per hour (input, default: 5)
     - Item-anchored comments per hour (input, default: 25)
-    - Posts per hour (input, default: 3)
+    - Posts per hour (input, default: 4)
     - Burst limit (input, default: 5 per 5 min)
     - Save button
   - Trust Scores section:

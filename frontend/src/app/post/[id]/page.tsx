@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useState, useEffect, useCallback } from 'react';
+import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 interface ListItem {
@@ -44,22 +44,49 @@ interface Comment {
   author_username: string;
   author_display_name: string;
   created_at: string;
+  updated_at?: string;
   list_item_id?: string;
   parent_comment_id?: string;
+  replies?: Comment[];
 }
 
 export default function PostDetailPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const postId = params?.id as string;
+  const itemParam = searchParams?.get('item');
 
   const [post, setPost] = useState<Post | null>(null);
   const [items, setItems] = useState<ListItem[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Comment form state
+  const [commentContent, setCommentContent] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(itemParam);
+
+  const fetchComments = useCallback(() => {
+    if (!postId) return;
+    const url = selectedItemId 
+      ? `/api/posts/${postId}/comments?list_item_id=${selectedItemId}`
+      : `/api/posts/${postId}/comments`;
+      
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        setComments(data.comments || []);
+      })
+      .catch(err => console.error('Failed to load comments:', err))
+      .finally(() => setLoading(false));
+  }, [postId, selectedItemId]);
 
   useEffect(() => {
     if (!postId) return;
+    
+    // Fetch post and items
     fetch(`/api/posts/${postId}`)
       .then(res => {
         if (!res.ok) throw new Error('Failed to fetch');
@@ -67,74 +94,201 @@ export default function PostDetailPage() {
       })
       .then(data => {
         setPost(data.post);
-        setItems(data.items);
-        setComments(data.comments);
+        setItems(data.items || []);
       })
-      .catch(() => setError('Failed to load post'))
-      .finally(() => setLoading(false));
-  }, [postId]);
+      .catch(() => setError('Failed to load post'));
+      
+    // Fetch comments separately
+    fetchComments();
+  }, [postId, fetchComments]);
+
+  const handleSubmitComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!commentContent.trim() || submitting) return;
+
+    setSubmitting(true);
+    
+    try {
+      const body: Record<string, string> = {
+        content: commentContent,
+        device_fingerprint: getOrCreateFingerprint(),
+      };
+      
+      if (selectedItemId) {
+        body.list_item_id = selectedItemId;
+      }
+      
+      if (replyTo) {
+        body.parent_comment_id = replyTo;
+      }
+
+      const res = await fetch(`/api/posts/${postId}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.error || 'Failed to post comment');
+        return;
+      }
+
+      setCommentContent('');
+      setReplyTo(null);
+      fetchComments(); // Refresh comments
+    } catch {
+      alert('Failed to post comment');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const getOrCreateFingerprint = (): string => {
+    let fp = localStorage.getItem('yotop10_fp');
+    if (!fp) {
+      fp = 'fp_' + Math.random().toString(36).substring(2) + Date.now().toString(36);
+      localStorage.setItem('yotop10_fp', fp);
+    }
+    return fp;
+  };
+
+  const renderComment = (comment: Comment, depth: number = 0) => {
+    if (depth >= 3) return null;
+    
+    return (
+      <div key={comment.id} style={{ marginLeft: depth * 20 + 'px', borderLeft: '2px solid #ccc', paddingLeft: '10px', marginTop: '10px' }}>
+        <div style={{ backgroundColor: '#f5f5f5', padding: '10px', borderRadius: '5px' }}>
+          <div>
+            <strong>{comment.author_display_name}</strong> 
+            {comment.list_item_id && <span style={{ backgroundColor: '#e0f0ff', padding: '2px 6px', borderRadius: '3px', fontSize: '12px', marginLeft: '8px' }}>📌 On item</span>}
+            - {new Date(comment.created_at).toLocaleDateString()}
+          </div>
+          <p>{comment.content}</p>
+          <div style={{ fontSize: '12px', color: '#666' }}>
+            🔥 {comment.fire_count} 
+            {depth < 2 && (
+              <button 
+                onClick={() => setReplyTo(comment.id)}
+                style={{ marginLeft: '10px', background: 'none', border: 'none', color: '#0066cc', cursor: 'pointer' }}
+              >
+                Reply
+              </button>
+            )}
+          </div>
+        </div>
+        {comment.replies?.map(r => renderComment(r, depth + 1))}
+      </div>
+    );
+  };
 
   if (loading) return <div>Loading...</div>;
   if (error || !post) return <div>{error || 'Post not found'}</div>;
 
   const rootComments = comments.filter(c => c.depth === 0);
-  const repliesMap = comments.reduce((acc, c) => {
-    if (c.depth > 0 && c.parent_comment_id) {
-      if (!acc[c.parent_comment_id]) acc[c.parent_comment_id] = [];
-      acc[c.parent_comment_id].push(c);
-    }
-    return acc;
-  }, {} as Record<string, Comment[]>);
-
-  const renderComment = (comment: Comment, depth: number = 0) => {
-    if (depth >= 3) return null;
-    const replies = repliesMap[comment.id] || [];
-    return (
-      <div key={comment.id} style={{ marginLeft: depth * 20 + 'px', borderLeft: '2px solid #ccc', paddingLeft: '10px', marginTop: '10px' }}>
-        <div style={{ backgroundColor: '#f5f5f5', padding: '10px', borderRadius: '5px' }}>
-          <div><strong>{comment.author_display_name}</strong> - {new Date(comment.created_at).toLocaleDateString()}</div>
-          <p>{comment.content}</p>
-          <div>Fire: {comment.fire_count}</div>
-        </div>
-        {replies.map(r => renderComment(r, depth + 1))}
-      </div>
-    );
-  };
 
   return (
-    <div>
-      <header>
+    <div style={{ maxWidth: '900px', margin: '0 auto', padding: '20px' }}>
+      <header style={{ marginBottom: '20px', borderBottom: '1px solid #ccc', paddingBottom: '10px' }}>
         <h1>YoTop10</h1>
         <nav>
           <Link href="/">Home</Link> | <Link href="/categories">Categories</Link> | <Link href="/submit">Submit</Link>
         </nav>
       </header>
+      
       <main>
-        <article>
-          <p>{post.post_type} | {post.category?.name} | {new Date(post.created_at).toLocaleDateString()} | {post.view_count} views</p>
+        <article style={{ marginBottom: '30px' }}>
+          <p style={{ color: '#666', fontSize: '14px' }}>
+            {post.post_type} | {post.category?.name} | {new Date(post.created_at).toLocaleDateString()} | {post.view_count} views
+          </p>
           <h1>{post.title}</h1>
-          <p>By {post.author_display_name} | Fire: {post.fire_count}</p>
+          <p>By {post.author_display_name} | 🔥 {post.fire_count}</p>
           <p>{post.intro}</p>
-          <p><Link href={`/submit?counter_to=${post.id}`}>Submit Counter-List</Link> | <Link href={`/post/${post.id}/history`}>View History</Link></p>
+          <p>
+            <Link href={`/submit?counter_to=${post.id}`}>Submit Counter-List</Link> | <Link href={`/post/${post.id}/history`}>View History</Link>
+          </p>
         </article>
-        <section>
+        
+        <section style={{ marginBottom: '30px' }}>
           <h2>Ranked List</h2>
           {items.map(item => (
-            <div key={item.id} style={{ marginBottom: '20px' }}>
+            <div key={item.id} style={{ marginBottom: '20px', border: '1px solid #eee', padding: '15px', borderRadius: '5px' }}>
               <h3>#{item.rank} {item.title}</h3>
               <p>{item.justification}</p>
               {item.image_url && <img src={item.image_url} alt={item.title} style={{ maxWidth: '300px' }} />}
-              <p>Fire: {item.fire_count} | <Link href={`/post/${post.id}?item=${item.id}`}>Comment on this item</Link>{item.source_url && <span> | <a href={item.source_url} target="_blank" rel="noopener noreferrer">Source</a></span>}</p>
+              <p style={{ fontSize: '14px', color: '#666' }}>
+                🔥 {item.fire_count} | 
+                <button 
+                  onClick={() => setSelectedItemId(item.id)}
+                  style={{ background: selectedItemId === item.id ? '#e0f0ff' : 'none', border: '1px solid #ccc', marginLeft: '5px', padding: '2px 8px', cursor: 'pointer' }}
+                >
+                  Comment on this item
+                </button>
+                {item.source_url && <span> | <a href={item.source_url} target="_blank" rel="noopener noreferrer">Source</a></span>}
+              </p>
             </div>
           ))}
         </section>
+        
         <section>
           <h2>Comments ({post.comment_count})</h2>
-          {comments.length === 0 ? <p>No comments yet.</p> : rootComments.map(c => renderComment(c))}
+          
+          {/* Filter by item */}
+          <div style={{ marginBottom: '15px' }}>
+            <label>Filter: </label>
+            <select 
+              value={selectedItemId || ''} 
+              onChange={(e) => {
+                setSelectedItemId(e.target.value || null);
+              }}
+              style={{ padding: '5px' }}
+            >
+              <option value="">All Comments</option>
+              {items.map(item => (
+                <option key={item.id} value={item.id}>On #{item.rank} - {item.title}</option>
+              ))}
+            </select>
+          </div>
+          
+          {/* Comment Form */}
+          <form onSubmit={handleSubmitComment} style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f9f9f9', borderRadius: '5px' }}>
+            {replyTo && (
+              <div style={{ marginBottom: '10px', color: '#666' }}>
+                Replying to comment | <button onClick={() => setReplyTo(null)} style={{ color: 'red' }}>Cancel</button>
+              </div>
+            )}
+            {selectedItemId && (
+              <div style={{ marginBottom: '10px', color: '#0066cc' }}>
+                📌 Commenting on item #{items.find(i => i.id === selectedItemId)?.rank}
+              </div>
+            )}
+            <textarea
+              value={commentContent}
+              onChange={(e) => setCommentContent(e.target.value)}
+              placeholder="Write a comment..."
+              style={{ width: '100%', minHeight: '80px', padding: '10px', marginBottom: '10px' }}
+              maxLength={2000}
+            />
+            <button 
+              type="submit" 
+              disabled={submitting || !commentContent.trim()}
+              style={{ padding: '10px 20px', backgroundColor: submitting ? '#ccc' : '#0066cc', color: 'white', border: 'none', borderRadius: '5px', cursor: submitting ? 'not-allowed' : 'pointer' }}
+            >
+              {submitting ? 'Posting...' : 'Post Comment'}
+            </button>
+          </form>
+          
+          {/* Comments List */}
+          {comments.length === 0 ? (
+            <p>No comments yet. Be the first to comment!</p>
+          ) : (
+            rootComments.map(c => renderComment(c))
+          )}
         </section>
       </main>
-      <footer>
-        <p>YoTop10</p>
+      
+      <footer style={{ marginTop: '30px', borderTop: '1px solid #ccc', paddingTop: '10px', textAlign: 'center', color: '#666' }}>
+        <p>YoTop10 - Open Platform for Top 10 Lists</p>
       </footer>
     </div>
   );
