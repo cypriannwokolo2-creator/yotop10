@@ -36,6 +36,7 @@ import listingsRoutes from './routes/listings';
 import categoriesRoutes from './routes/categories';
 import searchRoutes from './routes/search';
 import reviewsRoutes from './routes/reviews';
+import commentsRoutes from './routes/comments';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
@@ -44,6 +45,7 @@ app.use('/api/listings', listingsRoutes);
 app.use('/api/categories', categoriesRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/reviews', reviewsRoutes);
+app.use('/api', commentsRoutes);
 
 // Error handling middleware
 app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {

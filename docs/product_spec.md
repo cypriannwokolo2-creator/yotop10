@@ -179,8 +179,11 @@ draft → pending_review → [approved / rejected]
 | Edit Window | 2-hour edit window after posting |
 
 ### Rate Limiting
-- **20 comments per hour per user** (by device fingerprint)
-- No rate limit for posting (but posts go to review queue)
+- **General Comments: 50 per hour per user** (by device fingerprint)
+- **Item-Anchored Comments: 45 per hour per user** (by device fingerprint)
+- **Posts: 4 per hour per user** (by device fingerprint)
+- **Burst Protection: Max 5 comments per 5 minutes**
+- No rate limit for browsing (only authenticated actions are limited)
 
 ---
 

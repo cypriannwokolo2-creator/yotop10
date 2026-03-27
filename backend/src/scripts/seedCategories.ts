@@ -38,6 +38,22 @@ const parentCategories = [
     ],
   },
   {
+    name: 'Sports & Athletics',
+    slug: 'sports-athletics',
+    description: 'All sports, athletic competitions, and fitness activities',
+    icon: '⚽',
+    children: [
+      'Football (Soccer)', 'Cricket', 'Basketball', 'Hockey (Field & Ice)',
+      'Tennis', 'Volleyball', 'Table Tennis', 'Badminton',
+      'Baseball', 'American Football', 'Rugby', 'Golf',
+      'MMA', 'Boxing', 'Formula 1', 'Cycling',
+      'Athletics', 'Swimming', 'eSports', 'Snooker',
+      'Handball', 'Gymnastics', 'Wrestling', 'Horse Racing',
+      'Surfing', 'Skiing', 'Australian Rules Football', 'Archery',
+      'Lacrosse', 'Bowling'
+    ],
+  },
+  {
     name: 'Business & Finance',
     slug: 'business-finance',
     description: 'Entrepreneurship, investing, markets, and financial topics',
