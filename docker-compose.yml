@@ -37,21 +37,27 @@ services:
     networks:
       - yotop10_net
       - traefik-public
+    extra_hosts:
+      - "yotop10.fun:host-gateway"
+      - "api.yotop10.fun:host-gateway"
+      - "www.yotop10.fun:host-gateway"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.yotop10-app.rule=Host(`yotop10.fun`)"
       - "traefik.http.routers.yotop10-app.entrypoints=websecure"
       - "traefik.http.routers.yotop10-app.tls.certresolver=letsencrypt"
       - "traefik.http.services.yotop10-app.loadbalancer.server.port=3000"
-      # API routes - pass to backend (keeps /api prefix)
       - "traefik.http.routers.yotop10-api.rule=Host(`yotop10.fun`) && PathPrefix(`/api`)"
       - "traefik.http.routers.yotop10-api.entrypoints=websecure"
       - "traefik.http.routers.yotop10-api.tls.certresolver=letsencrypt"
       - "traefik.http.services.yotop10-api.loadbalancer.server.port=8000"
     depends_on:
-      - mongodb
-      - redis
-      - elasticsearch
+      mongodb:
+        condition: service_started
+      redis:
+        condition: service_started
+      elasticsearch:
+        condition: service_healthy
 
   # ─── MongoDB ─────────────────────────────────────────────────────
   mongodb:
@@ -89,8 +95,13 @@ services:
       - elasticsearch_data:/usr/share/elasticsearch/data
     networks:
       - yotop10_net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -vq 'red'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # ─── MinIO (Image Storage → cdn.yotop10.com) ─────────────────────
+  # ─── MinIO (Image Storage) ─────────────────────
   minio:
     image: minio/minio:latest
     container_name: yotop10_minio
@@ -107,7 +118,6 @@ services:
       - traefik-public
     labels:
       - "traefik.enable=true"
-      # Public image serving on cdn.yotop10.fun (S3 API port 9000)
       - "traefik.http.routers.yotop10-cdn.rule=Host(`cdn.yotop10.fun`)"
       - "traefik.http.routers.yotop10-cdn.entrypoints=websecure"
       - "traefik.http.routers.yotop10-cdn.tls.certresolver=letsencrypt"
@@ -122,6 +132,6 @@ volumes:
 
 networks:
   yotop10_net:
-    internal: true        # Completely isolated — no outside access
+    internal: false
   traefik-public:
-    external: true        # Shared Traefik network — all apps connect here
+    external: true
