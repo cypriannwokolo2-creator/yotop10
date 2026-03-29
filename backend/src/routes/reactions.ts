@@ -1,0 +1,184 @@
+import { Router, Request, Response } from 'express';
+import { body, validationResult } from 'express-validator';
+import mongoose from 'mongoose';
+import { Reaction } from '../models/Reaction';
+import { Comment } from '../models/Comment';
+
+const router: Router = Router();
+
+// Validation middleware
+const validateReaction = [
+  body('target_type').isIn(['comment']).withMessage('Invalid target type - reactions are only allowed on comments'),
+  body('target_id').isMongoId().withMessage('Invalid target ID'),
+  body('device_fingerprint').notEmpty().withMessage('Device fingerprint is required'),
+];
+
+// Helper to get fingerprint from request
+const getFingerprint = (req: Request): string => {
+  return req.headers['x-device-fingerprint'] as string || req.body.device_fingerprint || 'unknown';
+};
+
+// POST /api/reactions - Toggle fire reaction
+router.post('/', validateReaction, async (req: Request, res: Response) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { target_type, target_id } = req.body;
+    const device_fingerprint = getFingerprint(req);
+
+    // Verify target exists and get current fire count
+    let target;
+    
+    switch (target_type) {
+      case 'comment':
+        target = await Comment.findById(target_id);
+        break;
+      default:
+        return res.status(400).json({ error: 'Invalid target type - reactions are only allowed on comments' });
+    }
+
+    if (!target) {
+      return res.status(404).json({ error: `${target_type} not found` });
+    }
+
+    // Check if user already reacted
+    const existingReaction = await Reaction.findOne({
+      user_device_fingerprint: device_fingerprint,
+      target_type,
+      target_id,
+    });
+
+    let action: 'added' | 'removed';
+    let currentFireCount = target.fire_count || 0;
+
+    if (existingReaction) {
+      // Remove reaction (toggle off)
+      await Reaction.findByIdAndDelete(existingReaction._id);
+      currentFireCount = Math.max(0, currentFireCount - 1);
+      action = 'removed';
+    } else {
+      // Add reaction (toggle on)
+      await Reaction.create({
+        user_device_fingerprint: device_fingerprint,
+        target_type,
+        target_id,
+        reaction_type: 'fire',
+      });
+      currentFireCount += 1;
+      action = 'added';
+    }
+
+    // Update fire_count on the target
+    await Comment.findByIdAndUpdate(target_id, { fire_count: currentFireCount });
+
+    res.json({
+      success: true,
+      action,
+      target_type,
+      target_id,
+      fire_count: currentFireCount,
+      user_reacted: action === 'added',
+    });
+  } catch (error) {
+    console.error('Toggle reaction error:', error);
+    res.status(500).json({ error: 'Failed to toggle reaction' });
+  }
+});
+
+// GET /api/reactions/state - Check reaction status for multiple targets
+router.get('/state', async (req: Request, res: Response) => {
+  try {
+    const { targets } = req.query;
+    const device_fingerprint = getFingerprint(req);
+
+    if (!targets) {
+      return res.status(400).json({ error: 'No targets provided' });
+    }
+
+    // Parse targets: [{"type":"comment","id":"..."}]
+    let parsedTargets: Array<{ type: string; id: string }>;
+    try {
+      parsedTargets = JSON.parse(targets as string);
+    } catch {
+      return res.status(400).json({ error: 'Invalid targets format' });
+    }
+
+    // Filter to only comments
+    const commentTargets = parsedTargets.filter(t => t.type === 'comment');
+    if (commentTargets.length === 0) {
+      return res.json({ targets: [] });
+    }
+
+    // Get all reactions for these targets by this user
+    const targetIds = commentTargets.map(t => new mongoose.Types.ObjectId(t.id));
+    const userReactions = await Reaction.find({
+      user_device_fingerprint: device_fingerprint,
+      target_type: 'comment',
+      target_id: { $in: targetIds },
+    });
+
+    // Create a map of reacted targets
+    const reactedMap = new Map<string, boolean>();
+    userReactions.forEach(r => {
+      reactedMap.set(r.target_id.toString(), true);
+    });
+
+    // Build response
+    const results = commentTargets.map(t => ({
+      type: t.type,
+      id: t.id,
+      user_reacted: reactedMap.has(t.id) || false,
+    }));
+
+    res.json({ targets: results });
+  } catch (error) {
+    console.error('Get reaction state error:', error);
+    res.status(500).json({ error: 'Failed to get reaction state' });
+  }
+});
+
+// GET /api/reactions/:targetType/:targetId - Get reaction count and user status
+router.get('/:targetType/:targetId', async (req: Request, res: Response) => {
+  try {
+    const { targetType, targetId } = req.params;
+    const device_fingerprint = getFingerprint(req);
+
+    // Only allow comments
+    if (targetType !== 'comment') {
+      return res.status(400).json({ error: 'Invalid target type - reactions are only allowed on comments' });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(targetId)) {
+      return res.status(400).json({ error: 'Invalid target ID' });
+    }
+
+    // Get target and its fire count
+    const target = await Comment.findById(targetId).select('fire_count');
+
+    if (!target) {
+      return res.status(404).json({ error: 'Target not found' });
+    }
+
+    // Check if user has reacted
+    const userReaction = await Reaction.findOne({
+      user_device_fingerprint: device_fingerprint,
+      target_type: targetType,
+      target_id: targetId,
+    });
+
+    res.json({
+      target_type: targetType,
+      target_id: targetId,
+      fire_count: target.fire_count || 0,
+      user_reacted: !!userReaction,
+    });
+  } catch (error) {
+    console.error('Get reaction error:', error);
+    res.status(500).json({ error: 'Failed to get reaction' });
+  }
+});
+
+export default router;

@@ -67,6 +67,10 @@ export default function PostDetailPage() {
   const [submitting, setSubmitting] = useState(false);
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(itemParam);
+  
+  // Fire reaction state
+  const [userReactions, setUserReactions] = useState<Record<string, boolean>>({}); // key: "type-id", value: hasReacted
+  const [reacting, setReacting] = useState(false);
 
   const fetchComments = useCallback(() => {
     if (!postId) return;
@@ -101,6 +105,29 @@ export default function PostDetailPage() {
     // Fetch comments separately
     fetchComments();
   }, [postId, fetchComments]);
+
+  // Fetch initial reaction state when comments are loaded
+  useEffect(() => {
+    if (comments.length === 0) return;
+    
+    const fingerprint = getOrCreateFingerprint();
+    const targets = comments.map((c: Comment) => ({ type: 'comment', id: c.id }));
+    
+    fetch(`/api/reactions/state?targets=${encodeURIComponent(JSON.stringify(targets))}`, {
+      headers: { 'x-device-fingerprint': fingerprint },
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.targets) {
+          const reactionMap: Record<string, boolean> = {};
+          data.targets.forEach((t: { type: string; id: string; user_reacted: boolean }) => {
+            reactionMap[`${t.type}-${t.id}`] = t.user_reacted;
+          });
+          setUserReactions(reactionMap);
+        }
+      })
+      .catch(err => console.error('Failed to load reaction state:', err));
+  }, [comments]);
 
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -153,6 +180,54 @@ export default function PostDetailPage() {
     return fp;
   };
 
+  const handleReaction = async (targetType: 'post' | 'list_item' | 'comment', targetId: string) => {
+    if (reacting) return;
+    setReacting(true);
+    
+    const key = `${targetType}-${targetId}`;
+    const currentReacted = userReactions[key] || false;
+    
+    try {
+      const res = await fetch('/api/reactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          target_type: targetType,
+          target_id: targetId,
+          device_fingerprint: getOrCreateFingerprint(),
+        }),
+      });
+      
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.error || 'Failed to react');
+        return;
+      }
+      
+      const data = await res.json();
+      
+      // Update local state
+      setUserReactions(prev => ({ ...prev, [key]: data.user_reacted }));
+      
+      // Update the fire count in comments
+      if (targetType === 'comment') {
+        setComments(prev => updateCommentFireCount(prev, targetId, data.fire_count));
+      }
+    } catch {
+      alert('Failed to react');
+    } finally {
+      setReacting(false);
+    }
+  };
+
+  const updateCommentFireCount = (comments: Comment[], targetId: string, newCount: number): Comment[] => {
+    return comments.map(c => ({
+      ...c,
+      fire_count: c.id === targetId ? newCount : c.fire_count,
+      replies: c.replies ? updateCommentFireCount(c.replies, targetId, newCount) : c.replies,
+    }));
+  };
+
   const renderComment = (comment: Comment, depth: number = 0) => {
     if (depth >= 3) return null;
     
@@ -202,7 +277,7 @@ export default function PostDetailPage() {
             {post.post_type} | {post.category?.name} | {new Date(post.created_at).toLocaleDateString()} | {post.view_count} views
           </p>
           <h1>{post.title}</h1>
-          <p>By {post.author_display_name} | 🔥 {post.fire_count}</p>
+          <p>By {post.author_display_name}</p>
           <p>{post.intro}</p>
           <p>
             <Link href={`/submit?counter_to=${post.id}`}>Submit Counter-List</Link> | <Link href={`/post/${post.id}/history`}>View History</Link>
@@ -217,7 +292,6 @@ export default function PostDetailPage() {
               <p>{item.justification}</p>
               {item.image_url && <img src={item.image_url} alt={item.title} style={{ maxWidth: '300px' }} />}
               <p style={{ fontSize: '14px', color: '#666' }}>
-                🔥 {item.fire_count} | 
                 <button 
                   onClick={() => setSelectedItemId(item.id)}
                   style={{ background: selectedItemId === item.id ? '#e0f0ff' : 'none', border: '1px solid #ccc', marginLeft: '5px', padding: '2px 8px', cursor: 'pointer' }}
