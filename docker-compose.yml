@@ -43,6 +43,11 @@ services:
       - "traefik.http.routers.yotop10-app.entrypoints=websecure"
       - "traefik.http.routers.yotop10-app.tls.certresolver=letsencrypt"
       - "traefik.http.services.yotop10-app.loadbalancer.server.port=3000"
+      # API routes - pass to backend (keeps /api prefix)
+      - "traefik.http.routers.yotop10-api.rule=Host(`yotop10.fun`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.yotop10-api.entrypoints=websecure"
+      - "traefik.http.routers.yotop10-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.yotop10-api.loadbalancer.server.port=8000"
     depends_on:
       - mongodb
       - redis
