@@ -16,5 +16,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: |
             cd /home/o4ainnovations/yotop10
+            git config --global --add safe.directory /home/o4ainnovations/yotop10
             git pull
+            docker compose down
             docker compose up -d --build
