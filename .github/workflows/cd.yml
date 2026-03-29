@@ -18,5 +18,7 @@ jobs:
             cd /home/o4ainnovations/yotop10
             git config --global --add safe.directory /home/o4ainnovations/yotop10
             git pull
-            docker compose down
-            docker compose up -d --build
+            # Use restart instead of down to avoid container removal issues
+            docker compose restart
+            # If restart fails, try full rebuild
+            docker compose up -d --build --pull never
