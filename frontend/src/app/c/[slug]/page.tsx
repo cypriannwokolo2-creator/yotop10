@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { API, getBaseUrl } from '@/lib/api';
 
 interface Category {
   id: string;
@@ -41,14 +42,11 @@ export default function CategoryFeedPage() {
     if (!slug) return;
 
     Promise.all([
-      fetch(`/api/categories/${slug}`).then(res => {
-        if (!res.ok) throw new Error('Category not found');
-        return res.json();
-      }),
-      fetch(`/api/posts?category=${slug}&page=1&limit=20`).then(res => res.json()),
+      API.getCategory(slug).then((data: any) => data.category),
+      API.getPosts({ category: slug, page: 1, limit: 20 }).then((data: any) => data),
     ])
       .then(([catData, postsData]) => {
-        setCategory(catData.category);
+        setCategory(catData);
         setPosts(postsData.posts || []);
         setHasMore(postsData.pagination?.totalPages > 1);
       })
@@ -61,7 +59,9 @@ export default function CategoryFeedPage() {
 
   const loadMore = () => {
     const nextPage = page + 1;
-    fetch(`/api/posts?category=${slug}&page=${nextPage}&limit=20`)
+    const baseUrl = getBaseUrl();
+    
+    fetch(`${baseUrl}/posts?category=${slug}&page=${nextPage}&limit=20`)
       .then(res => res.json())
       .then(data => {
         setPosts(prev => [...prev, ...(data.posts || [])]);

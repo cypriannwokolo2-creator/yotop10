@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { API } from '@/lib/api';
 
 interface ListItem {
   id: string;
@@ -69,38 +70,33 @@ export default function PostDetailPage() {
   const [selectedItemId, setSelectedItemId] = useState<string | null>(itemParam);
   
   // Fire reaction state
-  const [userReactions, setUserReactions] = useState<Record<string, boolean>>({}); // key: "type-id", value: hasReacted
+  const [userReactions, setUserReactions] = useState<Record<string, boolean>>({});
   const [reacting, setReacting] = useState(false);
 
-  const fetchComments = useCallback(() => {
+  const fetchComments = useCallback(async () => {
     if (!postId) return;
-    const url = selectedItemId 
-      ? `/api/posts/${postId}/comments?list_item_id=${selectedItemId}`
-      : `/api/posts/${postId}/comments`;
-      
-    fetch(url)
-      .then(res => res.json())
-      .then(data => {
-        setComments(data.comments || []);
-      })
-      .catch(err => console.error('Failed to load comments:', err))
-      .finally(() => setLoading(false));
-  }, [postId, selectedItemId]);
+    setLoading(true);
+    
+    try {
+      const data = await API.getComments(postId);
+      setComments(data.comments || []);
+    } catch (err) {
+      console.error('Failed to load comments:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [postId]);
 
   useEffect(() => {
     if (!postId) return;
     
-    // Fetch post and items
-    fetch(`/api/posts/${postId}`)
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to fetch');
-        return res.json();
-      })
-      .then(data => {
+    API.getPost(postId)
+      .then((data: any) => {
         setPost(data.post);
         setItems(data.items || []);
       })
-      .catch(() => setError('Failed to load post'));
+      .catch(() => setError('Failed to load post'))
+      .finally(() => setLoading(false));
       
     // Fetch comments separately
     fetchComments();
@@ -113,7 +109,11 @@ export default function PostDetailPage() {
     const fingerprint = getOrCreateFingerprint();
     const targets = comments.map((c: Comment) => ({ type: 'comment', id: c.id }));
     
-    fetch(`/api/reactions/state?targets=${encodeURIComponent(JSON.stringify(targets))}`, {
+    const baseUrl = typeof window === 'undefined' 
+      ? process.env.INTERNAL_API_URL 
+      : process.env.NEXT_PUBLIC_API_URL;
+    
+    fetch(`${baseUrl}/reactions/state?targets=${encodeURIComponent(JSON.stringify(targets))}`, {
       headers: { 'x-device-fingerprint': fingerprint },
     })
       .then(res => res.json())
@@ -136,31 +136,7 @@ export default function PostDetailPage() {
     setSubmitting(true);
     
     try {
-      const body: Record<string, string> = {
-        content: commentContent,
-        device_fingerprint: getOrCreateFingerprint(),
-      };
-      
-      if (selectedItemId) {
-        body.list_item_id = selectedItemId;
-      }
-      
-      if (replyTo) {
-        body.parent_comment_id = replyTo;
-      }
-
-      const res = await fetch(`/api/posts/${postId}/comments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        alert(err.error || 'Failed to post comment');
-        return;
-      }
-
+      await API.addComment(postId, commentContent);
       setCommentContent('');
       setReplyTo(null);
       fetchComments(); // Refresh comments
@@ -188,23 +164,7 @@ export default function PostDetailPage() {
     const currentReacted = userReactions[key] || false;
     
     try {
-      const res = await fetch('/api/reactions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          target_type: targetType,
-          target_id: targetId,
-          device_fingerprint: getOrCreateFingerprint(),
-        }),
-      });
-      
-      if (!res.ok) {
-        const err = await res.json();
-        alert(err.error || 'Failed to react');
-        return;
-      }
-      
-      const data = await res.json();
+      const data: any = await API.toggleReaction(postId);
       
       // Update local state
       setUserReactions(prev => ({ ...prev, [key]: data.user_reacted }));

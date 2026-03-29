@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { API } from '@/lib/api';
 
 interface ChildCategory {
   id: string;
@@ -29,12 +30,8 @@ export default function CategoriesPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/api/categories')
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to fetch');
-        return res.json();
-      })
-      .then(data => {
+    API.getCategories()
+      .then((data: any) => {
         setCategories(data.categories);
       })
       .catch(err => {

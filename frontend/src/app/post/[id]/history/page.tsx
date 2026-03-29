@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
+import { API } from '@/lib/api';
 
 interface PostVersion {
   version_number: number;
@@ -24,14 +25,11 @@ export default function PostHistoryPage() {
 
   useEffect(() => {
     if (!postId) return;
-    fetch(`/api/posts/${postId}/history`)
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to fetch');
-        return res.json();
-      })
-      .then(data => {
-        setVersions(data.versions);
-        if (data.versions.length > 0) setSelectedVersion(data.versions[0]);
+    
+    API.getPostHistory(postId)
+      .then((data: any) => {
+        setVersions(data.versions || []);
+        if (data.versions?.length > 0) setSelectedVersion(data.versions[0]);
       })
       .catch(() => setError('Failed to load history'))
       .finally(() => setLoading(false));
