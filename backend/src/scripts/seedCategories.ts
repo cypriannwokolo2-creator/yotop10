@@ -7,7 +7,7 @@ dotenv.config();
 const parentCategories = [
   {
     name: 'Technology & Digital',
-    slug: 'technology-digital',
+    slug: 'technology',
     description: 'All things tech, software, hardware, and digital innovation',
     icon: '💻',
     children: [
@@ -23,7 +23,7 @@ const parentCategories = [
   },
   {
     name: 'Health & Wellness',
-    slug: 'health-wellness',
+    slug: 'health',
     description: 'Physical health, mental wellness, fitness, and medical topics',
     icon: '🏥',
     children: [
@@ -39,7 +39,7 @@ const parentCategories = [
   },
   {
     name: 'Sports & Athletics',
-    slug: 'sports-athletics',
+    slug: 'sports',
     description: 'All sports, athletic competitions, and fitness activities',
     icon: '⚽',
     children: [
@@ -55,7 +55,7 @@ const parentCategories = [
   },
   {
     name: 'Business & Finance',
-    slug: 'business-finance',
+    slug: 'business',
     description: 'Entrepreneurship, investing, markets, and financial topics',
     icon: '💼',
     children: [
@@ -71,7 +71,7 @@ const parentCategories = [
   },
   {
     name: 'Lifestyle & Leisure',
-    slug: 'lifestyle-leisure',
+    slug: 'lifestyle',
     description: 'Travel, food, fashion, hobbies, and everyday living',
     icon: '🌴',
     children: [
@@ -87,7 +87,7 @@ const parentCategories = [
   },
   {
     name: 'Creative Arts & Entertainment',
-    slug: 'creative-arts-entertainment',
+    slug: 'creative',
     description: 'Art, music, film, literature, and creative expression',
     icon: '🎨',
     children: [
@@ -103,7 +103,7 @@ const parentCategories = [
   },
   {
     name: 'Education & Self-Development',
-    slug: 'education-self-development',
+    slug: 'education',
     description: 'Learning, skills, personal growth, and academic topics',
     icon: '📚',
     children: [
@@ -119,7 +119,7 @@ const parentCategories = [
   },
   {
     name: 'Home & Family',
-    slug: 'home-family',
+    slug: 'home',
     description: 'Home improvement, family life, and domestic topics',
     icon: '🏠',
     children: [
@@ -135,7 +135,7 @@ const parentCategories = [
   },
   {
     name: 'Professional & Industrial',
-    slug: 'professional-industrial',
+    slug: 'professional',
     description: 'Industry, manufacturing, trades, and professional services',
     icon: '🏭',
     children: [
@@ -151,7 +151,7 @@ const parentCategories = [
   },
   {
     name: 'Social & Global Issues',
-    slug: 'social-global-issues',
+    slug: 'social',
     description: 'Society, politics, environment, and global challenges',
     icon: '🌍',
     children: [
@@ -167,7 +167,7 @@ const parentCategories = [
   },
   {
     name: 'Niche Hobbies & Collections',
-    slug: 'niche-hobbies-collections',
+    slug: 'nichehobbies',
     description: 'Specialized interests, collecting, and unique pastimes',
     icon: '🎯',
     children: [
@@ -194,32 +194,60 @@ async function seedCategories() {
     await Category.deleteMany({});
     console.log('🗑️  Cleared existing categories');
 
-    // Create parent categories
-    const parentDocs = await Category.insertMany(
-      parentCategories.map((cat) => ({
-        name: cat.name,
-        slug: cat.slug,
-        description: cat.description,
-        icon: cat.icon,
-        is_featured: true,
-      }))
-    );
-    console.log(`✅ Created ${parentDocs.length} parent categories`);
+    // Create parent categories using bulkWrite for upsert
+    const parentOperations = parentCategories.map(cat => ({
+      updateOne: {
+        filter: { slug: cat.slug },
+        update: {
+          $set: {
+            name: cat.name,
+            slug: cat.slug,
+            description: cat.description,
+            icon: cat.icon,
+            is_featured: true,
+          },
+        },
+        upsert: true,
+      },
+    }));
 
-    // Create child categories
+    await Category.bulkWrite(parentOperations);
+    console.log(`✅ Created/updated parent categories`);
+
+    // Fetch all parent categories to get their IDs
+    const parentDocs = await Category.find({ slug: { $in: parentCategories.map(c => c.slug) } });
+    console.log(`✅ Fetched ${parentDocs.length} parent categories`);
+
+    // Create child categories using bulkWrite for upsert
     let childCount = 0;
+    const childOperations: any[] = [];
+
     for (let i = 0; i < parentCategories.length; i++) {
       const parent = parentCategories[i];
-      const parentDoc = parentDocs[i];
+      const parentDoc = parentDocs.find(p => p.slug === parent.slug);
+      if (!parentDoc) continue;
 
-      const childDocs = parent.children.map((childName) => ({
-        name: childName,
-        slug: `${parent.slug}-${childName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}`,
-        parent_id: parentDoc._id,
-      }));
+      for (const childName of parent.children) {
+        const childSlug = `${parent.slug}/${childName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}`;
+        childOperations.push({
+          updateOne: {
+            filter: { slug: childSlug },
+            update: {
+              $set: {
+                name: childName,
+                slug: childSlug,
+                parent_id: parentDoc._id,
+              },
+            },
+            upsert: true,
+          },
+        });
+      }
+    }
 
-      await Category.insertMany(childDocs);
-      childCount += childDocs.length;
+    if (childOperations.length > 0) {
+      await Category.bulkWrite(childOperations);
+      childCount = childOperations.length;
     }
 
     console.log(`✅ Created ${childCount} child categories`);
