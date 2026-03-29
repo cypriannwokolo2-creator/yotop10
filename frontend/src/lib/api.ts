@@ -39,23 +39,123 @@ export async function apiFetch<T>(
   return response.json();
 }
 
+// API Response Types
+export interface CategoriesResponse {
+  categories: Category[];
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  icon?: string;
+  post_count: number;
+  is_featured: boolean;
+  children: ChildCategory[];
+}
+
+export interface ChildCategory {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  icon?: string;
+  post_count: number;
+}
+
+export interface SingleCategoryResponse {
+  category: Category;
+}
+
+export interface PostsResponse {
+  posts: Post[];
+  pagination?: {
+    page: number;
+    totalPages: number;
+    total: number;
+  };
+}
+
+export interface Post {
+  id: string;
+  title: string;
+  post_type: string;
+  intro: string;
+  fire_count: number;
+  comment_count: number;
+  view_count: number;
+  author_username: string;
+  author_display_name: string;
+  category?: Category;
+  created_at: string;
+}
+
+export interface PostDetailResponse {
+  post: Post;
+  items: ListItem[];
+}
+
+export interface ListItem {
+  id: string;
+  rank: number;
+  title: string;
+  justification: string;
+  image_url?: string;
+  source_url?: string;
+  fire_count: number;
+}
+
+export interface PostHistoryResponse {
+  versions: PostVersion[];
+}
+
+export interface PostVersion {
+  version_number: number;
+  title: string;
+  intro: string;
+  items: Array<{ rank: number; title: string; justification: string }>;
+  created_at: string;
+  author_username: string;
+  change_summary?: string;
+}
+
+export interface CommentsResponse {
+  comments: Comment[];
+}
+
+export interface Comment {
+  id: string;
+  content: string;
+  depth: number;
+  fire_count: number;
+  reply_count: number;
+  author_username: string;
+  author_display_name: string;
+  created_at: string;
+  updated_at?: string;
+  list_item_id?: string;
+  parent_comment_id?: string;
+  replies?: Comment[];
+}
+
 /**
- * API endpoints
+ * API endpoints with typed responses
  */
 export const API = {
   // Categories
-  getCategories: () => apiFetch('/categories'),
-  getCategory: (slug: string) => apiFetch(`/categories/${slug}`),
+  getCategories: (): Promise<CategoriesResponse> => apiFetch('/categories'),
+  getCategory: (slug: string): Promise<SingleCategoryResponse> => apiFetch(`/categories/${slug}`),
 
   // Posts
-  getPosts: (params?: { category?: string; page?: number; limit?: number }) => {
+  getPosts: (params?: { category?: string; page?: number; limit?: number }): Promise<PostsResponse> => {
     const query = params ? '?' + new URLSearchParams(
       Object.entries(params).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)])
     ).toString() : '';
     return apiFetch(`/posts${query}`);
   },
-  getPost: (id: string) => apiFetch(`/posts/${id}`),
-  getPostHistory: (id: string) => apiFetch(`/posts/${id}/history`),
+  getPost: (id: string): Promise<PostDetailResponse> => apiFetch(`/posts/${id}`),
+  getPostHistory: (id: string): Promise<PostHistoryResponse> => apiFetch(`/posts/${id}/history`),
 
   // Reactions
   getReactionState: (postId: string) => apiFetch(`/reactions/state?post_id=${postId}`),
@@ -65,7 +165,7 @@ export const API = {
   }),
 
   // Comments
-  getComments: (postId: string) => apiFetch(`/comments?post_id=${postId}`),
+  getComments: (postId: string): Promise<CommentsResponse> => apiFetch(`/comments?post_id=${postId}`),
   addComment: (postId: string, content: string) => apiFetch('/comments', {
     method: 'POST',
     body: JSON.stringify({ post_id: postId, content }),
