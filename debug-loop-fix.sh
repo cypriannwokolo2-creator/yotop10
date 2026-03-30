@@ -5,8 +5,6 @@
 # This script will diagnose why your categories page is stuck loading
 # ============================================================================
 
-set -e
-
 echo "=========================================="
 echo "🔍 YOTOP10 DEBUGGING SCRIPT"
 echo "=========================================="
@@ -38,7 +36,6 @@ else
     echo "   Or if using Docker:"
     echo "   docker-compose up -d"
     echo ""
-    exit 1
 fi
 
 echo ""
