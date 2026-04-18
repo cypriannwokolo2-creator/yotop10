@@ -13,27 +13,35 @@ import {
   ArrowRight,
   LayoutGrid,
   ChevronRight,
-  ListRestart
+  ListRestart,
+  RotateCw
 } from 'lucide-react';
 import { ConfirmationModal, PromptModal, StatusModal } from '@/components/ui';
 import { cn } from '@/lib/utils';
 
 export default function PendingPostsPage() {
   const [posts, setPosts] = useState<Post[]>([]);
-  const [quickReplies, setQuickReplies] = useState<{label: string, message: string}[]>([]);
+  const [quickReplies, setQuickReplies] = useState<{label: string, message: string, type: string}[]>([]);
   const [loading, setLoading] = useState(true);
   const [actingOn, setActingOn] = useState<string | null>(null);
   
   // Modal states
-  const [confirmModal, setConfirmModal] = useState<{isOpen: boolean, postId: string, type: 'approve' | 'delete'}>({
+  const [promptModal, setPromptModal] = useState<{
+    isOpen: boolean, 
+    postId: string, 
+    type: 'approve' | 'reject' | 'edit',
+    title: string,
+    message: string,
+    variant: 'success' | 'danger' | 'info'
+  }>({
     isOpen: false,
     postId: '',
-    type: 'approve'
+    type: 'reject',
+    title: '',
+    message: '',
+    variant: 'danger'
   });
-  const [promptModal, setPromptModal] = useState<{isOpen: boolean, postId: string}>({
-    isOpen: false,
-    postId: ''
-  });
+
   const [statusMsg, setStatusMsg] = useState<{isOpen: boolean, type: 'success' | 'error', title: string, message: string}>({
     isOpen: false,
     type: 'success',
@@ -41,7 +49,8 @@ export default function PendingPostsPage() {
     message: ''
   });
 
-  const loadData = async () => {
+  const loadData = async (showLoader = true) => {
+    if (showLoader) setLoading(true);
     try {
       const [pRes, qRes] = await Promise.all([
         API.adminGetPendingPosts(),
@@ -52,7 +61,7 @@ export default function PendingPostsPage() {
     } catch (err) {
       console.error('Failed to load queue:', err);
     } finally {
-      setLoading(false);
+      if (showLoader) setLoading(false);
     }
   };
 
@@ -72,58 +81,36 @@ export default function PendingPostsPage() {
       groups[catName].items.push(post);
     });
 
-    // Sort by count descending
     return Object.entries(groups)
       .sort((a, b) => b[1].items.length - a[1].items.length)
       .map(([name, data]) => ({ name, ...data }));
   }, [posts]);
 
-  const handleApprove = async () => {
-    const { postId } = confirmModal;
-    setActingOn(postId);
-    setConfirmModal({ ...confirmModal, isOpen: false });
-
-    try {
-      await API.adminApprovePost(postId, 'approve');
-      setStatusMsg({
-        isOpen: true,
-        type: 'success',
-        title: 'Post Approved',
-        message: 'The list has been published and the author has been notified.'
-      });
-      loadData();
-    } catch (err: any) {
-      setStatusMsg({
-        isOpen: true,
-        type: 'error',
-        title: 'Action Failed',
-        message: err.message || 'Approval transmission failed.'
-      });
-    } finally {
-      setActingOn(null);
-    }
-  };
-
-  const handleReject = async (reason: string) => {
-    const { postId } = promptModal;
+  const handleAction = async (reason: string) => {
+    const { postId, type } = promptModal;
     setActingOn(postId);
     setPromptModal({ ...promptModal, isOpen: false });
 
     try {
-      await API.adminApprovePost(postId, 'reject', reason);
-      setStatusMsg({
-        isOpen: true,
-        type: 'success',
-        title: 'Post Rejected',
-        message: 'List data cleared. The author was notified of the rejection reason.'
-      });
-      loadData();
+      if (type === 'approve' || type === 'reject') {
+        const action = type === 'approve' ? 'approve' : 'reject';
+        await API.adminApprovePost(postId, action, reason);
+        setStatusMsg({
+          isOpen: true,
+          type: 'success',
+          title: type === 'approve' ? 'Submission Published' : 'Submission Purged',
+          message: type === 'approve' 
+            ? 'The list is now live. Scholar has been notified.' 
+            : 'Data wiped. Scholar was notified of the rejection reasoning.'
+        });
+      }
+      loadData(false);
     } catch (err: any) {
       setStatusMsg({
         isOpen: true,
         type: 'error',
-        title: 'Rejection Failed',
-        message: err.message || 'Operation failed.'
+        title: 'Operation Failed',
+        message: err.message || 'Transmission error.'
       });
     } finally {
       setActingOn(null);
@@ -139,14 +126,23 @@ export default function PendingPostsPage() {
   return (
     <div className="pb-20">
       <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div>
-          <h1 className="text-4xl font-black tracking-tight flex items-center gap-3 text-orange-600">
-            <ShieldAlert size={36} />
-            Editorial Gatekeeper
-          </h1>
-          <p className="text-muted-foreground mt-2 max-w-2xl leading-relaxed">
-            Verify, refine, or terminate pending submissions. Lists are grouped by category for efficient processing.
-          </p>
+        <div className="flex items-center gap-6">
+          <div className="relative">
+            <h1 className="text-4xl font-black tracking-tight flex items-center gap-3 text-orange-600">
+              <ShieldAlert size={36} />
+              Editorial Gatekeeper
+            </h1>
+            <p className="text-muted-foreground mt-2 max-w-2xl leading-relaxed">
+              Verify, refine, or terminate pending submissions. Lists are grouped by category volume.
+            </p>
+          </div>
+          <button 
+            onClick={() => loadData(false)}
+            className="p-3 bg-muted/50 hover:bg-muted rounded-2xl border border-border transition-all active:rotate-180 duration-500 hover:text-primary"
+            title="Refresh Queue"
+          >
+            <RotateCw size={24} />
+          </button>
         </div>
         
         <div className="flex items-center gap-4 bg-card/50 backdrop-blur-sm px-6 py-4 rounded-3xl border border-border shadow-sm">
@@ -174,7 +170,6 @@ export default function PendingPostsPage() {
         <div className="space-y-16">
           {groupedPosts.map((group) => (
             <div key={group.name} className="space-y-6">
-              {/* Category Header */}
               <div className="flex items-center gap-4 px-2">
                 <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center border border-primary/20 shadow-inner">
                   <LayoutGrid size={24} />
@@ -217,18 +212,20 @@ export default function PendingPostsPage() {
                              <span className="text-muted-foreground">Author:</span>
                              <span className="font-black underline decoration-primary/30 underline-offset-4">{post.author_display_name}</span>
                           </div>
-                          {post.min_items_required && (
-                            <div className="flex items-center gap-2 px-3 py-1 bg-muted/50 rounded-full border border-border/50 text-xs font-bold">
-                              Target: {post.min_items_required} items
-                            </div>
-                          )}
                         </div>
                       </div>
 
                       <div className="flex items-stretch gap-3 min-w-[340px]">
                         <div className="grid grid-cols-2 lg:grid-cols-1 w-full gap-3">
                           <button
-                            onClick={() => setConfirmModal({ isOpen: true, postId: id, type: 'approve' })}
+                            onClick={() => setPromptModal({ 
+                              isOpen: true, 
+                              postId: id, 
+                              type: 'approve',
+                              variant: 'success',
+                              title: 'Approve Submission',
+                              message: 'Verify content. Selecting a message will notify the author of their success.'
+                            })}
                             disabled={actingOn === id}
                             className="h-full min-h-[56px] bg-green-500 text-white rounded-2xl font-black text-sm flex items-center justify-center gap-2 hover:bg-green-600 transition-all active:scale-95 shadow-lg shadow-green-500/20"
                           >
@@ -243,11 +240,18 @@ export default function PendingPostsPage() {
                           </Link>
 
                           <button
-                            onClick={() => setPromptModal({ isOpen: true, postId: id })}
+                            onClick={() => setPromptModal({ 
+                              isOpen: true, 
+                              postId: id, 
+                              type: 'reject',
+                              variant: 'danger',
+                              title: 'Reject & Purge',
+                              message: 'Pick a reason for deletion. This action is permanent and clears all data.'
+                            })}
                             disabled={actingOn === id}
                             className="h-full min-h-[56px] bg-red-600 text-white rounded-2xl font-black text-sm flex items-center justify-center gap-2 hover:bg-red-700 transition-all active:scale-95 shadow-lg shadow-red-600/30 lg:col-span-1 col-span-2"
                           >
-                            <XCircle size={18} /> Reject & Purge
+                            <XCircle size={18} /> Reject
                           </button>
                         </div>
                       </div>
@@ -260,26 +264,16 @@ export default function PendingPostsPage() {
         </div>
       )}
 
-      {/* Decision Modals */}
-      <ConfirmationModal
-        isOpen={confirmModal.isOpen && confirmModal.type === 'approve'}
-        onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
-        onConfirm={handleApprove}
-        title="Sanction Publication?"
-        message="This will instantly publish the list to the platform. The author will be notified that their research has been verified."
-        confirmLabel="Verify & Publish"
-        variant="info"
-        isLoading={!!actingOn}
-      />
-
+      {/* Dynamic Moderation Modal */}
       <PromptModal
         isOpen={promptModal.isOpen}
         onClose={() => setPromptModal({ ...promptModal, isOpen: false })}
-        onConfirm={handleReject}
-        title="Rejection Reason"
-        message="Provide critical feedback. Rejection triggers identity alerts AND permanent list destruction from the database."
-        confirmLabel="Confirm Rejection"
-        quickReplies={quickReplies}
+        onConfirm={handleAction}
+        title={promptModal.title}
+        message={promptModal.message}
+        variant={promptModal.variant}
+        confirmLabel={promptModal.type === 'approve' ? 'Publish Now' : 'Purge Data'}
+        quickReplies={quickReplies.filter(r => r.type === promptModal.type)}
         isLoading={!!actingOn}
       />
 

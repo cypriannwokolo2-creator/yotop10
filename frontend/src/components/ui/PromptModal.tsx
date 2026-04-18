@@ -7,7 +7,8 @@ import {
   CheckCircle2, 
   ShieldAlert, 
   Zap,
-  SendHorizontal
+  SendHorizontal,
+  Info
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -19,8 +20,9 @@ interface PromptModalProps {
   message: string;
   placeholder?: string;
   confirmLabel?: string;
-  quickReplies?: { label: string; message: string }[];
+  quickReplies?: { label: string; message: string; type?: string }[];
   isLoading?: boolean;
+  variant?: 'success' | 'danger' | 'info';
 }
 
 export default function PromptModal({
@@ -33,6 +35,7 @@ export default function PromptModal({
   confirmLabel = 'Send & Confirm',
   quickReplies = [],
   isLoading = false,
+  variant = 'danger'
 }: PromptModalProps) {
   const [reason, setReason] = useState('');
   const [mounted, setMounted] = useState(false);
@@ -57,6 +60,41 @@ export default function PromptModal({
   };
 
   if (!mounted && !isOpen) return null;
+
+  const themes = {
+    success: {
+      bg: 'bg-green-500/10',
+      text: 'text-green-500',
+      border: 'border-green-500/20',
+      button: 'bg-green-600 shadow-green-600/20',
+      ring: 'focus:ring-green-500/10',
+      hoverBorder: 'hover:border-green-500/50',
+      hoverText: 'hover:text-green-500',
+      selected: 'bg-green-500'
+    },
+    danger: {
+      bg: 'bg-red-500/10',
+      text: 'text-red-500',
+      border: 'border-red-500/20',
+      button: 'bg-red-600 shadow-red-600/20',
+      ring: 'focus:ring-red-500/10',
+      hoverBorder: 'hover:border-red-500/50',
+      hoverText: 'hover:text-red-500',
+      selected: 'bg-red-500'
+    },
+    info: {
+      bg: 'bg-blue-500/10',
+      text: 'text-blue-500',
+      border: 'border-blue-500/20',
+      button: 'bg-blue-600 shadow-blue-600/20',
+      ring: 'focus:ring-blue-500/10',
+      hoverBorder: 'hover:border-blue-500/50',
+      hoverText: 'hover:text-blue-500',
+      selected: 'bg-blue-500'
+    }
+  };
+
+  const activeTheme = themes[variant];
 
   return (
     <div
@@ -88,8 +126,8 @@ export default function PromptModal({
 
         <div className="flex flex-col">
           <div className="flex items-center gap-4 mb-8">
-            <div className="w-14 h-14 rounded-2xl bg-red-500/10 text-red-500 flex items-center justify-center border border-red-500/20">
-              <ShieldAlert size={28} />
+            <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center border", activeTheme.bg, activeTheme.text, activeTheme.border)}>
+              {variant === 'danger' ? <ShieldAlert size={28} /> : variant === 'success' ? <CheckCircle2 size={28} /> : <Info size={28} />}
             </div>
             <div>
               <h3 className="text-2xl font-black tracking-tight">{title}</h3>
@@ -103,10 +141,10 @@ export default function PromptModal({
               <div className="space-y-3">
                 <div className="flex items-center justify-between ml-1">
                   <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                    Auto-Reasoning
+                    Action Templates
                   </label>
-                  <div className="flex items-center gap-1 text-[9px] text-primary font-bold">
-                    <Zap size={10} /> Double-click for Instant Reject
+                  <div className={cn("flex items-center gap-1 text-[9px] font-bold", activeTheme.text)}>
+                    <Zap size={10} /> Double-click for Instant Send
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -119,8 +157,8 @@ export default function PromptModal({
                       className={cn(
                         "group relative px-4 py-2.5 rounded-xl text-xs font-bold border transition-all hover:scale-[1.02] active:scale-95 flex items-center gap-2",
                         reason === reply.message 
-                          ? "bg-red-500 text-white border-red-500 shadow-lg shadow-red-500/20" 
-                          : "bg-muted/50 text-muted-foreground border-border hover:border-red-500/50 hover:text-red-500"
+                          ? cn("text-white shadow-lg", activeTheme.selected) 
+                          : cn("bg-muted/50 text-muted-foreground border-border", activeTheme.hoverBorder, activeTheme.hoverText)
                       )}
                     >
                       {reply.label}
@@ -139,16 +177,16 @@ export default function PromptModal({
 
             <div className="space-y-3">
               <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
-                Custom Feedback
+                Comment (Optional)
               </label>
               <div className="relative">
                 <textarea
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
                   placeholder={placeholder}
-                  className="w-full p-6 rounded-3xl border border-border bg-muted/20 focus:outline-none focus:ring-4 focus:ring-red-500/10 transition-all min-h-[160px] text-lg leading-relaxed font-medium"
+                  className={cn("w-full p-6 rounded-3xl border border-border bg-muted/20 focus:outline-none focus:ring-4 transition-all min-h-[160px] text-lg leading-relaxed font-medium", activeTheme.ring)}
                 ></textarea>
-                <div className="absolute top-6 right-6 text-red-500/20">
+                <div className={cn("absolute top-6 right-6 opacity-20", activeTheme.text)}>
                   <MessageSquare size={24} />
                 </div>
               </div>
@@ -158,8 +196,8 @@ export default function PromptModal({
           <div className="flex items-center gap-4 mt-10">
             <button
               onClick={() => onConfirm(reason)}
-              disabled={isLoading || !reason.trim()}
-              className="flex-1 h-16 bg-red-600 text-white rounded-2xl font-black text-xl shadow-xl shadow-red-600/20 hover:scale-[1.02] active:scale-95 hover:brightness-110 transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:scale-100"
+              disabled={isLoading || (variant === 'danger' && !reason.trim())}
+              className={cn("flex-1 h-16 text-white rounded-2xl font-black text-xl shadow-xl hover:scale-[1.02] active:scale-95 hover:brightness-110 transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:scale-100", activeTheme.button)}
             >
               {isLoading ? (
                 <span className="animate-spin border-4 border-white/20 border-t-white rounded-full w-6 h-6" />

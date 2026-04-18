@@ -232,10 +232,36 @@ router.patch('/posts/:id', adminAuthMiddleware, async (req: AdminAuthRequest, re
       );
     }
 
+    // 3. Notify User
+    await UserNotification.create({
+      author_id: post.author_id,
+      type: 'info',
+      post_title: post.title,
+      message: 'Moderators have refined your list for better platform compatibility.',
+      reason: 'Editorial Adjustment',
+    });
+
     res.json({ success: true, post });
   } catch (error) {
     console.error('Admin edit error:', error);
     res.status(500).json({ error: 'Failed to edit post' });
+  }
+});
+
+/**
+ * GET /api/admin/posts/:id
+ * Fetch full post details regardless of status (for vetting)
+ */
+router.get('/posts/:id', adminAuthMiddleware, async (req: AdminAuthRequest, res: Response) => {
+  try {
+    const post = await Post.findById(req.params.id).populate('category_id', 'name slug icon');
+    if (!post) return res.status(404).json({ error: 'Post not found' });
+
+    const items = await ListItem.find({ post_id: post._id }).sort({ rank: 1 });
+    
+    res.json({ post, items });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch post details' });
   }
 });
 
@@ -388,11 +414,18 @@ router.delete('/quick-replies/:id', adminAuthMiddleware, async (req: AdminAuthRe
 router.post('/quick-replies/seed', adminAuthMiddleware, async (req: AdminAuthRequest, res: Response) => {
   try {
     const defaults = [
-      { label: 'Insufficient Detail', message: 'Your list lack the necessary editorial depth. Please provide more substantial justifications for each placement.' },
-      { label: 'Wrong Category', message: 'This content belongs in a different category. Please re-submit under the appropriate domain.' },
-      { label: 'Formatting Issues', message: 'The list formatting is inconsistent or unreadable. Ensure all placements have clear titles and clean descriptions.' },
-      { label: 'Community Guidelines', message: 'This content violates our community publishing standards. Please review the platform rules and try again.' },
-      { label: 'Insufficient Rankings', message: 'The number of placements provided does not meet the minimum requirement set for this list type.' }
+      // Rejection Templates
+      { label: 'Low Detail', type: 'reject', message: 'Your list lacks necessary editorial depth. Please provide more substantial justifications for each placement.' },
+      { label: 'Wrong Domain', type: 'reject', message: 'This content belongs in a different category. Please re-submit under the correct domain.' },
+      { label: 'Policy Breach', type: 'reject', message: 'This content violates community publishing standards. Please review the rules.' },
+      
+      // Approval Templates
+      { label: 'Crystal Clear', type: 'approve', message: 'Your list is exceptionally well-researched. Published immediately!' },
+      { label: 'Verified', type: 'approve', message: 'Content verified. Your list is now live on the platform.' },
+      
+      // Edit Templates
+      { label: 'Grammar Fix', type: 'edit', message: 'I corrected some minor spelling and grammar issues to improve readability.' },
+      { label: 'Icon Alignment', type: 'edit', message: 'Updated your list categories for better visibility.' }
     ];
 
     await QuickReply.deleteMany({});

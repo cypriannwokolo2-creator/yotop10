@@ -30,7 +30,7 @@ export default function AdminEditPostPage() {
     const fetchData = async () => {
       try {
         const [postRes, catsRes, settings] = await Promise.all([
-          API.getPost(postId),
+          API.adminGetPostDetails(postId),
           API.getCategories(),
           API.adminGetSettings()
         ]);

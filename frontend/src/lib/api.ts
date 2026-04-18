@@ -280,6 +280,7 @@ export const API = {
 
   adminGetStats: () => apiFetch('/admin/stats'),
   adminGetPendingPosts: () => apiFetch('/admin/posts/pending'),
+  adminGetPostDetails: (id: string) => apiFetch(`/admin/posts/${id}`),
   adminApprovePost: (id: string, action: 'approve' | 'reject', reason?: string) =>
     apiFetch(`/admin/posts/${id}/approve`, {
       method: 'POST',
@@ -288,7 +289,7 @@ export const API = {
   
   adminGetQuickReplies: () => apiFetch('/admin/quick-replies'),
   
-  adminCreateQuickReply: (reply: { label: string, message: string }) => 
+  adminCreateQuickReply: (reply: { label: string, message: string, type: 'approve' | 'reject' | 'edit' }) => 
     apiFetch('/admin/quick-replies', {
       method: 'POST',
       body: JSON.stringify(reply)

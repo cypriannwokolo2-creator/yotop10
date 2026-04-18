@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { API } from '@/lib/api';
 import { 
   Settings, 
@@ -14,9 +14,13 @@ import {
   Trash2, 
   MessageSquare, 
   Zap,
-  RotateCcw
+  RotateCcw,
+  CheckCircle2,
+  XCircle,
+  Pencil
 } from 'lucide-react';
 import { StatusModal, ConfirmationModal } from '@/components/ui';
+import { cn } from '@/lib/utils';
 
 export default function AdminSettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -33,8 +37,13 @@ export default function AdminSettingsPage() {
   });
 
   // Quick Replies State
-  const [replies, setReplies] = useState<{id?: string, label: string, message: string}[]>([]);
-  const [newReply, setNewReply] = useState({ label: '', message: '' });
+  const [replies, setReplies] = useState<{id?: string, label: string, message: string, type: string}[]>([]);
+  const [activeTab, setActiveTab] = useState<'approve' | 'reject' | 'edit'>('reject');
+  const [newReply, setNewReply] = useState<{label: string, message: string, type: 'approve' | 'reject' | 'edit'}>({ 
+    label: '', 
+    message: '', 
+    type: 'reject' 
+  });
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const loadAll = async () => {
@@ -61,6 +70,10 @@ export default function AdminSettingsPage() {
     loadAll();
   }, []);
 
+  const filteredReplies = useMemo(() => {
+    return replies.filter(r => r.type === activeTab);
+  }, [replies, activeTab]);
+
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
@@ -80,7 +93,7 @@ export default function AdminSettingsPage() {
     if (!newReply.label || !newReply.message) return;
     try {
       await API.adminCreateQuickReply(newReply);
-      setNewReply({ label: '', message: '' });
+      setNewReply({ ...newReply, label: '', message: '' });
       loadAll();
     } catch {
       setError('Failed to save reason template.');
@@ -251,7 +264,7 @@ export default function AdminSettingsPage() {
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-3">
                 <MessageSquare size={20} className="text-primary" />
-                <h2 className="text-xl font-bold">Quick Replies</h2>
+                <h2 className="text-xl font-bold">Moderation Templates</h2>
               </div>
               <button 
                 onClick={handleSeedReplies}
@@ -262,8 +275,39 @@ export default function AdminSettingsPage() {
               </button>
             </div>
 
-            <div className="space-y-4 mb-8 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-              {replies.map((reply) => (
+            {/* Sub-Tabs for Categories */}
+            <div className="flex p-1 bg-muted rounded-2xl mb-6">
+              <button 
+                onClick={() => setActiveTab('approve')}
+                className={cn(
+                  "flex-1 py-2 px-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2",
+                  activeTab === 'approve' ? "bg-card text-green-500 shadow-sm" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <CheckCircle2 size={12} /> Accept
+              </button>
+              <button 
+                onClick={() => setActiveTab('reject')}
+                className={cn(
+                  "flex-1 py-2 px-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2",
+                  activeTab === 'reject' ? "bg-card text-red-500 shadow-sm" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <XCircle size={12} /> Reject
+              </button>
+              <button 
+                onClick={() => setActiveTab('edit')}
+                className={cn(
+                  "flex-1 py-2 px-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2",
+                  activeTab === 'edit' ? "bg-card text-blue-500 shadow-sm" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Pencil size={12} /> Edit
+              </button>
+            </div>
+
+            <div className="space-y-4 mb-8 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+              {filteredReplies.map((reply) => (
                 <div key={reply.id} className="group p-4 bg-muted/30 border border-border rounded-2xl relative hover:bg-muted/50 transition-colors">
                   <button 
                     onClick={() => setDeleteId(reply.id || null)}
@@ -275,25 +319,41 @@ export default function AdminSettingsPage() {
                   <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{reply.message}</p>
                 </div>
               ))}
-              {replies.length === 0 && (
-                <p className="text-center py-10 text-xs text-muted-foreground italic">No templates defined yet.</p>
+              {filteredReplies.length === 0 && (
+                <p className="text-center py-10 text-xs text-muted-foreground italic">No {activeTab} templates defined yet.</p>
               )}
             </div>
 
             <div className="space-y-4 pt-4 border-t border-border">
-              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">New Template</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">New {activeTab} Template</p>
+              
+              <div className="flex bg-muted p-1 rounded-xl gap-1">
+                {(['approve', 'reject', 'edit'] as const).map((t) => (
+                  <button 
+                    key={t}
+                    onClick={() => setNewReply({ ...newReply, type: t })}
+                    className={cn(
+                      "flex-1 py-1 rounded-lg text-[8px] font-black uppercase tracking-tighter transition-colors",
+                      newReply.type === t ? "bg-card shadow-sm text-primary" : "text-muted-foreground"
+                    )}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+
               <input 
                 type="text" 
                 placeholder="Button Label"
                 value={newReply.label}
                 onChange={(e) => setNewReply({ ...newReply, label: e.target.value })}
-                className="w-full h-11 px-4 rounded-xl border border-border bg-background text-sm font-bold"
+                className="w-full h-11 px-4 rounded-xl border border-border bg-background text-sm font-bold shadow-inner"
               />
               <textarea 
                 placeholder="Message Template"
                 value={newReply.message}
                 onChange={(e) => setNewReply({ ...newReply, message: e.target.value })}
-                className="w-full p-4 rounded-xl border border-border bg-background text-xs min-h-[100px]"
+                className="w-full p-4 rounded-xl border border-border bg-background text-xs min-h-[100px] shadow-inner"
               />
               <button 
                 onClick={handleAddReply}
