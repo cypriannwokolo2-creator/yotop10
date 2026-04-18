@@ -12,3 +12,4 @@ export { Tooltip } from './Tooltip';
 export { default as StatusModal } from './StatusModal';
 export { default as ConfirmationModal } from './ConfirmationModal';
 export { default as PromptModal } from './PromptModal';
+export { default as CategorySelect } from './CategorySelect';

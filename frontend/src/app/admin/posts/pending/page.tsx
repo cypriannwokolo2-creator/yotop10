@@ -1,121 +1,46 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { API, Post } from '@/lib/api';
+import { API } from '@/lib/api';
 import { 
-  CheckCircle, 
-  XCircle, 
-  ExternalLink, 
-  Pencil, 
   Loader2, 
   ShieldAlert,
-  ArrowRight,
   LayoutGrid,
   ChevronRight,
-  ListRestart,
-  RotateCw
+  RotateCw,
+  FolderOpen
 } from 'lucide-react';
-import { ConfirmationModal, PromptModal, StatusModal } from '@/components/ui';
-import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
-export default function PendingPostsPage() {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [quickReplies, setQuickReplies] = useState<{label: string, message: string, type: string}[]>([]);
+interface SummaryItem {
+  categoryId: string;
+  name: string;
+  icon: string;
+  slug: string;
+  count: number;
+}
+
+export default function PendingDashboardPage() {
+  const [summary, setSummary] = useState<SummaryItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [actingOn, setActingOn] = useState<string | null>(null);
-  
-  // Modal states
-  const [promptModal, setPromptModal] = useState<{
-    isOpen: boolean, 
-    postId: string, 
-    type: 'approve' | 'reject' | 'edit',
-    title: string,
-    message: string,
-    variant: 'success' | 'danger' | 'info'
-  }>({
-    isOpen: false,
-    postId: '',
-    type: 'reject',
-    title: '',
-    message: '',
-    variant: 'danger'
-  });
+  const [error, setError] = useState('');
 
-  const [statusMsg, setStatusMsg] = useState<{isOpen: boolean, type: 'success' | 'error', title: string, message: string}>({
-    isOpen: false,
-    type: 'success',
-    title: '',
-    message: ''
-  });
-
-  const loadData = async (showLoader = true) => {
+  const loadSummary = async (showLoader = true) => {
     if (showLoader) setLoading(true);
     try {
-      const [pRes, qRes] = await Promise.all([
-        API.adminGetPendingPosts(),
-        API.adminGetQuickReplies()
-      ]);
-      setPosts(pRes.posts || []);
-      setQuickReplies(qRes || []);
+      const res = await API.adminGetPendingSummary();
+      setSummary(res.summary || []);
     } catch (err) {
-      console.error('Failed to load queue:', err);
+      setError('System communication failure. Verify admin credentials.');
     } finally {
       if (showLoader) setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadData();
+    loadSummary();
   }, []);
-
-  // Grouping logic
-  const groupedPosts = useMemo(() => {
-    const groups: Record<string, { category: any, items: Post[] }> = {};
-    
-    posts.forEach(post => {
-      const catName = post.category?.name || 'Uncategorized';
-      if (!groups[catName]) {
-        groups[catName] = { category: post.category, items: [] };
-      }
-      groups[catName].items.push(post);
-    });
-
-    return Object.entries(groups)
-      .sort((a, b) => b[1].items.length - a[1].items.length)
-      .map(([name, data]) => ({ name, ...data }));
-  }, [posts]);
-
-  const handleAction = async (reason: string) => {
-    const { postId, type } = promptModal;
-    setActingOn(postId);
-    setPromptModal({ ...promptModal, isOpen: false });
-
-    try {
-      if (type === 'approve' || type === 'reject') {
-        const action = type === 'approve' ? 'approve' : 'reject';
-        await API.adminApprovePost(postId, action, reason);
-        setStatusMsg({
-          isOpen: true,
-          type: 'success',
-          title: type === 'approve' ? 'Submission Published' : 'Submission Purged',
-          message: type === 'approve' 
-            ? 'The list is now live. Scholar has been notified.' 
-            : 'Data wiped. Scholar was notified of the rejection reasoning.'
-        });
-      }
-      loadData(false);
-    } catch (err: any) {
-      setStatusMsg({
-        isOpen: true,
-        type: 'error',
-        title: 'Operation Failed',
-        message: err.message || 'Transmission error.'
-      });
-    } finally {
-      setActingOn(null);
-    }
-  };
 
   if (loading) return (
     <div className="min-h-[400px] flex items-center justify-center">
@@ -130,160 +55,81 @@ export default function PendingPostsPage() {
           <div className="relative">
             <h1 className="text-4xl font-black tracking-tight flex items-center gap-3 text-orange-600">
               <ShieldAlert size={36} />
-              Editorial Gatekeeper
+              Editorial Command
             </h1>
-            <p className="text-muted-foreground mt-2 max-w-2xl leading-relaxed">
-              Verify, refine, or terminate pending submissions. Lists are grouped by category volume.
+            <p className="text-muted-foreground mt-2 max-w-2xl leading-relaxed font-medium">
+              Categorical focus mode engaged. Process submissions one universe at a time for higher editorial precision.
             </p>
           </div>
           <button 
-            onClick={() => loadData(false)}
-            className="p-3 bg-muted/50 hover:bg-muted rounded-2xl border border-border transition-all active:rotate-180 duration-500 hover:text-primary"
-            title="Refresh Queue"
+            onClick={() => loadSummary(false)}
+            className="p-3 bg-card hover:bg-muted rounded-2xl border border-border transition-all active:rotate-180 duration-500 hover:text-primary shadow-sm"
           >
             <RotateCw size={24} />
           </button>
         </div>
-        
-        <div className="flex items-center gap-4 bg-card/50 backdrop-blur-sm px-6 py-4 rounded-3xl border border-border shadow-sm">
-          <div className="text-center border-r border-border pr-6">
-            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Total Pending</p>
-            <p className="text-2xl font-black text-orange-600 font-mono tracking-tighter">{posts.length}</p>
-          </div>
-          <div className="text-center pl-2">
-            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Categories</p>
-            <p className="text-2xl font-black text-primary font-mono tracking-tighter">{groupedPosts.length}</p>
-          </div>
-        </div>
       </div>
 
-      {posts.length === 0 ? (
-        <div className="relative overflow-hidden group py-32 bg-card rounded-[3rem] border border-border flex flex-col items-center justify-center text-center px-6">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-          <div className="w-24 h-24 rounded-full bg-green-500/10 text-green-500 flex items-center justify-center mb-6">
-            <CheckCircle size={48} />
-          </div>
-          <h2 className="text-3xl font-black mb-3">Omniscience Achieved</h2>
-          <p className="text-muted-foreground text-lg max-w-md">Every submission has been processed. The ecosystem is in balance.</p>
-        </div>
-      ) : (
-        <div className="space-y-16">
-          {groupedPosts.map((group) => (
-            <div key={group.name} className="space-y-6">
-              <div className="flex items-center gap-4 px-2">
-                <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center border border-primary/20 shadow-inner">
-                  <LayoutGrid size={24} />
-                </div>
-                <div className="flex-1">
-                  <h2 className="text-2xl font-black tracking-tight">{group.name}</h2>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                    {group.items.length} {group.items.length === 1 ? 'Submission' : 'Submissions'} Awaiting Review
-                  </p>
-                </div>
-                <div className="h-px flex-1 bg-gradient-to-r from-border to-transparent" />
-              </div>
-
-              <div className="grid grid-cols-1 gap-6">
-                {group.items.map((post) => {
-                  const id = post._id || post.id;
-                  return (
-                    <div key={id} className="group relative bg-card/60 backdrop-blur-sm p-8 rounded-[2.5rem] border border-border shadow-sm hover:shadow-xl transition-all hover:border-primary/20 flex flex-col xl:flex-row gap-8">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-4">
-                          <span className="px-3 py-1 bg-primary text-white text-[10px] font-black rounded-full uppercase tracking-widest shadow-lg shadow-primary/20">
-                            {post.post_type.replace('_', ' ')}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground font-mono opacity-50"># {id}</span>
-                        </div>
-                        
-                        <h3 className="text-2xl font-black mb-4 group-hover:text-primary transition-colors leading-tight">
-                          <Link href={`/${post.slug || id}`} target="_blank" className="flex items-center gap-3">
-                            {post.title} 
-                            <ExternalLink size={18} className="text-muted-foreground opacity-30 group-hover:opacity-100 transition-opacity" />
-                          </Link>
-                        </h3>
-                        
-                        <p className="text-muted-foreground leading-relaxed mb-6 line-clamp-2 italic font-medium">
-                          "{post.intro}"
-                        </p>
-                        
-                        <div className="flex flex-wrap items-center gap-6 text-sm">
-                          <div className="flex items-center gap-2">
-                             <span className="text-muted-foreground">Author:</span>
-                             <span className="font-black underline decoration-primary/30 underline-offset-4">{post.author_display_name}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-stretch gap-3 min-w-[340px]">
-                        <div className="grid grid-cols-2 lg:grid-cols-1 w-full gap-3">
-                          <button
-                            onClick={() => setPromptModal({ 
-                              isOpen: true, 
-                              postId: id, 
-                              type: 'approve',
-                              variant: 'success',
-                              title: 'Approve Submission',
-                              message: 'Verify content. Selecting a message will notify the author of their success.'
-                            })}
-                            disabled={actingOn === id}
-                            className="h-full min-h-[56px] bg-green-500 text-white rounded-2xl font-black text-sm flex items-center justify-center gap-2 hover:bg-green-600 transition-all active:scale-95 shadow-lg shadow-green-500/20"
-                          >
-                            <CheckCircle size={18} /> Approve
-                          </button>
-                          
-                          <Link
-                            href={`/admin/posts/edit/${id}`}
-                            className="h-full min-h-[56px] bg-muted/50 text-foreground rounded-2xl font-black text-sm flex items-center justify-center gap-2 hover:bg-muted transition-all active:scale-95 border border-border"
-                          >
-                            <Pencil size={18} /> Vette List
-                          </Link>
-
-                          <button
-                            onClick={() => setPromptModal({ 
-                              isOpen: true, 
-                              postId: id, 
-                              type: 'reject',
-                              variant: 'danger',
-                              title: 'Reject & Purge',
-                              message: 'Pick a reason for deletion. This action is permanent and clears all data.'
-                            })}
-                            disabled={actingOn === id}
-                            className="h-full min-h-[56px] bg-red-600 text-white rounded-2xl font-black text-sm flex items-center justify-center gap-2 hover:bg-red-700 transition-all active:scale-95 shadow-lg shadow-red-600/30 lg:col-span-1 col-span-2"
-                          >
-                            <XCircle size={18} /> Reject
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
+      {error && (
+        <div className="p-6 bg-red-500/10 border border-red-500/20 text-red-500 rounded-3xl mb-8 font-bold flex items-center gap-3">
+          <ShieldAlert size={20} /> {error}
         </div>
       )}
 
-      {/* Dynamic Moderation Modal */}
-      <PromptModal
-        isOpen={promptModal.isOpen}
-        onClose={() => setPromptModal({ ...promptModal, isOpen: false })}
-        onConfirm={handleAction}
-        title={promptModal.title}
-        message={promptModal.message}
-        variant={promptModal.variant}
-        confirmLabel={promptModal.type === 'approve' ? 'Publish Now' : 'Purge Data'}
-        quickReplies={quickReplies.filter(r => r.type === promptModal.type)}
-        isLoading={!!actingOn}
-      />
+      {summary.length === 0 ? (
+        <div className="py-32 bg-card rounded-[3rem] border border-border flex flex-col items-center justify-center text-center px-10">
+          <div className="w-24 h-24 rounded-full bg-green-500/10 text-green-500 flex items-center justify-center mb-6 border border-green-500/20">
+            <LayoutGrid size={48} />
+          </div>
+          <h2 className="text-3xl font-black mb-3 text-foreground">Station Cleared</h2>
+          <p className="text-muted-foreground text-lg max-w-md font-medium leading-relaxed">No pending submissions found in any dimension. The archives are balanced.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {summary.map((group, index) => (
+            <motion.div
+              key={group.categoryId}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05 }}
+            >
+              <Link
+                href={`/admin/posts/pending/category/${group.categoryId}`}
+                className="group block relative h-full bg-card hover:bg-muted/50 border border-border hover:border-primary/40 rounded-[2.5rem] p-8 transition-all duration-300 shadow-sm hover:shadow-2xl hover:shadow-primary/10"
+              >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-125" />
+                
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-8">
+                    <div className="w-16 h-16 rounded-2xl bg-primary/10 text-4xl flex items-center justify-center border border-primary/20 shadow-inner group-hover:scale-110 transition-transform">
+                      {group.icon || '📌'}
+                    </div>
+                    <div className="px-5 py-2.5 bg-orange-500 text-white rounded-2xl font-black font-mono text-xl shadow-lg shadow-orange-500/20 group-hover:animate-pulse">
+                      {group.count}
+                    </div>
+                  </div>
 
-      <StatusModal
-        isOpen={statusMsg.isOpen}
-        onClose={() => setStatusMsg({ ...statusMsg, isOpen: false })}
-        type={statusMsg.type}
-        title={statusMsg.title}
-        message={statusMsg.message}
-      />
+                  <h3 className="text-2xl font-black tracking-tight mb-2 flex items-center justify-between group-hover:text-primary transition-colors">
+                    {group.name}
+                    <ChevronRight className="opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all" size={24} />
+                  </h3>
+                  
+                  <p className="text-muted-foreground text-sm font-bold uppercase tracking-[0.2em] mb-6">
+                    {group.slug}
+                  </p>
+
+                  <div className="flex items-center gap-2 pt-6 border-t border-border mt-auto">
+                    <FolderOpen size={16} className="text-primary/40" />
+                    <span className="text-xs font-black text-primary/60 uppercase tracking-widest">
+                       Enter Queue
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            </motion.div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

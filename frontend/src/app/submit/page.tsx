@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { API, Category } from '@/lib/api';
 import { Save, Loader2, ArrowLeft, PenTool, LayoutList } from 'lucide-react';
 import Link from 'next/link';
-import { StatusModal } from '@/components/ui';
+import { StatusModal, CategorySelect } from '@/components/ui';
 
 export default function SubmitListPublicPage() {
   const router = useRouter();

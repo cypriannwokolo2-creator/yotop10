@@ -180,6 +180,8 @@ router.get('/stats', adminAuthMiddleware, async (req: AdminAuthRequest, res: Res
  * GET /api/admin/posts/pending
  * List pending posts
  */
+router.get('/posts/pending', adminAuthMiddleware, async (req: AdminAuthRequest, res: Response) => {
+  try {
     const posts = await Post.find({ status: 'pending_review' })
       .sort({ created_at: -1 })
       .populate('category', 'name icon slug')
@@ -207,6 +209,25 @@ router.get('/posts/pending/summary', adminAuthMiddleware, async (req: AdminAuthR
     res.json({ summary });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch pending summary' });
+  }
+});
+
+/**
+ * GET /api/admin/posts/pending/category/:id
+ * List pending posts for a specific category
+ */
+router.get('/posts/pending/category/:id', adminAuthMiddleware, async (req: AdminAuthRequest, res: Response) => {
+  try {
+    const posts = await Post.find({ 
+      status: 'pending_review',
+      category_id: req.params.id 
+    })
+      .sort({ created_at: -1 })
+      .populate('category', 'name icon slug')
+      .lean();
+    res.json({ posts });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch category pending posts' });
   }
 });
 

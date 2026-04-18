@@ -280,6 +280,8 @@ export const API = {
 
   adminGetStats: () => apiFetch('/admin/stats'),
   adminGetPendingPosts: () => apiFetch('/admin/posts/pending'),
+  adminGetPendingSummary: () => apiFetch('/admin/posts/pending/summary'),
+  adminGetPendingByCategory: (id: string) => apiFetch(`/admin/posts/pending/category/${id}`),
   adminGetPostDetails: (id: string) => apiFetch(`/admin/posts/${id}`),
   adminApprovePost: (id: string, action: 'approve' | 'reject', reason?: string) =>
     apiFetch(`/admin/posts/${id}/approve`, {
