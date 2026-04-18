@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { API, Category } from '@/lib/api';
 import { Save, Loader2, ArrowLeft, PenTool, LayoutList } from 'lucide-react';
 import Link from 'next/link';
+import { StatusModal } from '@/components/ui';
 
 export default function SubmitListPublicPage() {
   const router = useRouter();
@@ -23,6 +24,7 @@ export default function SubmitListPublicPage() {
   
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     API.getCategories()
@@ -47,6 +49,10 @@ export default function SubmitListPublicPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (items.length < 3) {
+      setError('Rankings must have at least 3 items.');
+      return;
+    }
     if (items.some(i => !i.title || !i.justification)) {
       setError('Rankings are missing titles or justifications.');
       return;
@@ -71,11 +77,11 @@ export default function SubmitListPublicPage() {
         author_display_name: authorName || 'Anonymous Scholar',
         device_fingerprint: fp,
         items,
+        min_items_required: 3,
       });
 
-      // Show success modal or route away
-      alert('List submitted! It is now pending moderator approval block.');
-      router.push('/explore');
+      // Show success modal
+      setModalOpen(true);
     } catch (err: any) {
       setError(err.message || 'Transmission failed.');
     } finally {
@@ -179,10 +185,20 @@ export default function SubmitListPublicPage() {
         </div>
 
         <button type="submit" disabled={submitting} className="w-full flex items-center justify-center gap-2 h-16 bg-primary text-white text-xl font-black rounded-3xl hover:-translate-y-1 hover:shadow-2xl hover:shadow-primary/30 transition-all duration-300 disabled:opacity-50 disabled:hover:translate-y-0">
-          {submitting ? <Loader2 className="animate-spin" size={24} /> : <Save size={24} />}
-          {submitting ? 'Transmitting to Server...' : 'Submit to Moderation'}
         </button>
       </form>
+      
+      <StatusModal
+        isOpen={modalOpen}
+        onClose={() => {
+          setModalOpen(false);
+          router.push('/explore');
+        }}
+        type="success"
+        title="Submission Transmitted"
+        message="Your list has been queued for verification. It will appear on the main feeds once a moderator validates the placements."
+        actionLabel="Back to Explore"
+      />
     </div>
   );
 }

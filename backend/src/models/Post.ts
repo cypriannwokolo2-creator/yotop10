@@ -15,6 +15,7 @@ export interface IPost extends Document {
   comment_count: number;
   view_count: number;
   is_public: boolean;
+  min_items_required: number;
   published_at?: Date;
   created_at: Date;
   updated_at: Date;
@@ -103,6 +104,10 @@ const postSchema = new Schema<IPost>(
       type: Boolean,
       default: true,
       index: true,
+    },
+    min_items_required: {
+      type: Number,
+      default: 3,
     },
     published_at: {
       type: Date,

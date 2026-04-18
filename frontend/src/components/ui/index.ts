@@ -9,3 +9,4 @@ export { Tabs, TabsList, TabsTrigger, TabsContent } from './Tabs';
 export { Skeleton, SkeletonCard, SkeletonList } from './Skeleton';
 export { EmptyState } from './EmptyState';
 export { Tooltip } from './Tooltip';
+export { default as StatusModal } from './StatusModal';

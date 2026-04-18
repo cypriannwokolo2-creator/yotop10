@@ -354,7 +354,15 @@ router.post('/', validatePostSubmission, async (req: Request, res: Response) => 
       items,
       author_display_name,
       device_fingerprint,
+      min_items_required = 3,
     } = req.body;
+
+    // Enforce dynamic minimum items placement
+    if (items.length < min_items_required) {
+      return res.status(400).json({
+        error: `Submission failed. This list type requires at least ${min_items_required} placements.`,
+      });
+    }
 
     // Apply per-user rate limit override if set
     let effectiveTrustScore = req.user?.trust_score || 1.0;
@@ -403,6 +411,7 @@ router.post('/', validatePostSubmission, async (req: Request, res: Response) => 
       intro,
       status: 'pending_review',
       category_id,
+      min_items_required: min_items_required || 3,
       fire_count: 0,
       comment_count: 0,
       view_count: 0,

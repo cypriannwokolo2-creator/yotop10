@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { API, Category, Post } from '@/lib/api';
-import { Save, Loader2, ArrowLeft } from 'lucide-react';
+import { Save, Loader2, ArrowLeft, Settings } from 'lucide-react';
 import Link from 'next/link';
+import { StatusModal } from '@/components/ui';
 
 export default function AdminCreatePostPage() {
   const router = useRouter();
@@ -15,12 +16,14 @@ export default function AdminCreatePostPage() {
   const [postType, setPostType] = useState('top_list');
   const [categoryId, setCategoryId] = useState('');
   const [authorName, setAuthorName] = useState('Admin');
+  const [minItemsRequired, setMinItemsRequired] = useState(3);
   
   // Minimal requirement: At least 1 item
   const [items, setItems] = useState([{ rank: 1, title: '', justification: '' }]);
   
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     API.getCategories().then((data) => {
@@ -43,6 +46,11 @@ export default function AdminCreatePostPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (items.length < minItemsRequired) {
+      setError(`Admin notice: This list is configured to require at least ${minItemsRequired} items. Currently has ${items.length}.`);
+      return;
+    }
+
     setSubmitting(true);
     setError('');
 
@@ -55,6 +63,7 @@ export default function AdminCreatePostPage() {
         author_display_name: authorName,
         device_fingerprint: 'admin_override_fp', // dummy fallback
         items,
+        min_items_required: minItemsRequired,
       };
 
       const res = await fetch('/api/posts', {
@@ -75,7 +84,7 @@ export default function AdminCreatePostPage() {
         await API.adminApprovePost(data.post.id, 'approve');
       }
       
-      router.push('/admin');
+      setModalOpen(true);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -127,6 +136,30 @@ export default function AdminCreatePostPage() {
             <label className="block text-sm font-semibold mb-2 ml-1">Introduction / Hook</label>
             <textarea required value={intro} onChange={(e) => setIntro(e.target.value)} className="w-full p-4 rounded-xl border border-border bg-muted/30 focus:outline-none focus:ring-2 focus:ring-primary/50 min-h-[100px]" placeholder="Explain why this list was made..."></textarea>
           </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <label className="block text-sm font-semibold mb-2 ml-1">Author Display Name</label>
+              <input type="text" value={authorName} onChange={(e) => setAuthorName(e.target.value)} className="w-full h-12 px-4 rounded-xl border border-border bg-muted/30 focus:outline-none focus:ring-2 focus:ring-primary/50" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-2 ml-1 flex items-center gap-2">
+                <Settings size={14} className="text-muted-foreground" />
+                Minimum Placements Required
+              </label>
+              <input 
+                type="number" 
+                min="1" 
+                max="50"
+                value={minItemsRequired} 
+                onChange={(e) => setMinItemsRequired(parseInt(e.target.value) || 1)} 
+                className="w-full h-12 px-4 rounded-xl border border-border bg-muted/30 focus:outline-none focus:ring-2 focus:ring-primary/50 font-mono font-bold" 
+              />
+              <p className="text-[10px] text-muted-foreground mt-1.5 ml-1">
+                Submissions with fewer items will be auto-rejected by the server.
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* List Items Pane */}
@@ -166,6 +199,18 @@ export default function AdminCreatePostPage() {
           {submitting ? 'Publishing...' : 'Instantly Publish List'}
         </button>
       </form>
+
+      <StatusModal
+        isOpen={modalOpen}
+        onClose={() => {
+          setModalOpen(false);
+          router.push('/admin');
+        }}
+        type="success"
+        title="List Published!"
+        message="The authoritative list has been created and instantly approved for public viewing across the platform."
+        actionLabel="Back to Dashboard"
+      />
     </div>
   );
 }
