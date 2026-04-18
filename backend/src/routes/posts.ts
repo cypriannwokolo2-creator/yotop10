@@ -374,6 +374,7 @@ router.post('/', validatePostSubmission, async (req: Request, res: Response) => 
     
     // Check rate limit with trust score multiplier
     const rateLimitResult = await checkRateLimit(device_fingerprint, effectiveTrustScore);
+
     if (!rateLimitResult.allowed) {
       return res.status(429).json({
         error: 'Rate limit exceeded. You can submit 4 posts per hour.',
