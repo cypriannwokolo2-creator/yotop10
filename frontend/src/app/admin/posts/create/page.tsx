@@ -24,6 +24,8 @@ export default function AdminCreatePostPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
+  const [errorModalOpen, setErrorModalOpen] = useState(false);
+  const [globalMax, setGlobalMax] = useState(20);
 
   useEffect(() => {
     API.getCategories().then((data) => {
@@ -32,6 +34,8 @@ export default function AdminCreatePostPage() {
         setCategoryId(data.categories[0].id);
       }
     });
+    
+    API.adminGetSettings().then(s => setGlobalMax(s.max_ranking_items)).catch(() => {});
   }, []);
 
   const handleAddItem = () => {
@@ -47,7 +51,14 @@ export default function AdminCreatePostPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (items.length < minItemsRequired) {
-      setError(`Admin notice: This list is configured to require at least ${minItemsRequired} items. Currently has ${items.length}.`);
+      setError(`Notice: This list is configured to require ${minItemsRequired} placements. You only have ${items.length}.`);
+      setErrorModalOpen(true);
+      return;
+    }
+
+    if (items.length > globalMax) {
+      setError(`Exceeds Platform Maximum: The current global limit is ${globalMax} items. Please adjust the list length.`);
+      setErrorModalOpen(true);
       return;
     }
 
@@ -105,8 +116,6 @@ export default function AdminCreatePostPage() {
           </p>
         </div>
       </div>
-
-      {error && <div className="p-4 bg-red-500/10 text-red-500 border border-red-500/20 rounded-xl mb-6 font-medium">{error}</div>}
 
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Post Metadata Pane */}
@@ -210,6 +219,15 @@ export default function AdminCreatePostPage() {
         title="List Published!"
         message="The authoritative list has been created and instantly approved for public viewing across the platform."
         actionLabel="Back to Dashboard"
+      />
+
+      <StatusModal
+        isOpen={errorModalOpen}
+        onClose={() => setErrorModalOpen(false)}
+        type="error"
+        title="Configuration Error"
+        message={error}
+        actionLabel="Adjust Details"
       />
     </div>
   );

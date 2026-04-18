@@ -25,6 +25,8 @@ export default function SubmitListPublicPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
+  const [errorModalOpen, setErrorModalOpen] = useState(false);
+  const [globalConstraints, setGlobalConstraints] = useState({ min: 3, max: 20 });
 
   useEffect(() => {
     API.getCategories()
@@ -35,6 +37,25 @@ export default function SubmitListPublicPage() {
         }
       })
       .catch(() => setError('Could not engage platform services.'));
+
+    API.adminGetSettings() // We should probably make a public settings endpoint, but for now we follow admin
+      .then((settings) => {
+        setGlobalConstraints({
+          min: settings.min_ranking_items,
+          max: settings.max_ranking_items
+        });
+        // Adjust default items if min is higher
+        if (items.length < settings.min_ranking_items) {
+          const needed = settings.min_ranking_items - items.length;
+          const extra = Array.from({ length: needed }).map((_, i) => ({
+             rank: items.length + i + 1,
+             title: '',
+             justification: ''
+          }));
+          setItems([...items, ...extra]);
+        }
+      })
+      .catch(() => {}); // Fallback to defaults
   }, []);
 
   const handleAddItem = () => {
@@ -49,12 +70,19 @@ export default function SubmitListPublicPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (items.length < 3) {
-      setError('Rankings must have at least 3 items.');
+    if (items.length < globalConstraints.min) {
+      setError(`Platform policy requires at least ${globalConstraints.min} items for a list. Please add more placements.`);
+      setErrorModalOpen(true);
+      return;
+    }
+    if (items.length > globalConstraints.max) {
+      setError(`This list exceeds the platform maximum of ${globalConstraints.max} items. Please trim it down.`);
+      setErrorModalOpen(true);
       return;
     }
     if (items.some(i => !i.title || !i.justification)) {
-      setError('Rankings are missing titles or justifications.');
+      setError('Rankings are missing titles or justifications. Every placement must be defended.');
+      setErrorModalOpen(true);
       return;
     }
     
@@ -77,13 +105,14 @@ export default function SubmitListPublicPage() {
         author_display_name: authorName || 'Anonymous Scholar',
         device_fingerprint: fp,
         items,
-        min_items_required: 3,
+        min_items_required: globalConstraints.min,
       });
 
       // Show success modal
       setModalOpen(true);
     } catch (err: any) {
       setError(err.message || 'Transmission failed.');
+      setErrorModalOpen(true);
     } finally {
       setSubmitting(false);
     }
@@ -198,6 +227,15 @@ export default function SubmitListPublicPage() {
         title="Submission Transmitted"
         message="Your list has been queued for verification. It will appear on the main feeds once a moderator validates the placements."
         actionLabel="Back to Explore"
+      />
+
+      <StatusModal
+        isOpen={errorModalOpen}
+        onClose={() => setErrorModalOpen(false)}
+        type="error"
+        title="Transmission Error"
+        message={error}
+        actionLabel="Review Form"
       />
     </div>
   );

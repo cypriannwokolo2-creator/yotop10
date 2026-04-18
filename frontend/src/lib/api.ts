@@ -286,6 +286,17 @@ export const API = {
       body: JSON.stringify(updates)
     }),
   
+  adminDeletePost: (id: string) =>
+    apiFetch(`/admin/posts/${id}`, { method: 'DELETE' }),
+
+  adminGetSettings: () => apiFetch('/admin/settings'),
+
+  adminUpdateSettings: (settings: any) =>
+    apiFetch('/admin/settings', {
+      method: 'PATCH',
+      body: JSON.stringify(settings),
+    }),
+  
   adminUploadImage: async (file: File): Promise<{ url: string, relativeUrl: string }> => {
     const formData = new FormData();
     formData.append('image', file);

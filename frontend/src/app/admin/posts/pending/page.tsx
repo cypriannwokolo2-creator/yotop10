@@ -100,6 +100,25 @@ export default function PendingPostsPage() {
                 >
                   <XCircle size={18} /> Reject
                 </button>
+                <button
+                  onClick={async () => {
+                    if (confirm('Permanently destroy this list and all its items?')) {
+                      setActingOn(post.id);
+                      try {
+                        await API.adminDeletePost(post.id);
+                        loadPending();
+                      } catch {
+                        alert('Delete failed');
+                      } finally {
+                        setActingOn(null);
+                      }
+                    }
+                  }}
+                  disabled={actingOn === post.id}
+                  className="w-full flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-muted text-red-500 rounded-xl font-bold hover:bg-red-500/10 transition-colors border border-red-500/20"
+                >
+                  <XCircle size={18} /> Delete
+                </button>
               </div>
             </div>
           ))}

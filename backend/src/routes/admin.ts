@@ -8,6 +8,7 @@ import { User } from '../models/User';
 import { Comment } from '../models/Comment';
 import { Category } from '../models/Category';
 import { ListItem } from '../models/ListItem';
+import { GlobalSettings, getSettings } from '../models/GlobalSettings';
 
 const router: Router = Router();
 
@@ -195,10 +196,43 @@ router.get('/posts/pending', adminAuthMiddleware, async (req: AdminAuthRequest, 
  */
 router.patch('/posts/:id', adminAuthMiddleware, async (req: AdminAuthRequest, res: Response) => {
   try {
-    const post = await Post.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const { title, intro, items, status, category_id, min_items_required } = req.body;
+    const postId = req.params.id;
+
+    // 1. Update Post Metadata
+    const updateData: any = {};
+    if (title !== undefined) updateData.title = title;
+    if (intro !== undefined) updateData.intro = intro;
+    if (status !== undefined) updateData.status = status;
+    if (category_id !== undefined) updateData.category_id = category_id;
+    if (min_items_required !== undefined) updateData.min_items_required = min_items_required;
+
+    const post = await Post.findByIdAndUpdate(postId, updateData, { new: true });
     if (!post) return res.status(404).json({ error: 'Post not found' });
+
+    // 2. Sync Items if provided
+    if (items && Array.isArray(items)) {
+      // Clear existing
+      await ListItem.deleteMany({ post_id: postId });
+      
+      // Re-create
+      await Promise.all(
+        items.map((item: any) => 
+          ListItem.create({
+            post_id: postId,
+            rank: item.rank,
+            title: item.title,
+            justification: item.justification,
+            image_url: item.image_url,
+            source_url: item.source_url,
+          })
+        )
+      );
+    }
+
     res.json({ success: true, post });
   } catch (error) {
+    console.error('Admin edit error:', error);
     res.status(500).json({ error: 'Failed to edit post' });
   }
 });
@@ -222,6 +256,58 @@ router.post('/posts/:id/approve', adminAuthMiddleware, async (req: AdminAuthRequ
     res.json({ success: true, post });
   } catch (error) {
     res.status(500).json({ error: 'Failed to approve post' });
+  }
+});
+
+/**
+ * DELETE /api/admin/posts/:id
+ * Permanently delete a post and associated data
+ */
+router.delete('/posts/:id', adminAuthMiddleware, async (req: AdminAuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const post = await Post.findById(id);
+    if (!post) return res.status(404).json({ error: 'Post not found' });
+
+    // Cascading deletion
+    await Promise.all([
+      Post.findByIdAndDelete(id),
+      ListItem.deleteMany({ post_id: id }),
+      Comment.deleteMany({ post_id: id }),
+      // Decrement category count if post was approved
+      post.status === 'approved' ? Category.findByIdAndUpdate(post.category_id, { $inc: { post_count: -1 } }) : Promise.resolve()
+    ]);
+
+    res.json({ success: true, message: 'Post and associated data destroyed.' });
+  } catch (error) {
+    console.error('Delete error:', error);
+    res.status(500).json({ error: 'Failed to delete post' });
+  }
+});
+
+/**
+ * GET /api/admin/settings
+ * Fetch global platform settings
+ */
+router.get('/settings', adminAuthMiddleware, async (req: AdminAuthRequest, res: Response) => {
+  try {
+    const settings = await getSettings();
+    res.json(settings);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch settings' });
+  }
+});
+
+/**
+ * PATCH /api/admin/settings
+ * Update global platform settings
+ */
+router.patch('/settings', adminAuthMiddleware, async (req: AdminAuthRequest, res: Response) => {
+  try {
+    const settings = await GlobalSettings.findOneAndUpdate({}, req.body, { new: true, upsert: true });
+    res.json({ success: true, settings });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update settings' });
   }
 });
 

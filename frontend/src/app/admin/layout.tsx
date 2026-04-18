@@ -28,6 +28,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: 'Pending Approvals', href: '/admin/posts/pending', icon: CheckSquare },
     { name: 'Add Free List', href: '/admin/posts/create', icon: PlusCircle },
     { name: 'Categories', href: '/admin/categories', icon: FolderGit2 },
+    { name: 'Platform Settings', href: '/admin/settings', icon: Settings },
   ];
 
   return (
