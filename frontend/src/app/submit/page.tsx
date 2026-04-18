@@ -155,12 +155,11 @@ export default function SubmitListPublicPage() {
             </div>
             
             <div>
-              <label className="block text-sm font-semibold mb-2 ml-1 text-muted-foreground">Select Domain</label>
-              <select required value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="w-full h-14 px-5 rounded-2xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 text-base font-medium">
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
-                ))}
-              </select>
+              <CategorySelect 
+                categories={categories}
+                value={categoryId}
+                onChange={setCategoryId}
+              />
             </div>
           </div>
           

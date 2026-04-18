@@ -180,15 +180,33 @@ router.get('/stats', adminAuthMiddleware, async (req: AdminAuthRequest, res: Res
  * GET /api/admin/posts/pending
  * List pending posts
  */
-router.get('/posts/pending', adminAuthMiddleware, async (req: AdminAuthRequest, res: Response) => {
-  try {
     const posts = await Post.find({ status: 'pending_review' })
       .sort({ created_at: -1 })
-      .populate('category_id', 'name')
+      .populate('category', 'name icon slug')
       .lean();
     res.json({ posts });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch pending posts' });
+  }
+});
+
+/**
+ * GET /api/admin/posts/pending/summary
+ * Get count of pending posts per category
+ */
+router.get('/posts/pending/summary', adminAuthMiddleware, async (req: AdminAuthRequest, res: Response) => {
+  try {
+    const summary = await Post.aggregate([
+      { $match: { status: 'pending_review' } },
+      { $group: { _id: '$category_id', count: { $sum: 1 } } },
+      { $lookup: { from: 'categories', localField: '_id', foreignField: '_id', as: 'category' } },
+      { $unwind: '$category' },
+      { $project: { _id: 0, categoryId: '$_id', name: '$category.name', icon: '$category.icon', slug: '$category.slug', count: 1 } },
+      { $sort: { count: -1 } }
+    ]);
+    res.json({ summary });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch pending summary' });
   }
 });
 

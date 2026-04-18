@@ -120,6 +120,14 @@ const postSchema = new Schema<IPost>(
   }
 );
 
+// Virtual for category (matches frontend 'post.category' expectation)
+postSchema.virtual('category', {
+  ref: 'Category',
+  localField: 'category_id',
+  foreignField: '_id',
+  justOne: true
+});
+
 // Auto-generate slug before saving
 postSchema.pre('save', function(next) {
   if (this.isNew || this.isModified('title')) {
