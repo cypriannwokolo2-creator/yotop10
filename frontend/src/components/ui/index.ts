@@ -10,3 +10,5 @@ export { Skeleton, SkeletonCard, SkeletonList } from './Skeleton';
 export { EmptyState } from './EmptyState';
 export { Tooltip } from './Tooltip';
 export { default as StatusModal } from './StatusModal';
+export { default as ConfirmationModal } from './ConfirmationModal';
+export { default as PromptModal } from './PromptModal';

@@ -249,6 +249,8 @@ import adminRoutes from './routes/admin';
 import exploreRoutes from './routes/explore';
 import uploadRoutes from './routes/upload';
 
+import notificationsRoutes from './routes/notifications';
+
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/posts', postsRoutes);
@@ -257,6 +259,7 @@ app.use('/api/categories', categoriesRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/reviews', reviewsRoutes);
 app.use('/api/reactions', reactionsRoutes);
+app.use('/api/notifications', notificationsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin/upload', uploadRoutes); // Admin protected upload route
 app.use('/api/explore', exploreRoutes);

@@ -273,13 +273,33 @@ export const API = {
 
   adminGetMe: () => apiFetch('/admin/me'),
   
+  // Notifications
+  getNotifications: () => apiFetch('/notifications'),
+  markNotificationRead: (id: string) => apiFetch(`/notifications/${id}/read`, { method: 'PATCH' }),
+  clearNotifications: () => apiFetch('/notifications/clear', { method: 'DELETE' }),
+
   adminGetStats: () => apiFetch('/admin/stats'),
   adminGetPendingPosts: () => apiFetch('/admin/posts/pending'),
-  adminApprovePost: (id: string, action: 'approve' | 'reject') =>
+  adminApprovePost: (id: string, action: 'approve' | 'reject', reason?: string) =>
     apiFetch(`/admin/posts/${id}/approve`, {
       method: 'POST',
-      body: JSON.stringify({ action })
+      body: JSON.stringify({ action, reason })
     }),
+  
+  adminGetQuickReplies: () => apiFetch('/admin/quick-replies'),
+  
+  adminCreateQuickReply: (reply: { label: string, message: string }) => 
+    apiFetch('/admin/quick-replies', {
+      method: 'POST',
+      body: JSON.stringify(reply)
+    }),
+    
+  adminDeleteQuickReply: (id: string) => 
+    apiFetch(`/admin/quick-replies/${id}`, { method: 'DELETE' }),
+
+  adminSeedQuickReplies: () => 
+    apiFetch('/admin/quick-replies/seed', { method: 'POST' }),
+
   adminEditPost: (id: string, updates: Partial<Post>) =>
     apiFetch(`/admin/posts/${id}`, {
       method: 'PATCH',

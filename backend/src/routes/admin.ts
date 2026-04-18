@@ -9,6 +9,8 @@ import { Comment } from '../models/Comment';
 import { Category } from '../models/Category';
 import { ListItem } from '../models/ListItem';
 import { GlobalSettings, getSettings } from '../models/GlobalSettings';
+import { QuickReply } from '../models/QuickReply';
+import { UserNotification } from '../models/UserNotification';
 
 const router: Router = Router();
 
@@ -239,23 +241,56 @@ router.patch('/posts/:id', adminAuthMiddleware, async (req: AdminAuthRequest, re
 
 /**
  * POST /api/admin/posts/:id/approve
- * Approve or reject a post
+ * Approve or reject a post (Rejection triggers permanent deletion)
  */
 router.post('/posts/:id/approve', adminAuthMiddleware, async (req: AdminAuthRequest, res: Response) => {
   try {
-    const { action } = req.body; // 'approve' or 'reject'
-    const status = action === 'approve' ? 'approved' : 'rejected';
+    const { action, reason } = req.body; // 'approve' or 'reject'
+    const postId = req.params.id;
     
-    const post = await Post.findByIdAndUpdate(
-      req.params.id,
-      { status, published_at: status === 'approved' ? new Date() : undefined },
-      { new: true }
-    );
-    
+    const post = await Post.findById(postId);
     if (!post) return res.status(404).json({ error: 'Post not found' });
-    res.json({ success: true, post });
+
+    if (action === 'approve') {
+      post.status = 'approved';
+      post.published_at = new Date();
+      await post.save();
+
+      // Notify User
+      await UserNotification.create({
+        author_id: post.author_id,
+        type: 'approved',
+        post_title: post.title,
+        message: 'Your list has been verified and published!',
+        reason: 'Authorized by Moderator',
+      });
+
+      return res.json({ success: true, post });
+    } else {
+      // REJECT = DELETE
+      // 1. Create Notification for the author before destruction
+      await UserNotification.create({
+        author_id: post.author_id,
+        type: 'rejected',
+        post_title: post.title,
+        message: 'Your list submission was unfortunately rejected and removed.',
+        reason: reason || 'Does not meet community guidelines.',
+      });
+
+      // 2. Cascading Deletion
+      await Promise.all([
+        Post.findByIdAndDelete(postId),
+        ListItem.deleteMany({ post_id: postId }),
+        Comment.deleteMany({ post_id: postId }),
+        // Decrement category count if it was somehow approved before
+        post.status === 'approved' ? Category.findByIdAndUpdate(post.category_id, { $inc: { post_count: -1 } }) : Promise.resolve()
+      ]);
+
+      return res.json({ success: true, message: 'Post rejected and data wiped.' });
+    }
   } catch (error) {
-    res.status(500).json({ error: 'Failed to approve post' });
+    console.error('Moderation error:', error);
+    res.status(500).json({ error: 'Failed to process moderation action' });
   }
 });
 
@@ -308,6 +343,63 @@ router.patch('/settings', adminAuthMiddleware, async (req: AdminAuthRequest, res
     res.json({ success: true, settings });
   } catch (error) {
     res.status(500).json({ error: 'Failed to update settings' });
+  }
+});
+
+/**
+ * GET /api/admin/quick-replies
+ */
+router.get('/quick-replies', adminAuthMiddleware, async (req: AdminAuthRequest, res: Response) => {
+  try {
+    const replies = await QuickReply.find();
+    res.json(replies);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch quick replies' });
+  }
+});
+
+/**
+ * POST /api/admin/quick-replies
+ */
+router.post('/quick-replies', adminAuthMiddleware, async (req: AdminAuthRequest, res: Response) => {
+  try {
+    const reply = await QuickReply.create(req.body);
+    res.json(reply);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create quick reply' });
+  }
+});
+
+/**
+ * DELETE /api/admin/quick-replies/:id
+ */
+router.delete('/quick-replies/:id', adminAuthMiddleware, async (req: AdminAuthRequest, res: Response) => {
+  try {
+    await QuickReply.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete quick reply' });
+  }
+});
+
+/**
+ * POST /api/admin/quick-replies/seed
+ */
+router.post('/quick-replies/seed', adminAuthMiddleware, async (req: AdminAuthRequest, res: Response) => {
+  try {
+    const defaults = [
+      { label: 'Insufficient Detail', message: 'Your list lack the necessary editorial depth. Please provide more substantial justifications for each placement.' },
+      { label: 'Wrong Category', message: 'This content belongs in a different category. Please re-submit under the appropriate domain.' },
+      { label: 'Formatting Issues', message: 'The list formatting is inconsistent or unreadable. Ensure all placements have clear titles and clean descriptions.' },
+      { label: 'Community Guidelines', message: 'This content violates our community publishing standards. Please review the platform rules and try again.' },
+      { label: 'Insufficient Rankings', message: 'The number of placements provided does not meet the minimum requirement set for this list type.' }
+    ];
+
+    await QuickReply.deleteMany({});
+    await QuickReply.insertMany(defaults);
+    res.json({ success: true, count: defaults.length });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to seed replies' });
   }
 });
 

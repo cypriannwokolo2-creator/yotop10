@@ -10,6 +10,7 @@ import { getFingerprint } from '@/lib/fingerprint';
 import Logo from './Logo';
 import UserMenu from '@/components/auth/UserMenu';
 import MobileMenu from './MobileMenu';
+import NotificationBell from '@/components/notifications/NotificationBell';
 
 import { useAuth } from '@/context/PublicAuthContext';
 
@@ -78,10 +79,7 @@ export default function Header() {
 
           {/* Notifications (authenticated only) */}
           {user && (
-            <button className="p-2 rounded-full hover:bg-muted transition-colors relative">
-              <Bell size={18} className="text-muted-foreground" />
-              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary" />
-            </button>
+            <NotificationBell />
           )}
 
           {/* Quick Actions dropdown (authenticated only) */}
