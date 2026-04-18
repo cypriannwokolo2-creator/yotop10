@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import AppProviders from "@/components/layout/AppProviders";
 
 export const metadata: Metadata = {
   title: "YoTop10 - Top 10 Lists Platform",
@@ -12,8 +13,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full antialiased">
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="en" className="h-full antialiased" suppressHydrationWarning>
+      <body className="min-h-screen">
+        <AppProviders>
+          {children}
+        </AppProviders>
+      </body>
     </html>
   );
 }

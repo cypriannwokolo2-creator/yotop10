@@ -14,6 +14,8 @@ const router: Router = Router();
 let cronInterval: NodeJS.Timeout | null = null;
 let thresholdCronInterval: NodeJS.Timeout | null = null;
 
+const isMongoConnected = () => mongoose.connection.readyState === 1;
+
 // Initialize Redis client for rate limiting
 const getRedisClient = async () => {
   const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
@@ -180,6 +182,8 @@ const startSparkScoreCron = () => {
   // Run every 20 minutes
   cronInterval = setInterval(async () => {
     try {
+      if (!isMongoConnected()) return;
+
       const seventyTwoHoursAgo = new Date(Date.now() - 72 * 60 * 60 * 1000);
       
       // Get comments from last 72 hours with spark_score > 0.01
@@ -235,6 +239,8 @@ const stopSparkScoreCron = () => {
 // Calculate and store percentile thresholds
 const calculateThresholds = async () => {
   try {
+    if (!isMongoConnected()) return;
+
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     
     // Get all comments from last 30 days
@@ -290,7 +296,20 @@ const startThresholdCron = () => {
   console.log('[SparkEngine] Threshold cron started (every 6 hours)');
 };
 
+const startSparkCronsWhenMongoReady = () => {
+  if (isMongoConnected()) {
+    startSparkScoreCron();
+    startThresholdCron();
+    return;
+  }
 
+  mongoose.connection.once('connected', () => {
+    startSparkScoreCron();
+    startThresholdCron();
+  });
+};
+
+startSparkCronsWhenMongoReady();
 
 // Check rate limit for comments (50 per hour per fingerprint)
 const checkCommentRateLimit = async (fingerprint: string, trustScore: number = 1.0): Promise<{ allowed: boolean; remaining: number; resetTime: number }> => {
@@ -327,13 +346,6 @@ const checkCommentRateLimit = async (fingerprint: string, trustScore: number = 1
     return { allowed: true, remaining: Math.floor(50 * trustScore), resetTime: Date.now() + 3600000 };
   }
 };
-
-
-
-// Start cron on module load
-startSparkScoreCron();
-startThresholdCron();
-
 // Validation middleware
 const validateComment = [
   body('content').trim().notEmpty().withMessage('Content is required').isLength({ max: 2000 }).withMessage('Content must be less than 2000 characters'),

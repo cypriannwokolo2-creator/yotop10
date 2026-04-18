@@ -8,6 +8,7 @@ export interface IUser extends Document {
   trust_score: number;
   trust_locked: boolean;
   is_admin: boolean;
+  recovery_key?: string;
   rate_limit_override?: {
     posts_per_hour?: number | null;
     comments_per_hour?: number | null;
@@ -44,6 +45,12 @@ const userSchema = new Schema<IUser>(
       type: Boolean,
       default: false,
     },
+    recovery_key: {
+      type: String,
+      unique: true,
+      sparse: true,
+      index: true,
+    },
     trust_score: {
       type: Number,
       default: 1.0,
@@ -63,9 +70,5 @@ const userSchema = new Schema<IUser>(
     timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
   }
 );
-
-// Index for efficient queries
-userSchema.index({ device_fingerprint: 1 });
-userSchema.index({ username: 1 });
 
 export const User = mongoose.model<IUser>('User', userSchema);

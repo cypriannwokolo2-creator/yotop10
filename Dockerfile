@@ -7,8 +7,8 @@ FROM base AS deps
 WORKDIR /app
 COPY frontend/package.json frontend/pnpm-lock.yaml ./frontend/
 COPY backend/package.json backend/pnpm-lock.yaml ./backend/
-RUN cd frontend && pnpm install --frozen-lockfile
-RUN cd backend && pnpm install --frozen-lockfile
+RUN cd frontend && pnpm install --no-frozen-lockfile
+RUN cd backend && pnpm install --no-frozen-lockfile
 
 # Build stage
 FROM base AS builder

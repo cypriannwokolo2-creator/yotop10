@@ -5,6 +5,7 @@ export interface ICategory extends Document {
   slug: string;
   description?: string;
   icon?: string;
+  image_url?: string;
   parent_id?: mongoose.Types.ObjectId;
   post_count: number;
   is_featured: boolean;
@@ -29,6 +30,9 @@ const categorySchema = new Schema<ICategory>(
       type: String,
     },
     icon: {
+      type: String,
+    },
+    image_url: {
       type: String,
     },
     parent_id: {
@@ -59,6 +63,5 @@ const categorySchema = new Schema<ICategory>(
 // Indexes for efficient queries
 categorySchema.index({ parent_id: 1, is_archived: 1 });
 categorySchema.index({ is_featured: 1, is_archived: 1 });
-categorySchema.index({ slug: 1 });
 
 export const Category = mongoose.model<ICategory>('Category', categorySchema);

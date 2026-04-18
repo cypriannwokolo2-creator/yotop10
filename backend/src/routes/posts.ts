@@ -195,6 +195,8 @@ router.get('/', async (req: Request, res: Response) => {
       sortOption = { created_at: 1 };
     } else if (sort === 'most_commented') {
       sortOption = { comment_count: -1 };
+    } else if (sort === 'trending') {
+      sortOption = { view_count: -1, comment_count: -1 };
     }
 
     // Execute query with pagination

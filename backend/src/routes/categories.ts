@@ -24,6 +24,7 @@ router.get('/', async (req: Request, res: Response) => {
         slug: parent.slug,
         description: parent.description,
         icon: parent.icon,
+        image_url: parent.image_url,
         post_count: parent.post_count,
         is_featured: parent.is_featured,
         children: children
@@ -34,6 +35,7 @@ router.get('/', async (req: Request, res: Response) => {
             slug: child.slug,
             description: child.description,
             icon: child.icon,
+            image_url: child.image_url,
             post_count: child.post_count,
           })),
       }));
@@ -47,6 +49,7 @@ router.get('/', async (req: Request, res: Response) => {
         slug: c.slug,
         description: c.description,
         icon: c.icon,
+        image_url: c.image_url,
         post_count: c.post_count,
         parent_id: c.parent_id,
       }))});
@@ -69,7 +72,7 @@ router.get('/:slug(*)', async (req: Request, res: Response) => {
     }
 
     // Get children if it's a parent category
-    const children: Array<{ _id: unknown; name: string; slug: string; description?: string; icon?: string; post_count: number }> = [];
+    const children: Array<{ _id: unknown; name: string; slug: string; description?: string; icon?: string; image_url?: string; post_count: number }> = [];
     if (!category.parent_id) {
       const childDocs = await Category.find({ parent_id: category._id, is_archived: false })
         .sort({ name: 1 })
@@ -86,6 +89,7 @@ router.get('/:slug(*)', async (req: Request, res: Response) => {
         slug: category.slug,
         description: category.description,
         icon: category.icon,
+        image_url: category.image_url,
         post_count: category.post_count,
         is_featured: category.is_featured,
         children: children.map(c => ({
@@ -94,6 +98,7 @@ router.get('/:slug(*)', async (req: Request, res: Response) => {
           slug: c.slug,
           description: c.description,
           icon: c.icon,
+          image_url: c.image_url,
           post_count: c.post_count,
         })),
       },
@@ -107,7 +112,7 @@ router.get('/:slug(*)', async (req: Request, res: Response) => {
 // POST /api/categories — Create category (admin)
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const { name, slug, description, icon, parent_id, is_featured } = req.body;
+    const { name, slug, description, icon, image_url, parent_id, is_featured } = req.body;
 
     // Generate slug if not provided
     const finalSlug = slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
@@ -123,6 +128,7 @@ router.post('/', async (req: Request, res: Response) => {
       slug: finalSlug,
       description,
       icon,
+      image_url,
       parent_id,
       is_featured: is_featured || false,
       post_count: 0,
@@ -140,11 +146,11 @@ router.post('/', async (req: Request, res: Response) => {
 router.patch('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, description, icon, is_featured } = req.body;
+    const { name, description, icon, image_url, is_featured } = req.body;
 
     const category = await Category.findByIdAndUpdate(
       id,
-      { name, description, icon, is_featured },
+      { name, description, icon, image_url, is_featured },
       { new: true }
     );
 

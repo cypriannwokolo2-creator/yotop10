@@ -5,3 +5,4 @@ export { Comment } from './Comment';
 export { Reaction } from './Reaction';
 export { Category } from './Category';
 export { AdminUser } from './AdminUser';
+export { Session } from './Session';

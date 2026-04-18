@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { User } from '../models/User';
+import { verifySession, type SessionPayload } from '../lib/sessionAuth';
 import crypto from 'crypto';
 
 // Extend Express Request type
@@ -17,35 +18,62 @@ declare module 'express' {
       };
       is_admin: boolean;
     };
+    /** Set when auth was via Bearer session token */
+    session_payload?: SessionPayload;
   }
 }
 
+/**
+ * Identity middleware — runs on ALL /api routes.
+ * Auth priority:
+ *   1. Authorization: Bearer <session_token>  (preferred — revocable, expiring)
+ *   2. X-Device-Fingerprint header             (legacy / first-time auth exchange)
+ *   3. Anonymous — no user context attached
+ *
+ * NEVER rejects a request. Only attaches user context when available.
+ */
 export const fingerprintMiddleware = async (req: Request, res: Response, next: NextFunction) => {
+  // --- 1. Try Bearer session token first ---
+  const authHeader = req.headers['authorization'] as string | undefined;
+  if (authHeader?.startsWith('Bearer ')) {
+    const token = authHeader.slice(7);
+    try {
+      const result = await verifySession(token);
+      if (result) {
+        const { payload, user } = result;
+        req.user = {
+          user_id: user.user_id,
+          username: user.username,
+          device_fingerprint: user.device_fingerprint,
+          trust_score: user.trust_score,
+          trust_locked: user.trust_locked,
+          rate_limit_override: user.rate_limit_override,
+          is_admin: user.is_admin,
+        };
+        req.session_payload = payload;
+        return next();
+      }
+    } catch (err) {
+      console.error('[Auth] Bearer token verification error:', err);
+    }
+    // Token invalid/expired — fall through to fingerprint or anonymous
+  }
+
+  // --- 2. Try fingerprint header ---
   const deviceFingerprint = req.headers['x-device-fingerprint'] as string;
-  
-  // ✅ ALL ENDPOINTS ARE PUBLIC - NEVER REJECT ANY REQUEST
-  // This middleware only attaches user context when fingerprint is available
-  // It will never block, reject, or return an error for ANY request
-  
-  console.log(`[FINGERPRINT] ${req.method} ${req.path} - Fingerprint: ${deviceFingerprint ? 'PRESENT' : 'NOT PRESENT'}`);
-  
+
   if (!deviceFingerprint) {
-    console.log(`[FINGERPRINT] ${req.method} ${req.path} - Continuing anonymously`);
-    return next();
+    return next(); // Anonymous — no user context
   }
 
   try {
-    // Find existing user by fingerprint
     let user = await User.findOne({ device_fingerprint: deviceFingerprint });
-    
-    // Create new user if not exists
+
     if (!user) {
-      // Generate user ID (8 random hex chars)
+      // Create new user on first action with fingerprint
       const userId = crypto.randomBytes(4).toString('hex');
-      
-      // Generate a_XXXX username (last 4 chars of user ID)
       const username = `a_${userId.slice(-4)}`;
-      
+
       user = await User.create({
         user_id: userId,
         username,
@@ -53,11 +81,10 @@ export const fingerprintMiddleware = async (req: Request, res: Response, next: N
         trust_score: 1.0,
         is_admin: false,
       });
-      
-      console.log(`[Fingerprint] Created new user: ${username} for fingerprint ${deviceFingerprint.slice(0, 8)}...`);
+
+      console.log(`[Auth] Created new user: ${username} for fingerprint ${deviceFingerprint.slice(0, 8)}...`);
     }
-    
-    // Attach user to request context
+
     req.user = {
       user_id: user.user_id,
       username: user.username,
@@ -67,10 +94,10 @@ export const fingerprintMiddleware = async (req: Request, res: Response, next: N
       rate_limit_override: (user as any).rate_limit_override,
       is_admin: user.is_admin,
     };
-    
+
     next();
   } catch (error) {
-    console.error('[Fingerprint] Middleware error:', error);
+    console.error('[Auth] Middleware error:', error);
     res.status(500).json({ error: 'Failed to process user identity' });
   }
 };

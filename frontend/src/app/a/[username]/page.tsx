@@ -77,7 +77,7 @@ export default function UserProfilePage({ params }: { params: Promise<{ username
     };
 
     fetchProfile();
-  }, [params]);
+  }, [params, router]);
 
   const handleUpdateDisplayName = async () => {
     if (!newDisplayName.trim()) return;

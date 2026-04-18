@@ -19,13 +19,14 @@ services:
       - AUTH_URL=https://yotop10.fun/nextauth
       - AUTH_TRUST_HOST=1
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
-      - INTERNAL_API_URL=http://localhost:8000/api
+      - INTERNAL_API_URL=http://127.0.0.1:8000/api
       - NEXT_PUBLIC_CDN_URL=${NEXT_PUBLIC_CDN_URL}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - MONGODB_URI=mongodb://mongodb:27017/yotop10
       - REDIS_URL=redis://redis:6379
       - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - ELASTICSEARCH_REQUIRED=true
       - JWT_SECRET=${JWT_SECRET}
       - CORS_ORIGINS=${CORS_ORIGINS}
       - BREVO_API_KEY=${BREVO_API_KEY}
@@ -62,9 +63,11 @@ services:
 
   # ─── MongoDB ─────────────────────────────────────────────────────
   mongodb:
-    image: mongo:7
+    image: mongo:latest
     container_name: yotop10_mongodb
     restart: unless-stopped
+    ports:
+      - "27017:27017"
     environment:
       - MONGO_INITDB_DATABASE=yotop10
     volumes:
@@ -74,9 +77,11 @@ services:
 
   # ─── Redis ───────────────────────────────────────────────────────
   redis:
-    image: redis:7-alpine
+    image: redis:alpine
     container_name: yotop10_redis
     restart: unless-stopped
+    ports:
+      - "6379:6379"
     command: redis-server --save 60 1 --loglevel warning
     volumes:
       - redis_data:/data
@@ -85,9 +90,11 @@ services:
 
   # ─── Elasticsearch ────────────────────────────────────────────────
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.0
     container_name: yotop10_elasticsearch
     restart: unless-stopped
+    ports:
+      - "9200:9200"
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false

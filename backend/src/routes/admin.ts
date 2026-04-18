@@ -3,6 +3,11 @@ import bcrypt from 'bcryptjs';
 import { AdminUser } from '../models/AdminUser';
 import { SetupToken } from '../models/SetupToken';
 import { adminAuthMiddleware, generateAdminToken, generateSetupToken, AdminAuthRequest } from '../lib/adminAuth';
+import { Post } from '../models/Post';
+import { User } from '../models/User';
+import { Comment } from '../models/Comment';
+import { Category } from '../models/Category';
+import { ListItem } from '../models/ListItem';
 
 const router: Router = Router();
 
@@ -139,6 +144,85 @@ router.get('/setup/validate', async (req: Request, res: Response) => {
   res.json({
     valid: !!setupToken,
   });
+});
+
+/**
+ * GET /api/admin/test
+ * Debug route to verify admin mounting
+ */
+router.get('/test', (req: Request, res: Response) => {
+  res.json({ ok: true, message: 'Admin routes are alive' });
+});
+
+/**
+ * GET /api/admin/stats
+ * Platform overview statistics
+ */
+router.get('/stats', adminAuthMiddleware, async (req: AdminAuthRequest, res: Response) => {
+  try {
+    const [totalUsers, totalPosts, pendingPosts, totalComments] = await Promise.all([
+      User.countDocuments(),
+      Post.countDocuments({ status: 'approved' }),
+      Post.countDocuments({ status: 'pending_review' }),
+      Comment.countDocuments()
+    ]);
+    res.json({ totalUsers, totalPosts, pendingPosts, totalComments });
+  } catch (error) {
+    console.error('Stats error:', error);
+    res.status(500).json({ error: 'Failed to fetch stats' });
+  }
+});
+
+/**
+ * GET /api/admin/posts/pending
+ * List pending posts
+ */
+router.get('/posts/pending', adminAuthMiddleware, async (req: AdminAuthRequest, res: Response) => {
+  try {
+    const posts = await Post.find({ status: 'pending_review' })
+      .sort({ created_at: -1 })
+      .populate('category_id', 'name')
+      .lean();
+    res.json({ posts });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch pending posts' });
+  }
+});
+
+/**
+ * PATCH /api/admin/posts/:id
+ * Edit any post details
+ */
+router.patch('/posts/:id', adminAuthMiddleware, async (req: AdminAuthRequest, res: Response) => {
+  try {
+    const post = await Post.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!post) return res.status(404).json({ error: 'Post not found' });
+    res.json({ success: true, post });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to edit post' });
+  }
+});
+
+/**
+ * POST /api/admin/posts/:id/approve
+ * Approve or reject a post
+ */
+router.post('/posts/:id/approve', adminAuthMiddleware, async (req: AdminAuthRequest, res: Response) => {
+  try {
+    const { action } = req.body; // 'approve' or 'reject'
+    const status = action === 'approve' ? 'approved' : 'rejected';
+    
+    const post = await Post.findByIdAndUpdate(
+      req.params.id,
+      { status, published_at: status === 'approved' ? new Date() : undefined },
+      { new: true }
+    );
+    
+    if (!post) return res.status(404).json({ error: 'Post not found' });
+    res.json({ success: true, post });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to approve post' });
+  }
 });
 
 export default router;

@@ -167,6 +167,5 @@ postSchema.index({ category_id: 1, status: 1 });
 postSchema.index({ author_id: 1, status: 1 });
 postSchema.index({ post_type: 1, status: 1 });
 postSchema.index({ title: 'text', intro: 'text' });
-postSchema.index({ slug: 1 }, { unique: true });
 
 export const Post = mongoose.model<IPost>('Post', postSchema);

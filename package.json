@@ -1,0 +1,16 @@
+{
+  "name": "yotop10",
+  "version": "1.0.0",
+  "description": "YoTop10 - Full stack application with Next.js frontend and Express backend",
+  "private": true,
+  "scripts": {
+    "dev": "node dev.js",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "deploy": "docker-compose up -d --build"
+  }
+}
