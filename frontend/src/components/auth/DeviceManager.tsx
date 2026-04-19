@@ -13,7 +13,7 @@ import {
   AlertCircle,
   History
 } from 'lucide-react';
-import { API, type UserSession } from '@/lib/api';
+import { API, type DeviceSession } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
 interface DeviceManagerProps {
@@ -21,7 +21,7 @@ interface DeviceManagerProps {
 }
 
 export default function DeviceManager({ onClose }: DeviceManagerProps) {
-  const [sessions, setSessions] = useState<UserSession[]>([]);
+  const [sessions, setSessions] = useState<DeviceSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [revokingId, setRevokingId] = useState<string | null>(null);
   const [revokingOthers, setRevokingOthers] = useState(false);
@@ -29,7 +29,7 @@ export default function DeviceManager({ onClose }: DeviceManagerProps) {
 
   const fetchSessions = async () => {
     try {
-      const data = await API.getUserSessions();
+      const data = await API.getActiveSessions();
       setSessions(data.sessions);
     } catch (err) {
       console.error('Failed to fetch sessions:', err);

@@ -20,13 +20,16 @@ import {
   FolderOpen,
   Copy,
   Check,
-  Info
+  Info,
+  ShieldAlert,
+  ArrowRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/PublicAuthContext';
 import TransferIdentityModal from '@/components/auth/TransferIdentityModal';
 import DeviceManager from '@/components/auth/DeviceManager';
 import RecoveryModal from '@/components/auth/RecoveryModal';
+import AuthModal from '@/components/auth/AuthModal';
 
 export default function SettingsPage() {
   const { user, status, generateRecoveryKey } = useAuth();
@@ -36,6 +39,7 @@ export default function SettingsPage() {
   const [showTransfer, setShowTransfer] = useState(false);
   const [showDevices, setShowDevices] = useState(false);
   const [showRecovery, setShowRecovery] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   
   const [recoveryPath, setRecoveryPath] = useState<string>('');
   const [downloading, setDownloading] = useState(false);
@@ -97,18 +101,33 @@ export default function SettingsPage() {
     { id: 'devices', label: 'Connected Browsers', icon: Monitor },
   ];
 
-  if (!user) {
+  if (!user || status === 'guest') {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
-        <AlertCircle size={48} className="text-muted-foreground/30 mb-4" />
-        <h2 className="text-xl font-bold mb-2">Authentication Required</h2>
-        <p className="text-muted-foreground mb-6">You need an active identity to access settings.</p>
-        <button 
-          onClick={() => router.push('/')}
-          className="px-6 py-2.5 rounded-full bg-primary text-white font-semibold"
-        >
-          Return Home
-        </button>
+      <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-4 max-w-md mx-auto">
+        <div className="w-20 h-20 rounded-[2.5rem] bg-amber-500/10 flex items-center justify-center mb-6 border border-amber-500/20 shadow-lg shadow-amber-500/5">
+          <ShieldAlert size={40} className="text-amber-500" />
+        </div>
+        <h2 className="text-2xl font-black tracking-tight mb-3 uppercase">Scholar Access Only</h2>
+        <p className="text-muted-foreground mb-8 leading-relaxed font-medium">
+          Settings are reserved for <span className="text-foreground font-bold underline decoration-primary decoration-2 underline-offset-4">Certified Scholars</span>. Upgrade your guest identity to access cross-browser syncing and session management.
+        </p>
+        
+        <div className="flex flex-col w-full gap-3">
+          <button 
+            onClick={() => setShowAuthModal(true)}
+            className="w-full flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-primary text-white font-bold hover:bg-primary-dark transition-all shadow-lg shadow-primary/20 active:scale-[0.98]"
+          >
+            Authenticate Now <ArrowRight size={18} />
+          </button>
+          <button 
+            onClick={() => router.push('/')}
+            className="w-full px-8 py-4 rounded-2xl bg-muted text-foreground font-bold hover:bg-muted/80 transition-all active:scale-[0.98]"
+          >
+            Return Home
+          </button>
+        </div>
+
+        {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} initialTab="status" />}
       </div>
     );
   }
@@ -188,23 +207,25 @@ export default function SettingsPage() {
 
           {activeSection === 'identity' && (
             <div className="space-y-6">
-              {/* Identity Transfer */}
-              <section className="bg-card border border-border rounded-3xl p-6 md:p-8">
-                <div className="flex items-center gap-3 mb-6">
-                  <QrCode size={24} className="text-primary" />
-                  <h3 className="text-xl font-bold">Cross-Browser Connection</h3>
-                </div>
-                <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-                  Connect your identity to another browser or phone. Use the QR code to securely link devices without passwords or emails.
-                </p>
-                <button 
-                  onClick={() => setShowTransfer(true)}
-                  className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl bg-primary text-white font-bold hover:bg-primary-dark transition-all shadow-lg shadow-primary/20"
-                >
-                  <Smartphone size={20} />
-                  Connect New Browser
-                </button>
-              </section>
+              {/* Identity Transfer - only for scholars */}
+              {status === 'scholar' && (
+                <section className="bg-card border border-border rounded-3xl p-6 md:p-8">
+                  <div className="flex items-center gap-3 mb-6">
+                    <QrCode size={24} className="text-primary" />
+                    <h3 className="text-xl font-bold">Cross-Browser Connection</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+                    Connect your identity to another browser or phone. Use the QR code to securely link devices without passwords or emails.
+                  </p>
+                  <button 
+                    onClick={() => setShowTransfer(true)}
+                    className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl bg-primary text-white font-bold hover:bg-primary-dark transition-all shadow-lg shadow-primary/20"
+                  >
+                    <Smartphone size={20} />
+                    Connect New Browser
+                  </button>
+                </section>
+              )}
 
               {/* Recovery Management */}
               <section className="bg-card border border-border rounded-3xl p-6 md:p-8">
@@ -282,7 +303,7 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {activeSection === 'devices' && (
+          {activeSection === 'devices' && status === 'scholar' && (
             <section className="bg-card border border-border rounded-3xl p-6 md:p-8">
               <div className="flex items-center gap-3 mb-6">
                 <Monitor size={24} className="text-primary" />

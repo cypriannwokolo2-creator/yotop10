@@ -52,7 +52,23 @@ export async function apiFetch<T>(
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error('[apiFetch] Error response:', errorText);
+
+    // 401 = session revoked/expired on another device — clear stale local session
+    if (response.status === 401 && typeof window !== 'undefined') {
+      const sessionToken = localStorage.getItem('yotop10_session');
+      if (sessionToken) {
+        localStorage.removeItem('yotop10_session');
+        localStorage.removeItem('yotop10_session_exp');
+        localStorage.removeItem('yotop10_backup_key');
+        // Dispatch event so UI can show restore prompt instead of hard reload
+        window.dispatchEvent(new CustomEvent('session-revoked'));
+      }
+    }
+
+    // 404s are expected (e.g. post not found) — don't pollute console
+    if (response.status !== 404) {
+      console.error('[apiFetch] Error response:', errorText);
+    }
     throw new Error(`API Error: ${response.status} ${response.statusText} - ${errorText}`);
   }
 
@@ -412,6 +428,9 @@ export const API = {
 
   revokeSession: (session_id: string): Promise<RecoveryResponse> =>
     apiFetch(`/auth/sessions/${session_id}`, { method: 'DELETE' }),
+
+  signOutThisDevice: (): Promise<RecoveryResponse> =>
+    apiFetch('/auth/sessions/signout', { method: 'POST' }),
 
   revokeAllOtherSessions: (): Promise<RecoveryResponse> =>
     apiFetch('/auth/sessions/revoke-others', { method: 'POST' }),

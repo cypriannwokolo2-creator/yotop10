@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { 
   X, 
   Key, 
@@ -10,11 +10,15 @@ import {
   RotateCcw, 
   Loader2, 
   FileUp, 
-  Info,
   ShieldCheck,
   Download,
-  CheckCircle2
+  CheckCircle2,
+  Camera,
+  Keyboard
 } from 'lucide-react';
+import { Html5Qrcode } from 'html5-qrcode';
+import { API } from '@/lib/api';
+import { storeRecoveredSession } from '@/lib/auth';
 import { useAuth } from '@/context/PublicAuthContext';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -33,12 +37,20 @@ export default function RecoveryModal({ onClose }: RecoveryModalProps) {
   const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // QR Scanner state
+  const [inputMode, setInputMode] = useState<'key' | 'scan'>('key');
+  const [scanStatus, setScanStatus] = useState<'idle' | 'scanning' | 'confirming' | 'waiting_approval' | 'success' | 'error' | 'no_camera'>('idle');
+  const [scanMessage, setScanMessage] = useState('');
+  const [scanSessionId, setScanSessionId] = useState('');
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const scannerContainerId = 'recovery-qr-scanner';
+
   const handleGenerate = async () => {
     setLoading(true);
     try {
       const key = await generateRecoveryKey();
       setRecoveryKey(key);
-    } catch (err) {
+    } catch {
       setError('Failed to generate key');
     } finally {
       setLoading(false);
@@ -88,6 +100,177 @@ export default function RecoveryModal({ onClose }: RecoveryModalProps) {
       setLoading(false);
     }
   };
+
+  // --- QR Scanner logic ---
+
+  const stopScanner = useCallback(async () => {
+    if (scannerRef.current) {
+      try {
+        const s = scannerRef.current;
+        scannerRef.current = null;
+        if (s.isScanning) await s.stop();
+      } catch {}
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => { stopScanner(); };
+  }, [stopScanner]);
+
+  const handleTransferConfirm = useCallback(async (sid: string) => {
+    await stopScanner();
+    setScanSessionId(sid);
+    setScanStatus('confirming');
+    setScanMessage('');
+    try {
+      const res = await API.confirmTransfer(sid);
+      if (res.success) {
+        storeRecoveredSession({ token: res.token, expires_at: res.expires_at, username: res.username });
+        setScanStatus('success');
+        setScanMessage('Identity recovered! Reloading...');
+        setTimeout(() => window.location.reload(), 1500);
+      } else {
+        setScanStatus('waiting_approval');
+      }
+    } catch {
+      setScanStatus('error');
+      setScanMessage('Transfer failed. The code may be invalid or expired.');
+    }
+  }, [stopScanner]);
+
+  const startScanner = useCallback(async () => {
+    await stopScanner();
+
+    const container = document.getElementById(scannerContainerId);
+    if (!container) {
+      await new Promise(r => setTimeout(r, 500));
+      const retry = document.getElementById(scannerContainerId);
+      if (!retry) {
+        setScanStatus('no_camera');
+        setScanMessage('Scanner element not found. Use key input instead.');
+        return;
+      }
+    }
+
+    const onScanSuccess = (decodedText: string) => {
+      try {
+        const data = JSON.parse(decodedText);
+        if (data.type === 'yotop10_transfer' && data.session_id) {
+          handleTransferConfirm(data.session_id);
+        } else if (data.recovery_key) {
+          stopScanner();
+          setClaimKey(data.recovery_key);
+          setInputMode('key');
+        }
+      } catch {
+        const uuidMatch = decodedText.match(/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i);
+        if (uuidMatch) {
+          stopScanner();
+          setClaimKey(decodedText.trim());
+          setInputMode('key');
+        }
+      }
+    };
+
+    const screenWidth = typeof window !== 'undefined' ? window.innerWidth : 300;
+    const qrboxSize = Math.min(250, screenWidth - 80);
+
+    const scannerConfig = {
+      fps: 15,
+      qrbox: { width: qrboxSize, height: qrboxSize },
+      aspectRatio: 1.0,
+    };
+
+    try {
+      const scanner = new Html5Qrcode(scannerContainerId);
+      scannerRef.current = scanner;
+      setScanStatus('scanning');
+
+      // Try 1: Use getCameras() to pick back camera by ID
+      try {
+        const devices = await Html5Qrcode.getCameras();
+        if (devices && devices.length > 0) {
+          const backCamera = devices.find(d =>
+            d.label.toLowerCase().includes('back') ||
+            d.label.toLowerCase().includes('rear') ||
+            d.label.toLowerCase().includes('environment')
+          );
+          const cameraId = backCamera?.id || devices[0].id;
+          await scanner.start(cameraId, scannerConfig, onScanSuccess, () => {});
+          return;
+        }
+      } catch (err) {
+        console.warn('[QR Scanner] getCameras() failed, trying facingMode fallback:', err);
+      }
+
+      // Try 2: Fallback to facingMode string
+      try {
+        await scanner.start(
+          { facingMode: 'environment' as const },
+          scannerConfig,
+          onScanSuccess,
+          () => {}
+        );
+        return;
+      } catch (err) {
+        console.warn('[QR Scanner] facingMode fallback failed:', err);
+      }
+
+      await stopScanner();
+      setScanStatus('no_camera');
+      setScanMessage('Could not start camera. Use key input instead.');
+    } catch (err: any) {
+      console.error('[QR Scanner] Failed to start:', err);
+      await stopScanner();
+      const msg = (err?.message || String(err)).toLowerCase();
+      if (msg.includes('permission') || msg.includes('notallowed') || msg.includes('denied')) {
+        setScanStatus('no_camera');
+        setScanMessage('Camera permission denied. Allow camera access and try again.');
+      } else if (msg.includes('notfound') || msg.includes('device not found') || msg.includes('no camera')) {
+        setScanStatus('no_camera');
+        setScanMessage('No camera found on this device. Use key input instead.');
+      } else if (msg.includes('secure context') || msg.includes('https')) {
+        setScanStatus('no_camera');
+        setScanMessage('Camera requires HTTPS. Use key input or access via HTTPS.');
+      } else {
+        setScanStatus('no_camera');
+        setScanMessage('Could not start camera. Use key input instead.');
+      }
+    }
+  }, [stopScanner, handleTransferConfirm]);
+
+  useEffect(() => {
+    if (inputMode === 'scan' && (scanStatus === 'idle' || scanStatus === 'no_camera')) {
+      const timer = setTimeout(startScanner, 300);
+      return () => clearTimeout(timer);
+    }
+    if (inputMode !== 'scan') {
+      stopScanner();
+    }
+  }, [inputMode, scanStatus, startScanner, stopScanner]);
+
+  // Poll for approval from source device
+  const pollForApproval = useCallback(async () => {
+    if (!scanSessionId) return;
+    try {
+      const res = await API.confirmTransfer(scanSessionId);
+      if (res.success) {
+        storeRecoveredSession({ token: res.token, expires_at: res.expires_at, username: res.username });
+        setScanStatus('success');
+        setScanMessage('Identity recovered! Reloading...');
+        setTimeout(() => window.location.reload(), 1500);
+      }
+    } catch {
+      setScanStatus('error');
+      setScanMessage('Transfer expired or was denied. Try again.');
+    }
+  }, [scanSessionId]);
+
+  useEffect(() => {
+    if (scanStatus !== 'waiting_approval') return;
+    const interval = setInterval(pollForApproval, 3000);
+    return () => clearInterval(interval);
+  }, [scanStatus, pollForApproval]);
 
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
@@ -187,62 +370,167 @@ export default function RecoveryModal({ onClose }: RecoveryModalProps) {
             )}
           </div>
         ) : (
-          <form onSubmit={handleClaim} className="space-y-6">
-            <p className="text-sm text-center text-muted-foreground px-4 leading-relaxed font-medium">
-              Paste your secret key or upload your backup file to restore your identity.
-            </p>
-            
-            <div className="space-y-4">
-              <input
-                type="text"
-                value={claimKey}
-                onChange={(e) => setClaimKey(e.target.value)}
-                placeholder="00000000-0000-0000-0000-000000000000"
-                className="w-full h-14 px-5 rounded-2xl border border-border bg-background/50 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-              />
-              
-              <div className="relative py-2">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-border/50" />
+          <div className="space-y-6">
+            {/* Scan status overlays */}
+            {scanStatus === 'success' && (
+              <div className="text-center py-6">
+                <div className="w-14 h-14 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-4">
+                  <Check size={28} className="text-green-600" />
                 </div>
-                <div className="relative flex justify-center text-[10px] font-black uppercase tracking-[0.2em]">
-                  <span className="bg-card px-3 text-muted-foreground/50">Or Upload</span>
-                </div>
+                <p className="font-semibold text-lg mb-1">Identity Recovered!</p>
+                <p className="text-sm text-muted-foreground">{scanMessage}</p>
               </div>
+            )}
 
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                onChange={handleFileUpload} 
-                accept=".txt" 
-                className="hidden" 
-              />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="w-full py-4 rounded-2xl border-2 border-dashed border-border/60 hover:border-primary/40 hover:bg-primary/5 transition-all flex items-center justify-center gap-3 text-sm font-bold text-muted-foreground hover:text-primary"
-              >
-                <FileUp size={20} />
-                Select Recovery File
-              </button>
-              
-              {error && (
-                <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/5 text-red-500 text-xs font-bold animate-in fade-in">
-                  <ShieldAlert size={14} />
-                  {error}
+            {scanStatus === 'confirming' && (
+              <div className="text-center py-6">
+                <Loader2 size={28} className="mx-auto mb-3 animate-spin text-primary" />
+                <p className="font-semibold mb-1">Connecting...</p>
+                <p className="text-sm text-muted-foreground">Contacting the source device...</p>
+              </div>
+            )}
+
+            {scanStatus === 'waiting_approval' && (
+              <div className="text-center py-6">
+                <Loader2 size={28} className="mx-auto mb-3 animate-spin text-primary" />
+                <p className="font-semibold mb-1">Waiting for approval</p>
+                <p className="text-sm text-muted-foreground">The source device needs to approve this transfer.</p>
+              </div>
+            )}
+
+            {scanStatus === 'error' && (
+              <div className="text-center py-6">
+                <p className="text-sm text-red-500 mb-4">{scanMessage}</p>
+                <button
+                  onClick={() => { setScanStatus('idle'); setScanSessionId(''); }}
+                  className="px-6 py-2.5 rounded-full bg-primary text-white font-semibold text-sm hover:bg-primary-dark transition-colors"
+                >
+                  Try Again
+                </button>
+              </div>
+            )}
+
+            {(scanStatus === 'idle' || scanStatus === 'scanning' || scanStatus === 'no_camera') && (
+              <>
+                {/* Input mode toggle */}
+                <div className="flex gap-1 p-1 bg-muted/50 rounded-2xl border border-border/50">
+                  <button
+                    onClick={() => {
+                      stopScanner();
+                      setInputMode('key');
+                    }}
+                    className={cn(
+                      'flex-1 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2',
+                      inputMode === 'key' ? 'bg-card text-foreground shadow-sm ring-1 ring-black/5' : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    <Keyboard size={14} />
+                    Key / File
+                  </button>
+                  <button
+                    onClick={() => setInputMode('scan')}
+                    className={cn(
+                      'flex-1 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2',
+                      inputMode === 'scan' ? 'bg-card text-foreground shadow-sm ring-1 ring-black/5' : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    <Camera size={14} />
+                    Scan QR
+                  </button>
                 </div>
-              )}
-            </div>
 
-            <button
-              type="submit"
-              disabled={loading || !claimKey.trim()}
-              className="w-full py-4 rounded-2xl bg-primary text-white font-bold hover:bg-primary-dark transition-all flex items-center justify-center gap-3 disabled:opacity-50 shadow-lg shadow-primary/20 active:scale-[0.98]"
-            >
-              {loading ? <Loader2 size={20} className="animate-spin" /> : <RotateCcw size={20} />}
-              Restore Identity
-            </button>
-          </form>
+                {inputMode === 'scan' ? (
+                  <div className="space-y-4">
+                    {scanStatus === 'scanning' && (
+                      <p className="text-sm text-muted-foreground text-center leading-relaxed">
+                        Point your camera at the QR code displayed on your other device.
+                      </p>
+                    )}
+                    {scanStatus === 'no_camera' && (
+                      <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10 text-center space-y-3">
+                        <ShieldAlert size={24} className="mx-auto text-amber-500" />
+                        <p className="text-sm font-bold text-amber-600">{scanMessage || 'Camera not available'}</p>
+                        <button
+                          onClick={startScanner}
+                          className="px-4 py-2 rounded-xl bg-primary text-white text-xs font-bold"
+                        >
+                          Retry Camera
+                        </button>
+                      </div>
+                    )}
+                    {(scanStatus === 'idle' || scanStatus === 'scanning') && (
+                      <div className="relative rounded-2xl overflow-hidden border border-border bg-black" style={{ minHeight: 280 }}>
+                        {scanStatus === 'idle' && (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <Loader2 size={24} className="animate-spin text-primary" />
+                          </div>
+                        )}
+                        <div id={scannerContainerId} className="w-full" />
+                      </div>
+                    )}
+                    <p className="text-[10px] text-center text-muted-foreground/60 font-medium">
+                      Supports transfer QR codes and recovery key QR codes
+                    </p>
+                  </div>
+                ) : (
+                  <form onSubmit={handleClaim} className="space-y-4">
+                    <p className="text-sm text-center text-muted-foreground px-4 leading-relaxed font-medium">
+                      Paste your secret key or upload your backup file to restore your identity.
+                    </p>
+
+                    <input
+                      type="text"
+                      value={claimKey}
+                      onChange={(e) => setClaimKey(e.target.value)}
+                      placeholder="00000000-0000-0000-0000-000000000000"
+                      className="w-full h-14 px-5 rounded-2xl border border-border bg-background/50 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                    />
+
+                    <div className="relative py-2">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t border-border/50" />
+                      </div>
+                      <div className="relative flex justify-center text-[10px] font-black uppercase tracking-[0.2em]">
+                        <span className="bg-card px-3 text-muted-foreground/50">Or Upload</span>
+                      </div>
+                    </div>
+
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileUpload}
+                      accept=".txt"
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full py-4 rounded-2xl border-2 border-dashed border-border/60 hover:border-primary/40 hover:bg-primary/5 transition-all flex items-center justify-center gap-3 text-sm font-bold text-muted-foreground hover:text-primary"
+                    >
+                      <FileUp size={20} />
+                      Select Recovery File
+                    </button>
+
+                    {error && (
+                      <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/5 text-red-500 text-xs font-bold animate-in fade-in">
+                        <ShieldAlert size={14} />
+                        {error}
+                      </div>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={loading || !claimKey.trim()}
+                      className="w-full py-4 rounded-2xl bg-primary text-white font-bold hover:bg-primary-dark transition-all flex items-center justify-center gap-3 disabled:opacity-50 shadow-lg shadow-primary/20 active:scale-[0.98]"
+                    >
+                      {loading ? <Loader2 size={20} className="animate-spin" /> : <RotateCcw size={20} />}
+                      Restore Identity
+                    </button>
+                  </form>
+                )}
+              </>
+            )}
+          </div>
         )}
       </div>
     </div>

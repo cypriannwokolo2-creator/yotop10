@@ -11,6 +11,18 @@ import {
 } from '../lib/sessionAuth';
 import { getRedisClient } from '../lib/redis';
 
+// Helper to check if user is a guest (auto-generated username)
+// Guest users have low trust_score and are not admins
+const isGuestUser = (user: any): boolean => {
+  // Fallback pattern check for legacy user creation
+  const usernamePattern = /^a_[0-9a-f]{4}$/;
+  if (!usernamePattern.test(user.username)) {
+    return false;
+  }
+  // Additional safeguard: guest accounts should have trust_score < 1.8 and not be admins
+  return user.trust_score < 1.8 && !user.is_admin;
+};
+
 const router: Router = Router();
 
 // ---------------------------------------------------------------------------
@@ -101,6 +113,11 @@ router.post('/session/refresh', async (req: Request, res: Response) => {
 router.post('/transfer/initiate', async (req: Request, res: Response) => {
   if (!req.user) {
     return res.status(401).json({ error: 'Not authenticated' });
+  }
+
+  // Prevent guest users from initiating transfers
+  if (isGuestUser(req.user)) {
+    return res.status(403).json({ error: 'Guest users cannot link devices' });
   }
 
   try {
@@ -324,7 +341,24 @@ router.delete('/sessions/:id', async (req: Request, res: Response) => {
 });
 
 // ---------------------------------------------------------------------------
-// 12. POST /auth/sessions/revoke-others — Sign out all other devices
+// 12. POST /auth/sessions/signout — Sign out current device (revoke own session)
+// ---------------------------------------------------------------------------
+router.post('/sessions/signout', async (req: Request, res: Response) => {
+  if (!req.user || !req.session_payload) {
+    return res.status(401).json({ success: false, message: 'Not authenticated' });
+  }
+
+  try {
+    await revokeSession(req.session_payload.session_id);
+    res.json({ success: true, message: 'Signed out' });
+  } catch (error) {
+    console.error('POST /auth/sessions/signout error:', error);
+    res.status(500).json({ success: false, message: 'Failed to sign out' });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// 13. POST /auth/sessions/revoke-others — Sign out all other devices
 // ---------------------------------------------------------------------------
 router.post('/sessions/revoke-others', async (req: Request, res: Response) => {
   if (!req.user || !req.session_payload) {
@@ -358,6 +392,13 @@ router.post('/recovery/generate', async (req: Request, res: Response) => {
     // Generate if it doesn't exist
     if (!user.recovery_key) {
       user.recovery_key = crypto.randomUUID();
+      
+      // M11.C: Elevate to Scholar status immediately upon backing up identity
+      // This allows them to choose a custom username without the a_ prefix
+      if (user.trust_score < 1.8) {
+        user.trust_score = 1.8;
+      }
+      
       await user.save();
     }
 

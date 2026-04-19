@@ -5,19 +5,18 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Moon, Sun, Menu, User, Search, Bell, Plus, TrendingUp, Bookmark, Clock, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { API } from '@/lib/api';
-import { getFingerprint } from '@/lib/fingerprint';
 import Logo from './Logo';
 import UserMenu from '@/components/auth/UserMenu';
 import MobileMenu from './MobileMenu';
 import NotificationBell from '@/components/notifications/NotificationBell';
+import AuthModal from '@/components/auth/AuthModal';
 
 import { useAuth } from '@/context/PublicAuthContext';
 
 export default function Header() {
   const pathname = usePathname();
   const isHomePage = pathname === '/';
-  const { user, loading, status } = useAuth();
+  const { user, loading, status, sessionRevoked, clearRevoked } = useAuth();
   const [darkMode, setDarkMode] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
@@ -139,7 +138,7 @@ export default function Header() {
 
             {/* User avatar (everyone) */}
             {user ? (
-              <UserMenu username={user.username} />
+              <UserMenu />
             ) : (
               <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-muted/50">
                 <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
@@ -209,6 +208,13 @@ export default function Header() {
             </div>
           </div>
         </div>
+      )}
+      {/* Session Revoked Overlay — prompt user to restore identity */}
+      {sessionRevoked && (
+        <AuthModal
+          onClose={() => { clearRevoked(); window.location.reload(); }}
+          initialTab="restore"
+        />
       )}
     </>
   );

@@ -3,17 +3,19 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { API, Category } from '@/lib/api';
-import { Save, Loader2, ArrowLeft, PenTool, LayoutList, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { Save, Loader2, ArrowLeft, PenTool, LayoutList, ShieldAlert, CheckCircle2, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { StatusModal, CategorySelect, ImageUpload, ConfirmationModal } from '@/components/ui';
 import { useAuth } from '@/context/PublicAuthContext';
 import { cn } from '@/lib/utils';
+import AuthModal from '@/components/auth/AuthModal';
 
 export default function SubmitListPublicPage() {
   const router = useRouter();
   const { user, status } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
   
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [title, setTitle] = useState('');
   const [intro, setIntro] = useState('');
   const [categoryId, setCategoryId] = useState('');
@@ -157,15 +159,18 @@ export default function SubmitListPublicPage() {
               <p className="text-xs text-amber-600/80 leading-relaxed font-medium">
                 You are submitting as a <strong>Guest</strong>. You will NOT receive notifications if your list is approved or rejected, and this submission will not contribute to your Scholar Trust Score.
                 <button 
-                  onClick={() => router.push('/settings')} 
-                  className="ml-1.5 text-primary font-bold hover:underline"
+                  type="button"
+                  onClick={() => setShowAuthModal(true)} 
+                  className="ml-1.5 text-primary font-bold hover:underline inline-flex items-center gap-1"
                 >
-                  Backup your identity to become a Scholar &rarr;
+                  Verify identity to become a Scholar <ArrowRight size={12} />
                 </button>
               </p>
            </div>
         </div>
       )}
+
+      {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} initialTab="status" />}
 
       {error && (
         <div className="p-5 bg-red-500/10 text-red-500 border border-red-500/20 rounded-2xl mb-8 font-medium">

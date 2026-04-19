@@ -30,7 +30,8 @@ declare module 'express' {
  *   2. X-Device-Fingerprint header             (legacy / first-time auth exchange)
  *   3. Anonymous — no user context attached
  *
- * NEVER rejects a request. Only attaches user context when available.
+ * If a Bearer token is present but invalid (revoked/expired), returns 401.
+ * This ensures that signout actually invalidates the session on the client.
  */
 export const fingerprintMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   // --- 1. Try Bearer session token first ---
@@ -56,7 +57,9 @@ export const fingerprintMiddleware = async (req: Request, res: Response, next: N
     } catch (err) {
       console.error('[Auth] Bearer token verification error:', err);
     }
-    // Token invalid/expired — fall through to fingerprint or anonymous
+    // Bearer token was provided but session is revoked/expired — return 401
+    // so the frontend knows to clear the stale session and prompt for re-auth
+    return res.status(401).json({ error: 'Session revoked or expired' });
   }
 
   // --- 2. Try fingerprint header ---

@@ -107,10 +107,17 @@ export function storeRecoveredSession(data: AuthTokenResponse) {
 
 /**
  * Sign out of THIS device only.
+ * Revokes the session on the backend (so the JWT becomes invalid everywhere)
+ * then clears local storage.
  */
-export function signOutThisDevice() {
+export async function signOutThisDevice() {
+  try {
+    // Revoke on backend first — this makes the JWT useless even if someone copied it
+    await API.signOutThisDevice();
+  } catch {
+    // Session may already be revoked — continue with local cleanup
+  }
   clearSession();
-  // Optionally clear fingerprint too
   localStorage.removeItem('yotop10_fp');
 }
 

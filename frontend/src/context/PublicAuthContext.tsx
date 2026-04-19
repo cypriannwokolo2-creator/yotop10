@@ -1,15 +1,16 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { API, UserIdentity } from '@/lib/api';
-import { getFingerprint } from '@/lib/fingerprint';
-import { ensureAuthenticated, hasSession, getSessionToken, clearSession } from '@/lib/auth';
+import { API } from '@/lib/api';
+import { ensureAuthenticated, signOutThisDevice } from '@/lib/auth';
 
 interface PublicAuthContextType {
   user: any | null;
   loading: boolean;
   status: 'guest' | 'scholar' | 'unauthenticated';
   activity: UserActivity;
+  sessionRevoked: boolean;
+  clearRevoked: () => void;
   refresh: () => Promise<void>;
   logout: () => void;
   generateRecoveryKey: () => Promise<string>;
@@ -33,6 +34,19 @@ export function PublicAuthProvider({ children }: { children: React.ReactNode }) 
     bookmarkedPosts: [],
     commentedPosts: [],
   });
+  const [sessionRevoked, setSessionRevoked] = useState(false);
+
+  // Listen for session-revoked event from apiFetch 401 handler
+  useEffect(() => {
+    const handler = () => {
+      setUser(null);
+      setSessionRevoked(true);
+    };
+    window.addEventListener('session-revoked', handler);
+    return () => window.removeEventListener('session-revoked', handler);
+  }, []);
+
+  const clearRevoked = () => setSessionRevoked(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -61,8 +75,8 @@ export function PublicAuthProvider({ children }: { children: React.ReactNode }) 
     refresh();
   }, [refresh]);
 
-  const logout = () => {
-    clearSession();
+  const logout = async () => {
+    await signOutThisDevice();
     setUser(null);
     window.location.reload();
   };
@@ -78,6 +92,7 @@ export function PublicAuthProvider({ children }: { children: React.ReactNode }) 
   };
 
   const generateRecoveryKey = async () => {
+    await ensureAuthenticated();
     const res = await API.generateRecoveryKey();
     return res.recovery_key;
   };
@@ -107,8 +122,12 @@ export function PublicAuthProvider({ children }: { children: React.ReactNode }) 
       loading, 
       status, 
       activity, 
+      sessionRevoked,
+      clearRevoked,
       refresh, 
       logout,
+      generateRecoveryKey,
+      claimAccount,
       updateActivity
     }}>
       {children}
