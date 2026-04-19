@@ -80,11 +80,10 @@ export default function Header() {
               </Link>
             )}
 
-            {/* Notifications (authenticated only, hidden on homepage) */}
-            {user && !isHomePage && (
+            {/* Notifications (scholars only, hidden on homepage) */}
+            {user && status === 'scholar' && !isHomePage && (
               <NotificationBell />
             )}
-
             {/* Quick Actions dropdown (authenticated only, hidden on homepage) */}
             {user && !isHomePage && (
               <div className="relative hidden md:block">

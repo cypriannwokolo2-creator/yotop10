@@ -17,7 +17,10 @@ import {
   AlertCircle,
   Link as LinkIcon,
   Trash2,
-  FolderOpen
+  FolderOpen,
+  Copy,
+  Check,
+  Info
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/PublicAuthContext';
@@ -37,6 +40,8 @@ export default function SettingsPage() {
   const [recoveryPath, setRecoveryPath] = useState<string>('');
   const [downloading, setDownloading] = useState(false);
   const [savedPath, setSavedPath] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [showPathPrompt, setShowPathPrompt] = useState(false);
 
   useEffect(() => {
     const path = localStorage.getItem('yotop10_recovery_path');
@@ -46,8 +51,8 @@ export default function SettingsPage() {
   const handleDownloadRecovery = async () => {
     setDownloading(true);
     try {
-      const key = await generateRecoveryKey();
-      const blob = new Blob([`YoTop10 Recovery Key\n\nUsername: ${user?.username}\nKey: ${key}\n\nKeep this file safe. If you lose your device, this is the ONLY way to recover your account.`], { type: 'text/plain' });
+      const { recovery_key } = await generateRecoveryKey();
+      const blob = new Blob([`YoTop10 Recovery Key\n\nUsername: ${user?.username}\nKey: ${recovery_key}\n\nKeep this file safe. If you lose your device, this is the ONLY way to recover your account.`], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -56,6 +61,9 @@ export default function SettingsPage() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      
+      // Prompt user to record where they saved it
+      setShowPathPrompt(true);
     } catch (err) {
       console.error('Download failed:', err);
     } finally {
@@ -63,10 +71,24 @@ export default function SettingsPage() {
     }
   };
 
+  const copyKeyToClipboard = async () => {
+    try {
+      const { recovery_key } = await generateRecoveryKey();
+      navigator.clipboard.writeText(recovery_key);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Copy failed:', err);
+    }
+  };
+
   const savePath = () => {
     localStorage.setItem('yotop10_recovery_path', recoveryPath);
     setSavedPath(true);
-    setTimeout(() => setSavedPath(false), 2000);
+    setTimeout(() => {
+      setSavedPath(false);
+      setShowPathPrompt(false);
+    }, 2000);
   };
 
   const sections = [
@@ -147,7 +169,7 @@ export default function SettingsPage() {
               </section>
 
               <button 
-                onClick={() => router.push(`/a/${user.username}`)}
+                onClick={() => router.push(`/a/${user.username.replace(/^a_/, '')}`)}
                 className="w-full flex items-center justify-between p-6 bg-card border border-border rounded-3xl hover:bg-muted/30 transition-colors group"
               >
                 <div className="flex items-center gap-4">
@@ -198,19 +220,37 @@ export default function SettingsPage() {
                     </p>
                   </div>
 
-                  <button 
-                    onClick={handleDownloadRecovery}
-                    disabled={downloading}
-                    className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl border-2 border-primary text-primary font-bold hover:bg-primary/5 transition-all"
-                  >
-                    {downloading ? <Loader2 size={20} className="animate-spin" /> : <Download size={20} />}
-                    Download Recovery File (.txt)
-                  </button>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <button 
+                      onClick={handleDownloadRecovery}
+                      disabled={downloading}
+                      className="flex items-center justify-center gap-3 py-4 rounded-2xl border-2 border-primary text-primary font-bold hover:bg-primary/5 transition-all"
+                    >
+                      {downloading ? <Loader2 size={20} className="animate-spin" /> : <Download size={20} />}
+                      Download File
+                    </button>
+                    <button 
+                      onClick={copyKeyToClipboard}
+                      className="flex items-center justify-center gap-3 py-4 rounded-2xl bg-muted text-foreground font-bold hover:bg-muted/80 transition-all border border-border"
+                    >
+                      {copied ? <CheckCircle2 size={20} className="text-emerald-500" /> : <Copy size={20} />}
+                      Copy Secret Key
+                    </button>
+                  </div>
 
-                  <div className="pt-4 border-t border-border">
-                    <label className="block text-xs font-black uppercase tracking-widest text-muted-foreground mb-3 ml-1">
-                      Manual File Path Storage
-                    </label>
+                  <div className={cn(
+                    "pt-6 border-t border-border transition-all duration-500 overflow-hidden",
+                    showPathPrompt ? "opacity-100 max-h-[300px]" : "opacity-100"
+                  )}>
+                    <div className="flex items-center gap-2 mb-3">
+                      <label className="block text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">
+                        Manual File Path Storage
+                      </label>
+                      {showPathPrompt && (
+                        <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[8px] font-black uppercase animate-pulse">Action Required</span>
+                      )}
+                    </div>
+                    
                     <div className="flex gap-2">
                       <div className="relative flex-1">
                         <FolderOpen size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -218,19 +258,23 @@ export default function SettingsPage() {
                           type="text" 
                           value={recoveryPath}
                           onChange={(e) => setRecoveryPath(e.target.value)}
-                          placeholder="/storage/emulated/0/Documents/yotop10-key.txt"
-                          className="w-full pl-11 pr-4 py-3.5 rounded-2xl bg-muted border-none text-sm focus:ring-2 focus:ring-primary/20"
+                          placeholder="e.g., /Documents/yotop10-key.txt"
+                          className={cn(
+                            "w-full pl-11 pr-4 py-3.5 rounded-2xl bg-muted border-none text-sm focus:ring-2 focus:ring-primary/20 transition-all",
+                            showPathPrompt && "ring-2 ring-primary/40 bg-background shadow-lg shadow-primary/5"
+                          )}
                         />
                       </div>
                       <button 
                         onClick={savePath}
-                        className="px-4 rounded-2xl bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                        className="px-6 rounded-2xl bg-primary text-white font-bold hover:bg-primary-dark transition-all shadow-lg shadow-primary/20"
                       >
-                        {savedPath ? <CheckCircle2 size={20} /> : <Save size={20} />}
+                        {savedPath ? <Check size={20} /> : <Save size={20} />}
                       </button>
                     </div>
-                    <p className="text-[10px] text-muted-foreground mt-2 px-1">
-                      Store the path to your recovery file here for your own reference on this device.
+                    <p className="text-[10px] text-muted-foreground mt-3 px-1 flex items-start gap-2 leading-relaxed">
+                      <Info size={12} className="shrink-0 mt-0.5" />
+                      <strong>For your reference:</strong> Record exactly where you saved the file on this device. Browsers cannot see your actual file system, so this path is stored locally to help you find the file if you ever need to restore your identity.
                     </p>
                   </div>
                 </div>

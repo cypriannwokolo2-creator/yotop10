@@ -311,9 +311,10 @@ export const API = {
   clearNotifications: () => apiFetch('/notifications/clear', { method: 'DELETE' }),
 
   adminGetStats: () => apiFetch('/admin/stats'),
-  adminGetPendingPosts: () => apiFetch('/admin/posts/pending'),
+  adminGetPendingPosts: (type?: string) => apiFetch(`/admin/posts/pending${type ? `?type=${type}` : ''}`),
+  adminGetPendingCounts: () => apiFetch('/admin/posts/pending/counts'),
   adminGetPendingSummary: () => apiFetch('/admin/posts/pending/summary'),
-  adminGetPendingByCategory: (id: string) => apiFetch(`/admin/posts/pending/category/${id}`),
+  adminGetPendingByCategory: (id: string, type?: string) => apiFetch(`/admin/posts/pending/category/${id}${type ? `?type=${type}` : ''}`),
   adminGetPostDetails: (id: string) => apiFetch(`/admin/posts/${id}`),
   adminApprovePost: (id: string, action: 'approve' | 'reject', reason?: string) =>
     apiFetch(`/admin/posts/${id}/approve`, {

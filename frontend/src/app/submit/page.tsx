@@ -3,12 +3,15 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { API, Category } from '@/lib/api';
-import { Save, Loader2, ArrowLeft, PenTool, LayoutList } from 'lucide-react';
+import { Save, Loader2, ArrowLeft, PenTool, LayoutList, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
-import { StatusModal, CategorySelect, ImageUpload } from '@/components/ui';
+import { StatusModal, CategorySelect, ImageUpload, ConfirmationModal } from '@/components/ui';
+import { useAuth } from '@/context/PublicAuthContext';
+import { cn } from '@/lib/utils';
 
 export default function SubmitListPublicPage() {
   const router = useRouter();
+  const { user, status } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
   
   const [title, setTitle] = useState('');
@@ -27,6 +30,7 @@ export default function SubmitListPublicPage() {
   const [error, setError] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [errorModalOpen, setErrorModalOpen] = useState(false);
+  const [guestConfirmOpen, setGuestConfirmOpen] = useState(false);
   const [globalConstraints, setGlobalConstraints] = useState({ min: 3, max: 20 });
 
   useEffect(() => {
@@ -70,8 +74,9 @@ export default function SubmitListPublicPage() {
     setItems(newItems);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+
     if (items.length < globalConstraints.min) {
       setError(`Platform policy requires at least ${globalConstraints.min} items for a list. Please add more placements.`);
       setErrorModalOpen(true);
@@ -85,6 +90,12 @@ export default function SubmitListPublicPage() {
     if (items.some(i => !i.title || !i.justification)) {
       setError('Rankings are missing titles or justifications. Every placement must be defended.');
       setErrorModalOpen(true);
+      return;
+    }
+
+    // Check if user is a scholar. If not, ask for confirmation.
+    if (status !== 'scholar' && !guestConfirmOpen) {
+      setGuestConfirmOpen(true);
       return;
     }
     
@@ -118,6 +129,7 @@ export default function SubmitListPublicPage() {
       setErrorModalOpen(true);
     } finally {
       setSubmitting(false);
+      setGuestConfirmOpen(false);
     }
   };
 
@@ -136,6 +148,24 @@ export default function SubmitListPublicPage() {
           </p>
         </div>
       </div>
+
+      {status !== 'scholar' && (
+        <div className="mb-10 p-6 rounded-3xl bg-amber-500/5 border border-amber-500/10 flex items-start gap-4 animate-in fade-in slide-in-from-top-2 duration-700">
+           <ShieldAlert size={24} className="text-amber-500 shrink-0 mt-1" />
+           <div>
+              <p className="font-bold text-amber-700 text-sm mb-1">Unsecured Submission Flow</p>
+              <p className="text-xs text-amber-600/80 leading-relaxed font-medium">
+                You are submitting as a <strong>Guest</strong>. You will NOT receive notifications if your list is approved or rejected, and this submission will not contribute to your Scholar Trust Score.
+                <button 
+                  onClick={() => router.push('/settings')} 
+                  className="ml-1.5 text-primary font-bold hover:underline"
+                >
+                  Backup your identity to become a Scholar &rarr;
+                </button>
+              </p>
+           </div>
+        </div>
+      )}
 
       {error && (
         <div className="p-5 bg-red-500/10 text-red-500 border border-red-500/20 rounded-2xl mb-8 font-medium">
@@ -250,6 +280,17 @@ export default function SubmitListPublicPage() {
         </button>
       </form>
       
+      {/* Confirmation for Guest Submissions */}
+      <ConfirmationModal
+        isOpen={guestConfirmOpen}
+        onClose={() => setGuestConfirmOpen(false)}
+        onConfirm={() => handleSubmit()}
+        title="Continue as Guest?"
+        message="Your account is not backed up. Guest submissions are processed with lower priority, do not earn Trust Points, and you will not be notified of the result. Do you wish to proceed anyway?"
+        confirmLabel="Proceed as Guest"
+        variant="danger"
+      />
+
       <StatusModal
         isOpen={modalOpen}
         onClose={() => {

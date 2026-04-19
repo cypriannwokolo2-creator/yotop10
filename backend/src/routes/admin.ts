@@ -11,6 +11,7 @@ import { ListItem } from '../models/ListItem';
 import { GlobalSettings, getSettings } from '../models/GlobalSettings';
 import { QuickReply } from '../models/QuickReply';
 import { UserNotification } from '../models/UserNotification';
+import { updateUserTrustScore } from '../lib/trustScore';
 
 const router: Router = Router();
 
@@ -178,15 +179,42 @@ router.get('/stats', adminAuthMiddleware, async (req: AdminAuthRequest, res: Res
 
 /**
  * GET /api/admin/posts/pending
- * List pending posts
+ * List pending posts with type filtering
  */
 router.get('/posts/pending', adminAuthMiddleware, async (req: AdminAuthRequest, res: Response) => {
   try {
-    const posts = await Post.find({ status: 'pending_review' })
-      .sort({ is_priority: -1, created_at: -1 })
-      .populate('category_id', 'name icon slug')
-      .lean();
-    // Map category_id to category for frontend consistency
+    const { type } = req.query; // 'priority', 'scholar', 'guest'
+    
+    let query: any = { status: 'pending_review' };
+    
+    if (type === 'priority') {
+      query.is_priority = true;
+    } else if (type === 'guest') {
+      query.is_guest = true;
+    } else if (type === 'scholar') {
+      query.is_priority = false;
+      query.is_guest = false;
+    }
+
+    const [posts, counts] = await Promise.all([
+      Post.find(query)
+        .sort({ is_priority: -1, created_at: -1 })
+        .populate('category_id', 'name icon slug')
+        .lean(),
+      Post.aggregate([
+        { $match: { status: 'pending_review' } },
+        { 
+          $group: { 
+            _id: null,
+            priority: { $sum: { $cond: [{ $eq: ['$is_priority', true] }, 1, 0] } },
+            guest: { $sum: { $cond: [{ $eq: ['$is_guest', true] }, 1, 0] } },
+            scholar: { $sum: { $cond: [{ $and: [{ $eq: ['$is_priority', false] }, { $eq: ['$is_guest', false] }] }, 1, 0] } },
+            total: { $sum: 1 }
+          } 
+        }
+      ])
+    ]);
+
     const formattedPosts = posts.map(post => ({
       ...post,
       id: post._id,
@@ -198,7 +226,10 @@ router.get('/posts/pending', adminAuthMiddleware, async (req: AdminAuthRequest, 
       } : null
     }));
     
-    res.json({ posts: formattedPosts });
+    res.json({ 
+      posts: formattedPosts,
+      counts: counts[0] || { priority: 0, guest: 0, scholar: 0, total: 0 }
+    });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch pending posts' });
   }
@@ -299,14 +330,18 @@ router.patch('/posts/:id', adminAuthMiddleware, async (req: AdminAuthRequest, re
       );
     }
 
-    // 3. Notify User
-    await UserNotification.create({
-      author_id: post.author_id,
-      type: 'approved',
-      post_title: post.title,
-      message: 'Your list is live! Moderators have refined your list for better platform compatibility.',
-      reason: reason || 'Editorial Adjustment',
-    });
+    // 3. Notify User (Scholars only)
+    if (!post.is_guest) {
+      await UserNotification.create({
+        author_id: post.author_id,
+        type: 'approved',
+        post_title: post.title,
+        message: 'Your list is live! Moderators have refined your list for better platform compatibility.',
+        reason: reason || 'Editorial Adjustment',
+      });
+      // Update trust score for scholars
+      await updateUserTrustScore(post.author_id);
+    }
 
     res.json({ success: true, post });
   } catch (error) {
@@ -361,14 +396,18 @@ router.post('/posts/:id/approve', adminAuthMiddleware, async (req: AdminAuthRequ
       post.published_at = new Date();
       await post.save();
 
-      // Notify User
-      await UserNotification.create({
-        author_id: post.author_id,
-        type: 'approved',
-        post_title: post.title,
-        message: 'Your list is live! Your list has been verified and published.',
-        reason: reason || 'Authorized by Moderator',
-      });
+      // Notify User (Scholars only)
+      if (!post.is_guest) {
+        await UserNotification.create({
+          author_id: post.author_id,
+          type: 'approved',
+          post_title: post.title,
+          message: 'Your list is live! Your list has been verified and published.',
+          reason: reason || 'Authorized by Moderator',
+        });
+        // Update trust score for scholars
+        await updateUserTrustScore(post.author_id);
+      }
 
       return res.json({ 
         success: true, 
@@ -385,14 +424,18 @@ router.post('/posts/:id/approve', adminAuthMiddleware, async (req: AdminAuthRequ
       });
     } else {
       // REJECT = DELETE
-      // 1. Create Notification for the author before destruction
-      await UserNotification.create({
-        author_id: post.author_id,
-        type: 'rejected',
-        post_title: post.title,
-        message: 'Your list submission was unfortunately rejected and removed.',
-        reason: reason || 'Does not meet community guidelines.',
-      });
+      // 1. Create Notification for the author (Scholars only)
+      if (!post.is_guest) {
+        await UserNotification.create({
+          author_id: post.author_id,
+          type: 'rejected',
+          post_title: post.title,
+          message: 'Your list submission was unfortunately rejected and removed.',
+          reason: reason || 'Does not meet community guidelines.',
+        });
+        // Update trust score for scholars
+        await updateUserTrustScore(post.author_id);
+      }
 
       // 2. Cascading Deletion
       await Promise.all([
@@ -456,74 +499,35 @@ router.get('/settings', adminAuthMiddleware, async (req: AdminAuthRequest, res: 
  */
 router.patch('/settings', adminAuthMiddleware, async (req: AdminAuthRequest, res: Response) => {
   try {
-    const settings = await GlobalSettings.findOneAndUpdate({}, req.body, { new: true, upsert: true });
-    res.json({ success: true, settings });
+    const updates = req.body;
+    const settings = await GlobalSettings.findOneAndUpdate({}, updates, { new: true, upsert: true });
+    res.json(settings);
   } catch (error) {
     res.status(500).json({ error: 'Failed to update settings' });
   }
 });
 
 /**
- * GET /api/admin/quick-replies
+ * GET /api/admin/posts/pending/counts
+ * Detailed counts of pending submissions
  */
-router.get('/quick-replies', adminAuthMiddleware, async (req: AdminAuthRequest, res: Response) => {
+router.get('/posts/pending/counts', adminAuthMiddleware, async (req: AdminAuthRequest, res: Response) => {
   try {
-    const replies = await QuickReply.find();
-    res.json(replies);
+    const counts = await Post.aggregate([
+      { $match: { status: 'pending_review' } },
+      { 
+        $group: { 
+          _id: null,
+          priority: { $sum: { $cond: [{ $eq: ['$is_priority', true] }, 1, 0] } },
+          guest: { $sum: { $cond: [{ $eq: ['$is_guest', true] }, 1, 0] } },
+          scholar: { $sum: { $cond: [{ $and: [{ $eq: ['$is_priority', false] }, { $eq: ['$is_guest', false] }] }, 1, 0] } },
+          total: { $sum: 1 }
+        } 
+      }
+    ]);
+    res.json(counts[0] || { priority: 0, guest: 0, scholar: 0, total: 0 });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch quick replies' });
-  }
-});
-
-/**
- * POST /api/admin/quick-replies
- */
-router.post('/quick-replies', adminAuthMiddleware, async (req: AdminAuthRequest, res: Response) => {
-  try {
-    const reply = await QuickReply.create(req.body);
-    res.json(reply);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to create quick reply' });
-  }
-});
-
-/**
- * DELETE /api/admin/quick-replies/:id
- */
-router.delete('/quick-replies/:id', adminAuthMiddleware, async (req: AdminAuthRequest, res: Response) => {
-  try {
-    await QuickReply.findByIdAndDelete(req.params.id);
-    res.json({ success: true });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to delete quick reply' });
-  }
-});
-
-/**
- * POST /api/admin/quick-replies/seed
- */
-router.post('/quick-replies/seed', adminAuthMiddleware, async (req: AdminAuthRequest, res: Response) => {
-  try {
-    const defaults = [
-      // Rejection Templates
-      { label: 'Low Detail', type: 'reject', message: 'Your list lacks necessary editorial depth. Please provide more substantial justifications for each placement.' },
-      { label: 'Wrong Domain', type: 'reject', message: 'This content belongs in a different category. Please re-submit under the correct domain.' },
-      { label: 'Policy Breach', type: 'reject', message: 'This content violates community publishing standards. Please review the rules.' },
-      
-      // Approval Templates
-      { label: 'Crystal Clear', type: 'approve', message: 'Your list is exceptionally well-researched. Published immediately!' },
-      { label: 'Verified', type: 'approve', message: 'Content verified. Your list is now live on the platform.' },
-      
-      // Edit Templates
-      { label: 'Grammar Fix', type: 'edit', message: 'I corrected some minor spelling and grammar issues to improve readability.' },
-      { label: 'Icon Alignment', type: 'edit', message: 'Updated your list categories for better visibility.' }
-    ];
-
-    await QuickReply.deleteMany({});
-    await QuickReply.insertMany(defaults);
-    res.json({ success: true, count: defaults.length });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to seed replies' });
+    res.status(500).json({ error: 'Failed to fetch counts' });
   }
 });
 

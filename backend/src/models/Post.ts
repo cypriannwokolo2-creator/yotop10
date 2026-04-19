@@ -16,6 +16,7 @@ export interface IPost extends Document {
   view_count: number;
   is_public: boolean;
   is_priority: boolean;
+  is_guest: boolean;
   min_items_required: number;
   cover_image?: string;
   published_at?: Date;
@@ -112,6 +113,11 @@ const postSchema = new Schema<IPost>(
       default: false,
       index: true,
     },
+    is_guest: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
     min_items_required: {
       type: Number,
       default: 3,
@@ -191,6 +197,7 @@ postSchema.index({ status: 1, created_at: -1 });
 postSchema.index({ category_id: 1, status: 1 });
 postSchema.index({ author_id: 1, status: 1 });
 postSchema.index({ post_type: 1, status: 1 });
+postSchema.index({ is_guest: 1 });
 postSchema.index({ title: 'text', intro: 'text' });
 
 export const Post = mongoose.model<IPost>('Post', postSchema);

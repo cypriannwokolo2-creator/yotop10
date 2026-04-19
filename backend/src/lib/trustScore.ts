@@ -6,9 +6,9 @@ import { User } from '../models/User';
  * Calculates and updates user trust score based on post approval rate
  */
 export const calculateTrustScore = async (userId: string): Promise<number> => {
-  // Count posts with status breakdown
+  // Count non-guest posts with status breakdown
   const userPosts = await Post.aggregate([
-    { $match: { author_id: userId } },
+    { $match: { author_id: userId, is_guest: false } },
     {
       $group: {
         _id: '$status',
