@@ -1,34 +1,33 @@
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
+import * as dotenv from 'dotenv';
 import { User } from '../models/User';
+import { Post } from '../models/Post';
 import { calculateTrustScore } from '../lib/trustScore';
 
-dotenv.config();
+dotenv.config({ path: '../.env' });
 
-/**
- * Recalculate trust scores for all existing users
- * Run once after deploying trust score system
- */
-const recalculateAllTrustScores = async () => {
-  const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/yotop10';
-  await mongoose.connect(mongoUri);
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/yotop10';
 
-  console.log('🔄 Recalculating trust scores for all users...');
+async function migrate() {
+  try {
+    console.log('Connecting to MongoDB...');
+    await mongoose.connect(MONGO_URI);
+    console.log('Connected.');
 
-  const users = await User.find({});
-  let updated = 0;
+    const users = await User.find({});
+    console.log(`Found ${users.length} users. Recalculating trust scores...`);
 
-  for (const user of users) {
-    try {
-      await calculateTrustScore(user.user_id);
-      updated++;
-    } catch (error) {
-      console.error(`Failed to calculate trust score for user ${user.user_id}:`, error);
+    for (const user of users) {
+      const score = await calculateTrustScore(user.user_id);
+      console.log(`User ${user.username}: ${score.toFixed(2)}`);
     }
+
+    console.log('Recalculation complete.');
+    process.exit(0);
+  } catch (error) {
+    console.error('Migration failed:', error);
+    process.exit(1);
   }
+}
 
-  console.log(`✅ Trust scores recalculated for ${updated} users`);
-  await mongoose.disconnect();
-};
-
-recalculateAllTrustScores().catch(console.error);
+migrate();

@@ -183,7 +183,7 @@ router.get('/stats', adminAuthMiddleware, async (req: AdminAuthRequest, res: Res
 router.get('/posts/pending', adminAuthMiddleware, async (req: AdminAuthRequest, res: Response) => {
   try {
     const posts = await Post.find({ status: 'pending_review' })
-      .sort({ created_at: -1 })
+      .sort({ is_priority: -1, created_at: -1 })
       .populate('category_id', 'name icon slug')
       .lean();
     // Map category_id to category for frontend consistency
@@ -234,7 +234,7 @@ router.get('/posts/pending/category/:id', adminAuthMiddleware, async (req: Admin
       status: 'pending_review',
       category_id: req.params.id 
     })
-      .sort({ created_at: -1 })
+      .sort({ is_priority: -1, created_at: -1 })
       .populate('category_id', 'name icon slug')
       .lean();
     // Map category_id to category for frontend consistency

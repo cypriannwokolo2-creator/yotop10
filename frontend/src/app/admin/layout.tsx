@@ -1,15 +1,18 @@
 'use client';
 
+import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAdmin } from '@/context/AdminAuthContext';
-import { LayoutDashboard, CheckSquare, FolderGit2, LogOut, Settings, PlusCircle } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, FolderGit2, LogOut, Settings, PlusCircle, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Logo from '@/components/ui/Logo';
+import AdminMobileMenu from '@/components/ui/AdminMobileMenu';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { admin, loading, logout } = useAdmin();
   const pathname = usePathname();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Skip auth check for login and setup pages
   const isPublicRoute = pathname === '/admin/login' || pathname.startsWith('/admin/setup');
@@ -33,8 +36,30 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-screen bg-muted/20 flex flex-col md:flex-row">
-      {/* Sidebar */}
-      <aside className="w-full md:w-64 bg-card border-r border-border md:min-h-screen flex flex-col">
+      {/* Mobile Header */}
+      <div className="md:hidden flex items-center justify-between px-6 h-16 bg-card border-b border-border sticky top-0 z-40">
+        <Logo size="sm" />
+        <div className="flex items-center gap-3">
+          <span className="text-[10px] font-black uppercase tracking-widest text-primary/70">Admin</span>
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            className="p-2.5 rounded-xl hover:bg-muted border border-border/50 transition-all active:scale-95 flex items-center justify-center"
+          >
+            <Menu size={20} strokeWidth={1.5} className="text-foreground/80" />
+          </button>
+        </div>
+      </div>
+
+      <AdminMobileMenu 
+        isOpen={mobileMenuOpen} 
+        onClose={() => setMobileMenuOpen(false)} 
+        admin={admin}
+        logout={logout}
+        navItems={navItems}
+      />
+
+      {/* Sidebar - Desktop Only */}
+      <aside className="hidden md:flex w-64 bg-card border-r border-border min-h-screen flex-col sticky top-0">
         <div className="p-6 border-b border-border">
           <Logo size="md" />
           <p className="text-xs text-muted-foreground mt-2 uppercase tracking-widest font-semibold">Admin Panel</p>

@@ -411,6 +411,7 @@ router.post('/', validatePostSubmission, async (req: Request, res: Response) => 
       post_type,
       intro,
       status: 'pending_review',
+      is_priority: (user.trust_score || 1.0) >= 1.5,
       category_id,
       min_items_required: min_items_required || 3,
       fire_count: 0,
