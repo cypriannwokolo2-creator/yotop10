@@ -1,9 +1,23 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { X, Key, Copy, Check, ShieldAlert, RotateCcw, Loader2, FileUp, Info } from 'lucide-react';
+import { 
+  X, 
+  Key, 
+  Copy, 
+  Check, 
+  ShieldAlert, 
+  RotateCcw, 
+  Loader2, 
+  FileUp, 
+  Info,
+  ShieldCheck,
+  Download,
+  CheckCircle2
+} from 'lucide-react';
 import { useAuth } from '@/context/PublicAuthContext';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 interface RecoveryModalProps {
   onClose: () => void;
@@ -44,7 +58,6 @@ export default function RecoveryModal({ onClose }: RecoveryModalProps) {
     const reader = new FileReader();
     reader.onload = (event) => {
       const content = event.target?.result as string;
-      // Extract key using regex: "Key: [uuid]"
       const match = content.match(/Key:\s*([a-f0-9-]{36})/i);
       if (match && match[1]) {
         setClaimKey(match[1]);
@@ -77,80 +90,88 @@ export default function RecoveryModal({ onClose }: RecoveryModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
 
-      <div className="relative bg-card border border-border rounded-2xl shadow-xl w-full max-w-md p-6 overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <Key size={20} className="text-primary" />
-            </div>
-            <div>
-              <h2 className="font-bold text-lg">Identity Recovery</h2>
-              <p className="text-xs text-muted-foreground">Never lose your scholar status</p>
-            </div>
+      <div className="relative bg-card/95 backdrop-blur-xl border border-border shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] rounded-[2.5rem] w-full max-w-md p-8 overflow-hidden ring-1 ring-white/10">
+        <button
+          onClick={onClose}
+          className="absolute top-6 right-6 p-2 rounded-full hover:bg-muted transition-all active:scale-90"
+        >
+          <X size={20} className="text-muted-foreground" />
+        </button>
+
+        <div className="flex items-center gap-4 mb-8">
+          <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center shadow-sm">
+            <ShieldCheck size={24} className="text-primary" />
           </div>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-muted transition-colors">
-            <X size={18} className="text-muted-foreground" />
-          </button>
+          <div>
+            <h2 className="font-black text-xl tracking-tight">Identity Recovery</h2>
+            <p className="text-xs font-medium text-muted-foreground">Secure your scholar status</p>
+          </div>
         </div>
 
         {/* Mode Toggle */}
-        <div className="flex gap-1 p-1 bg-muted rounded-xl mb-6">
+        <div className="flex gap-1 p-1 bg-muted/50 rounded-2xl mb-8 border border-border/50">
           <button
             onClick={() => setMode('backup')}
             className={cn(
-              'flex-1 py-2 rounded-lg text-sm font-medium transition-colors',
-              mode === 'backup' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+              'flex-1 py-2.5 rounded-xl text-sm font-bold transition-all',
+              mode === 'backup' ? 'bg-card text-foreground shadow-sm ring-1 ring-black/5' : 'text-muted-foreground hover:text-foreground'
             )}
           >
-            Backup Account
+            Backup
           </button>
           <button
             onClick={() => setMode('claim')}
             className={cn(
-              'flex-1 py-2 rounded-lg text-sm font-medium transition-colors',
-              mode === 'claim' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+              'flex-1 py-2.5 rounded-xl text-sm font-bold transition-all',
+              mode === 'claim' ? 'bg-card text-foreground shadow-sm ring-1 ring-black/5' : 'text-muted-foreground hover:text-foreground'
             )}
           >
-            Claim Existing
+            Restore
           </button>
         </div>
 
         {mode === 'backup' ? (
-          <div className="space-y-4">
-            <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl flex gap-3">
+          <div className="space-y-6">
+            <div className="p-5 bg-amber-500/5 border border-amber-500/10 rounded-2xl flex gap-4">
               <ShieldAlert size={20} className="text-amber-500 shrink-0 mt-0.5" />
-              <p className="text-xs text-amber-600 leading-relaxed">
-                Your recovery key is the ONLY way to retrieve your account if you lose your device. 
-                We do not store your identity on a central server, so we cannot "reset" this for you.
+              <p className="text-xs text-amber-600/80 leading-relaxed font-medium">
+                Your recovery key is the <span className="font-bold underline">only</span> way to retrieve your account if you lose your device. Keep it secret.
               </p>
             </div>
 
             {recoveryKey ? (
-              <div className="space-y-4">
+              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
                 <div className="relative group">
+                  <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-primary/0 rounded-2xl blur opacity-25"></div>
                   <input
                     type="text"
                     readOnly
                     value={recoveryKey}
-                    className="w-full h-12 pl-4 pr-12 rounded-xl bg-muted font-mono text-sm border-2 border-primary/20"
+                    className="relative w-full h-14 pl-5 pr-14 rounded-2xl bg-muted/50 font-mono text-sm border-2 border-primary/20 focus:border-primary/40 outline-none"
                   />
                   <button
                     onClick={handleCopy}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-card border border-border hover:bg-muted transition-colors"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 rounded-xl bg-card border border-border shadow-sm hover:bg-muted transition-all active:scale-90"
                   >
-                    {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
+                    {copied ? <CheckCircle2 size={20} className="text-green-500" /> : <Copy size={20} />}
                   </button>
                 </div>
-                <p className="text-[11px] text-center text-muted-foreground">
-                  Store this key somewhere safe (e.g., a password manager).
+                
+                <p className="text-[11px] text-center text-muted-foreground font-medium px-4">
+                  Store this key in a password manager or as a hidden file.
                 </p>
-                <div className="pt-2 text-center">
-                  <Link href="/settings" className="text-xs text-primary font-bold hover:underline" onClick={onClose}>
-                    Go to Settings for more backup options
+
+                <div className="pt-4 border-t border-border/50 text-center">
+                  <Link 
+                    href="/settings" 
+                    className="inline-flex items-center gap-2 text-xs text-primary font-black uppercase tracking-widest hover:underline"
+                    onClick={onClose}
+                  >
+                    <Download size={14} />
+                    Download Recovery File
                   </Link>
                 </div>
               </div>
@@ -158,34 +179,34 @@ export default function RecoveryModal({ onClose }: RecoveryModalProps) {
               <button
                 onClick={handleGenerate}
                 disabled={loading}
-                className="w-full h-12 rounded-xl bg-primary text-white font-bold hover:bg-primary-dark transition-colors flex items-center justify-center gap-3 shadow-lg shadow-primary/20"
+                className="w-full py-4 rounded-2xl bg-primary text-white font-bold hover:bg-primary-dark transition-all shadow-lg shadow-primary/20 active:scale-[0.98] flex items-center justify-center gap-3"
               >
-                {loading ? <Loader2 size={18} className="animate-spin" /> : <Key size={18} />}
-                Generate My Recovery Key
+                {loading ? <Loader2 size={20} className="animate-spin" /> : <Key size={20} />}
+                Generate Recovery Key
               </button>
             )}
           </div>
         ) : (
-          <form onSubmit={handleClaim} className="space-y-4">
-            <p className="text-sm text-center text-muted-foreground px-4">
-              Enter your recovery key below to move your scholar identity to this device.
+          <form onSubmit={handleClaim} className="space-y-6">
+            <p className="text-sm text-center text-muted-foreground px-4 leading-relaxed font-medium">
+              Paste your secret key or upload your backup file to restore your identity.
             </p>
             
-            <div className="space-y-3">
+            <div className="space-y-4">
               <input
                 type="text"
                 value={claimKey}
                 onChange={(e) => setClaimKey(e.target.value)}
-                placeholder="Paste your secret key here..."
-                className="w-full h-12 px-4 rounded-xl border border-border bg-background font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                placeholder="00000000-0000-0000-0000-000000000000"
+                className="w-full h-14 px-5 rounded-2xl border border-border bg-background/50 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
               />
               
-              <div className="relative">
+              <div className="relative py-2">
                 <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-border" />
+                  <span className="w-full border-t border-border/50" />
                 </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">Or</span>
+                <div className="relative flex justify-center text-[10px] font-black uppercase tracking-[0.2em]">
+                  <span className="bg-card px-3 text-muted-foreground/50">Or Upload</span>
                 </div>
               </div>
 
@@ -199,22 +220,27 @@ export default function RecoveryModal({ onClose }: RecoveryModalProps) {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full py-3 rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center justify-center gap-2 text-sm font-medium"
+                className="w-full py-4 rounded-2xl border-2 border-dashed border-border/60 hover:border-primary/40 hover:bg-primary/5 transition-all flex items-center justify-center gap-3 text-sm font-bold text-muted-foreground hover:text-primary"
               >
-                <FileUp size={16} className="text-primary" />
-                Upload Recovery File (.txt)
+                <FileUp size={20} />
+                Select Recovery File
               </button>
               
-              {error && <p className="text-xs text-red-500 mt-2 ml-1 flex items-center gap-1.5"><ShieldAlert size={12} /> {error}</p>}
+              {error && (
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/5 text-red-500 text-xs font-bold animate-in fade-in">
+                  <ShieldAlert size={14} />
+                  {error}
+                </div>
+              )}
             </div>
 
             <button
               type="submit"
               disabled={loading || !claimKey.trim()}
-              className="w-full h-12 rounded-xl bg-primary text-white font-bold hover:bg-primary-dark transition-colors flex items-center justify-center gap-3 disabled:opacity-50"
+              className="w-full py-4 rounded-2xl bg-primary text-white font-bold hover:bg-primary-dark transition-all flex items-center justify-center gap-3 disabled:opacity-50 shadow-lg shadow-primary/20 active:scale-[0.98]"
             >
-              {loading ? <Loader2 size={18} className="animate-spin" /> : <RotateCcw size={18} />}
-              Restore Account
+              {loading ? <Loader2 size={20} className="animate-spin" /> : <RotateCcw size={20} />}
+              Restore Identity
             </button>
           </form>
         )}
@@ -222,5 +248,3 @@ export default function RecoveryModal({ onClose }: RecoveryModalProps) {
     </div>
   );
 }
-
-import Link from 'next/link';

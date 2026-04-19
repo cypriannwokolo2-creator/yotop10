@@ -18,49 +18,51 @@ export default function TransferIdentityModal({ onClose }: TransferIdentityModal
   const [tab, setTab] = useState<Tab>('send');
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
 
-      <div className="relative bg-card border border-border rounded-2xl shadow-xl w-full max-w-md p-6">
+      <div className="relative bg-card/95 backdrop-blur-xl border border-border shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] rounded-[2rem] w-full max-w-md p-8 overflow-hidden ring-1 ring-white/10">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-muted transition-colors"
+          className="absolute top-6 right-6 p-2 rounded-full hover:bg-muted transition-all active:scale-90"
         >
-          <X size={18} className="text-muted-foreground" />
+          <X size={20} className="text-muted-foreground" />
         </button>
 
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-            <QrCode size={20} className="text-primary" />
+        <div className="flex items-center gap-4 mb-8">
+          <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center shadow-sm">
+            <QrCode size={24} className="text-primary" />
           </div>
           <div>
-            <h2 className="font-bold text-lg">Transfer Identity</h2>
-            <p className="text-xs text-muted-foreground">Move your identity between devices</p>
+            <h2 className="font-black text-xl tracking-tight">Identity Link</h2>
+            <p className="text-xs font-medium text-muted-foreground">Sync your scholar status</p>
           </div>
         </div>
 
-        <div className="flex gap-1 p-1 bg-muted rounded-xl mb-5">
+        <div className="flex gap-1 p-1 bg-muted/50 rounded-2xl mb-8 border border-border/50">
           <button
             onClick={() => setTab('send')}
             className={cn(
-              'flex-1 py-2 rounded-lg text-sm font-medium transition-colors',
-              tab === 'send' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+              'flex-1 py-2.5 rounded-xl text-sm font-bold transition-all',
+              tab === 'send' ? 'bg-card text-foreground shadow-sm ring-1 ring-black/5' : 'text-muted-foreground hover:text-foreground'
             )}
           >
-            Send from here
+            Send Link
           </button>
           <button
             onClick={() => setTab('receive')}
             className={cn(
-              'flex-1 py-2 rounded-lg text-sm font-medium transition-colors',
-              tab === 'receive' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+              'flex-1 py-2.5 rounded-xl text-sm font-bold transition-all',
+              tab === 'receive' ? 'bg-card text-foreground shadow-sm ring-1 ring-black/5' : 'text-muted-foreground hover:text-foreground'
             )}
           >
-            Receive here
+            Receive Link
           </button>
         </div>
 
-        {tab === 'send' ? <SendTab /> : <ReceiveTab />}
+        <div className="min-h-[300px] flex flex-col">
+          {tab === 'send' ? <SendTab /> : <ReceiveTab />}
+        </div>
       </div>
     </div>
   );
@@ -125,16 +127,18 @@ function SendTab() {
 
   if (status === 'idle') {
     return (
-      <div className="text-center py-4">
-        <Smartphone size={48} className="mx-auto mb-4 text-muted-foreground/40" />
-        <p className="text-sm text-muted-foreground mb-5">
-          Generate a QR code on this device. Scan it on your other device to transfer your identity.
+      <div className="text-center py-6 flex-1 flex flex-col justify-center">
+        <div className="w-20 h-20 rounded-[2rem] bg-muted/50 flex items-center justify-center mx-auto mb-6">
+          <Smartphone size={40} className="text-muted-foreground/40" />
+        </div>
+        <p className="text-sm text-muted-foreground mb-8 px-4 leading-relaxed">
+          Generate a secure link on this device. Scan it on your other device to securely transfer your identity.
         </p>
         <button
           onClick={initiate}
-          className="px-6 py-2.5 rounded-full bg-primary text-white font-semibold text-sm hover:bg-primary-dark transition-colors"
+          className="w-full py-4 rounded-2xl bg-primary text-white font-bold hover:bg-primary-dark transition-all shadow-lg shadow-primary/20 active:scale-[0.98]"
         >
-          Generate QR Code
+          Generate Link
         </button>
       </div>
     );
@@ -142,38 +146,41 @@ function SendTab() {
 
   if (status === 'loading') {
     return (
-      <div className="text-center py-8">
-        <Loader2 size={32} className="mx-auto mb-3 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground">Generating transfer session...</p>
+      <div className="text-center py-12 flex-1 flex flex-col justify-center">
+        <div className="relative w-16 h-16 mx-auto mb-6">
+          <div className="absolute inset-0 rounded-full border-4 border-primary/10"></div>
+          <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+        </div>
+        <p className="text-sm font-bold text-muted-foreground">Securing session...</p>
       </div>
     );
   }
 
   if (status === 'awaiting_approval') {
     return (
-      <div className="text-center py-4">
-        <div className="w-14 h-14 rounded-full bg-amber-50 flex items-center justify-center mx-auto mb-4">
-          <ShieldCheck size={28} className="text-amber-600" />
+      <div className="text-center py-6 flex-1 flex flex-col justify-center">
+        <div className="w-20 h-20 rounded-[2rem] bg-amber-500/10 flex items-center justify-center mx-auto mb-6">
+          <ShieldCheck size={40} className="text-amber-500" />
         </div>
-        <p className="font-semibold text-lg mb-1">Approve Transfer?</p>
-        <p className="text-sm text-muted-foreground mb-5">
-          Another device scanned your QR code and wants to receive your identity.
+        <h3 className="font-black text-xl mb-2">Authorize Link?</h3>
+        <p className="text-sm text-muted-foreground mb-8 px-2 leading-relaxed">
+          A new device is requesting access to your scholar identity. Approve only if you recognize the action.
         </p>
-        {error && <p className="text-sm text-red-500 mb-3">{error}</p>}
-        <div className="flex gap-3 justify-center">
+        {error && <p className="text-xs font-bold text-red-500 mb-4">{error}</p>}
+        <div className="flex gap-3">
           <button
             onClick={initiate}
-            className="px-5 py-2.5 rounded-full border border-border text-sm font-medium hover:bg-muted transition-colors"
+            className="flex-1 py-4 rounded-2xl bg-muted text-sm font-bold hover:bg-muted/80 transition-all active:scale-[0.98]"
           >
-            Deny
+            Reject
           </button>
           <button
             onClick={handleApprove}
             disabled={approving}
-            className="px-5 py-2.5 rounded-full bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors flex items-center gap-2"
+            className="flex-[2] py-4 rounded-2xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20 active:scale-[0.98]"
           >
-            {approving ? <Loader2 size={14} className="animate-spin" /> : null}
-            Approve Transfer
+            {approving ? <Loader2 size={16} className="animate-spin" /> : null}
+            Approve Access
           </button>
         </div>
       </div>
@@ -182,41 +189,12 @@ function SendTab() {
 
   if (status === 'confirmed') {
     return (
-      <div className="text-center py-6">
-        <div className="w-14 h-14 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-4">
-          <Check size={28} className="text-green-600" />
+      <div className="text-center py-12 flex-1 flex flex-col justify-center">
+        <div className="w-20 h-20 rounded-[2rem] bg-green-500/10 flex items-center justify-center mx-auto mb-6">
+          <CheckCircle2 size={40} className="text-green-500" />
         </div>
-        <p className="font-semibold text-lg mb-1">Transfer Complete!</p>
-        <p className="text-sm text-muted-foreground">Your identity is now active on the other device.</p>
-      </div>
-    );
-  }
-
-  if (status === 'expired') {
-    return (
-      <div className="text-center py-6">
-        <p className="font-semibold mb-2">Session Expired</p>
-        <p className="text-sm text-muted-foreground mb-4">The QR code has expired. Generate a new one.</p>
-        <button
-          onClick={initiate}
-          className="px-6 py-2.5 rounded-full bg-primary text-white font-semibold text-sm hover:bg-primary-dark transition-colors"
-        >
-          Try Again
-        </button>
-      </div>
-    );
-  }
-
-  if (status === 'error') {
-    return (
-      <div className="text-center py-6">
-        <p className="text-sm text-red-500 mb-4">{error}</p>
-        <button
-          onClick={initiate}
-          className="px-6 py-2.5 rounded-full bg-primary text-white font-semibold text-sm hover:bg-primary-dark transition-colors"
-        >
-          Retry
-        </button>
+        <h3 className="font-black text-xl mb-2">Success!</h3>
+        <p className="text-sm text-muted-foreground leading-relaxed">Your identity has been securely linked to the new device.</p>
       </div>
     );
   }
@@ -225,38 +203,41 @@ function SendTab() {
   const sessionId = session?.session_id || '';
 
   return (
-    <div className="text-center py-2">
-      <div className="inline-block p-4 bg-white rounded-2xl border border-border mb-4">
+    <div className="text-center py-2 flex-1 flex flex-col">
+      <div className="inline-block p-6 bg-white rounded-[2.5rem] shadow-xl shadow-black/5 border border-border/50 mx-auto mb-6">
         {session && (
           <QRCodeSVG
             value={session.qr_data}
-            size={200}
-            level="M"
+            size={220}
+            level="H"
             bgColor="#ffffff"
             fgColor="#171717"
+            includeMargin={false}
           />
         )}
       </div>
-      <div className="flex items-center justify-center gap-2 mb-2">
-        <Loader2 size={14} className="animate-spin text-primary" />
-        <p className="text-sm font-medium">Waiting for scan...</p>
+      
+      <div className="flex items-center justify-center gap-2 mb-6">
+        <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
+        <p className="text-sm font-bold tracking-tight">Awaiting Scan...</p>
       </div>
-      <p className="text-xs text-muted-foreground mb-3">
-        Open YoTop10 on your other device and scan this code.
+
+      <p className="text-xs text-muted-foreground mb-6 leading-relaxed">
+        Link expires in <span className="text-foreground font-bold">5 minutes</span>.
         <br />
-        Expires in 5 minutes.
+        Enter code manually if camera is unavailable.
       </p>
 
       {/* Manual fallback: show session ID */}
-      <div className="border-t border-border pt-3 mt-1">
-        <p className="text-[11px] text-muted-foreground mb-1.5">Or enter this code manually:</p>
+      <div className="mt-auto pt-6 border-t border-border/50">
+        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3">Manual Link Code</p>
         <button
           onClick={() => { navigator.clipboard.writeText(sessionId); }}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-muted text-xs font-mono tracking-wide hover:bg-muted/80 transition-colors"
+          className="w-full flex items-center justify-between px-5 py-4 rounded-2xl bg-muted/50 border border-border/50 text-xs font-mono tracking-wider hover:bg-muted transition-all group"
           title="Click to copy"
         >
-          {sessionId.slice(0, 8)}...{sessionId.slice(-4)}
-          <span className="text-[10px] text-muted-foreground">(tap to copy)</span>
+          <span className="text-foreground font-bold">{sessionId.slice(0, 8)}...{sessionId.slice(-8)}</span>
+          <span className="text-[10px] font-black uppercase tracking-widest text-primary opacity-0 group-hover:opacity-100 transition-opacity">Copy</span>
         </button>
       </div>
     </div>

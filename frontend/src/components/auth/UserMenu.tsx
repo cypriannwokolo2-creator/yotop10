@@ -2,15 +2,27 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { Key, User, QrCode, ChevronDown, Monitor, LogOut, Settings } from 'lucide-react';
+import { 
+  Key, 
+  User, 
+  QrCode, 
+  ChevronDown, 
+  Monitor, 
+  LogOut, 
+  Settings,
+  ShieldCheck,
+  Smartphone,
+  CheckCircle2
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/PublicAuthContext';
+import { motion, AnimatePresence } from 'framer-motion';
 import TransferIdentityModal from './TransferIdentityModal';
 import DeviceManager from './DeviceManager';
 import RecoveryModal from './RecoveryModal';
 
 export default function UserMenu() {
-  const { user, logout } = useAuth();
+  const { user, status, logout } = useAuth();
   const username = user?.username || 'Guest';
   const [open, setOpen] = useState(false);
   const [showTransfer, setShowTransfer] = useState(false);
@@ -35,88 +47,119 @@ export default function UserMenu() {
         {/* Trigger */}
         <button
           onClick={() => setOpen(!open)}
-          className="flex items-center gap-2 text-sm font-medium px-3 py-1.5 rounded-full border border-border hover:bg-muted transition-colors"
+          className={cn(
+            "flex items-center gap-2.5 pl-2.5 pr-3.5 py-1.5 rounded-full border border-border/60 transition-all active:scale-95 bg-background/50 backdrop-blur-sm",
+            open ? "ring-2 ring-primary/20 bg-muted/30" : "hover:bg-muted/50 hover:border-border"
+          )}
         >
-          <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-            <User size={13} className="text-primary" />
+          <div className="w-7 h-7 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shadow-inner">
+            <User size={14} className="text-primary" />
           </div>
-          <span className="max-w-[100px] truncate">{username}</span>
-          <ChevronDown size={12} className={cn('text-muted-foreground transition-transform', open && 'rotate-180')} />
+          <div className="flex flex-col items-start leading-none">
+            <span className="text-xs font-bold tracking-tight max-w-[100px] truncate">{username}</span>
+            <span className="text-[9px] font-black uppercase tracking-widest text-primary/70 mt-0.5">
+              {status === 'scholar' ? 'Scholar' : 'Guest'}
+            </span>
+          </div>
+          <ChevronDown size={14} className={cn('text-muted-foreground transition-transform duration-300 ml-1', open && 'rotate-180')} />
         </button>
 
         {/* Dropdown */}
-        {open && (
-          <div className="absolute right-0 top-full mt-2 w-56 bg-card border border-border rounded-xl shadow-lg py-1.5 z-50">
-            {/* Profile link */}
-            <Link
-              href={`/a/${username.replace(/^a_/, '')}`}
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors"
+        <AnimatePresence>
+          {open && (
+            <motion.div 
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.95 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="absolute right-0 top-full mt-2 w-64 bg-card/95 backdrop-blur-xl border border-border shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] rounded-2xl py-2 z-50 overflow-hidden ring-1 ring-white/10"
             >
-              <User size={15} className="text-muted-foreground" />
-              <span>My Profile</span>
-            </Link>
-
-            {/* Settings link */}
-            <Link
-              href="/settings"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors"
-            >
-              <Settings size={15} className="text-muted-foreground" />
-              <span>Settings</span>
-            </Link>
-
-
-            {/* Transfer Identity */}
-            <button
-              onClick={() => { setShowTransfer(true); setOpen(false); }}
-              className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors w-full text-left"
-            >
-              <QrCode size={15} className="text-muted-foreground" />
-              <div>
-                <span>Transfer Identity</span>
-                <p className="text-[11px] text-muted-foreground">Move to another device</p>
+              <div className="px-4 py-3 border-b border-border/50 bg-muted/30">
+                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Current Identity</p>
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-sm truncate">{username}</span>
+                  <CheckCircle2 size={12} className="text-primary" />
+                </div>
               </div>
-            </button>
 
-            {/* Manage Devices */}
-            <button
-              onClick={() => { setShowDevices(true); setOpen(false); }}
-              className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors w-full text-left"
-            >
-              <Monitor size={15} className="text-muted-foreground" />
-              <div>
-                <span>Active Devices</span>
-                <p className="text-[11px] text-muted-foreground">Sign out other devices</p>
+              <div className="p-1.5">
+                {/* Profile link */}
+                <Link
+                  href={`/a/${username.replace(/^a_/, '')}`}
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl hover:bg-muted transition-colors group"
+                >
+                  <User size={16} className="text-muted-foreground group-hover:text-primary transition-colors" />
+                  <span>Public Profile</span>
+                </Link>
+
+                {/* Settings link */}
+                <Link
+                  href="/settings"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl hover:bg-muted transition-colors group"
+                >
+                  <Settings size={16} className="text-muted-foreground group-hover:text-primary transition-colors" />
+                  <span>Settings</span>
+                </Link>
               </div>
-            </button>
 
+              <div className="h-px bg-border/50 mx-3 my-1" />
 
-            {/* Backup Identity */}
-            <button
-              onClick={() => { setShowRecovery(true); setOpen(false); }}
-              className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors w-full text-left border-t border-border mt-1.5 pt-3"
-            >
-              <Key size={15} className="text-primary" />
-              <div>
-                <span className="font-semibold text-primary">Backup Identity</span>
-                <p className="text-[11px] text-muted-foreground">Get your recovery key</p>
+              <div className="p-1.5">
+                {/* Transfer Identity */}
+                <button
+                  onClick={() => { setShowTransfer(true); setOpen(false); }}
+                  className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl hover:bg-muted transition-colors w-full text-left group"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-primary/5 flex items-center justify-center border border-primary/10 group-hover:bg-primary group-hover:text-white transition-all">
+                    <QrCode size={16} />
+                  </div>
+                  <div className="flex-1">
+                    <span className="block">Link New Device</span>
+                    <p className="text-[10px] text-muted-foreground group-hover:text-muted-foreground/80">Connect browser or phone</p>
+                  </div>
+                </button>
+
+                {/* Manage Devices */}
+                <button
+                  onClick={() => { setShowDevices(true); setOpen(false); }}
+                  className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl hover:bg-muted transition-colors w-full text-left group"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center border border-border/50 group-hover:bg-foreground group-hover:text-background transition-all">
+                    <Monitor size={16} />
+                  </div>
+                  <div className="flex-1">
+                    <span className="block">Active Sessions</span>
+                    <p className="text-[10px] text-muted-foreground group-hover:text-muted-foreground/80">Sign out remotely</p>
+                  </div>
+                </button>
               </div>
-            </button>
 
-            {/* Sign out this device */}
-            <button
-              onClick={() => {
-                logout();
-              }}
-              className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors w-full text-left text-red-500"
-            >
-              <LogOut size={15} />
-              <span>Sign Out</span>
-            </button>
-          </div>
-        )}
+              <div className="h-px bg-border/50 mx-3 my-1" />
+
+              <div className="p-1.5">
+                {/* Backup Identity */}
+                <button
+                  onClick={() => { setShowRecovery(true); setOpen(false); }}
+                  className="flex items-center gap-3 px-3 py-2.5 text-sm font-bold rounded-xl hover:bg-primary/10 text-primary transition-all w-full text-left group"
+                >
+                  <ShieldCheck size={18} />
+                  <span>Backup Identity</span>
+                </button>
+
+                {/* Sign out */}
+                <button
+                  onClick={() => { logout(); }}
+                  className="flex items-center gap-3 px-3 py-2.5 text-sm font-bold rounded-xl hover:bg-red-500/10 text-red-500 transition-all w-full text-left mt-1"
+                >
+                  <LogOut size={16} />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Modals */}
