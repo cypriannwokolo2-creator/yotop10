@@ -110,6 +110,7 @@ export interface Post {
   author_username: string;
   author_display_name: string;
   category: Category;
+  cover_image?: string;
   created_at: string;
 }
 
@@ -252,6 +253,37 @@ export const API = {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
+  uploadImage: async (file: File): Promise<{ url: string; relativeUrl: string }> => {
+    const formData = new FormData();
+    formData.append('image', file);
+    
+    // We don't use apiFetch here because it enforces JSON Content-Type
+    const baseUrl = getBaseUrl();
+    const url = `${baseUrl}/upload`;
+    
+    const headers: any = {};
+    const sessionToken = localStorage.getItem('yotop10_session');
+    if (sessionToken) {
+      headers['Authorization'] = `Bearer ${sessionToken}`;
+    }
+    const deviceFingerprint = localStorage.getItem('yotop10_fp');
+    if (deviceFingerprint) {
+      headers['X-Device-Fingerprint'] = deviceFingerprint;
+    }
+
+    const response = await fetch(url, {
+      method: 'POST',
+      body: formData,
+      headers
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Upload failed: ${errorText}`);
+    }
+
+    return response.json();
+  },
   getCurrentUser: () => apiFetch('/users/me'),
   updateDisplayName: (display_name: string) => 
     apiFetch('/users/me', {
@@ -303,7 +335,7 @@ export const API = {
   adminSeedQuickReplies: () => 
     apiFetch('/admin/quick-replies/seed', { method: 'POST' }),
 
-  adminEditPost: (id: string, updates: Partial<Post>) =>
+  adminEditPost: (id: string, updates: Partial<Post> & { reason?: string }) =>
     apiFetch(`/admin/posts/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(updates)

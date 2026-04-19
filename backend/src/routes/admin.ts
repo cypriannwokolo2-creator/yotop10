@@ -184,9 +184,21 @@ router.get('/posts/pending', adminAuthMiddleware, async (req: AdminAuthRequest, 
   try {
     const posts = await Post.find({ status: 'pending_review' })
       .sort({ created_at: -1 })
-      .populate('category', 'name icon slug')
+      .populate('category_id', 'name icon slug')
       .lean();
-    res.json({ posts });
+    // Map category_id to category for frontend consistency
+    const formattedPosts = posts.map(post => ({
+      ...post,
+      id: post._id,
+      category: post.category_id ? {
+        id: (post.category_id as any)._id,
+        name: (post.category_id as any).name,
+        slug: (post.category_id as any).slug,
+        icon: (post.category_id as any).icon
+      } : null
+    }));
+    
+    res.json({ posts: formattedPosts });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch pending posts' });
   }
@@ -223,9 +235,21 @@ router.get('/posts/pending/category/:id', adminAuthMiddleware, async (req: Admin
       category_id: req.params.id 
     })
       .sort({ created_at: -1 })
-      .populate('category', 'name icon slug')
+      .populate('category_id', 'name icon slug')
       .lean();
-    res.json({ posts });
+    // Map category_id to category for frontend consistency
+    const formattedPosts = posts.map(post => ({
+      ...post,
+      id: post._id,
+      category: post.category_id ? {
+        id: (post.category_id as any)._id,
+        name: (post.category_id as any).name,
+        slug: (post.category_id as any).slug,
+        icon: (post.category_id as any).icon
+      } : null
+    }));
+    
+    res.json({ posts: formattedPosts });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch category pending posts' });
   }
@@ -237,16 +261,20 @@ router.get('/posts/pending/category/:id', adminAuthMiddleware, async (req: Admin
  */
 router.patch('/posts/:id', adminAuthMiddleware, async (req: AdminAuthRequest, res: Response) => {
   try {
-    const { title, intro, items, status, category_id, min_items_required } = req.body;
+    const { title, intro, items, status, category_id, min_items_required, cover_image, reason } = req.body;
     const postId = req.params.id;
 
     // 1. Update Post Metadata
     const updateData: any = {};
     if (title !== undefined) updateData.title = title;
     if (intro !== undefined) updateData.intro = intro;
-    if (status !== undefined) updateData.status = status;
     if (category_id !== undefined) updateData.category_id = category_id;
     if (min_items_required !== undefined) updateData.min_items_required = min_items_required;
+    if (cover_image !== undefined) updateData.cover_image = cover_image;
+    
+    // Auto-approve administrative edits
+    updateData.status = 'approved';
+    updateData.published_at = new Date();
 
     const post = await Post.findByIdAndUpdate(postId, updateData, { new: true });
     if (!post) return res.status(404).json({ error: 'Post not found' });
@@ -274,10 +302,10 @@ router.patch('/posts/:id', adminAuthMiddleware, async (req: AdminAuthRequest, re
     // 3. Notify User
     await UserNotification.create({
       author_id: post.author_id,
-      type: 'info',
+      type: 'approved',
       post_title: post.title,
-      message: 'Moderators have refined your list for better platform compatibility.',
-      reason: 'Editorial Adjustment',
+      message: 'Your list is live! Moderators have refined your list for better platform compatibility.',
+      reason: reason || 'Editorial Adjustment',
     });
 
     res.json({ success: true, post });
@@ -298,7 +326,19 @@ router.get('/posts/:id', adminAuthMiddleware, async (req: AdminAuthRequest, res:
 
     const items = await ListItem.find({ post_id: post._id }).sort({ rank: 1 });
     
-    res.json({ post, items });
+    // Map category_id to category for frontend consistency
+    const formattedPost = {
+      ...post.toObject(),
+      id: post._id,
+      category: post.category_id ? {
+        id: (post.category_id as any)._id,
+        name: (post.category_id as any).name,
+        slug: (post.category_id as any).slug,
+        icon: (post.category_id as any).icon
+      } : null
+    };
+
+    res.json({ post: formattedPost, items });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch post details' });
   }
@@ -326,11 +366,23 @@ router.post('/posts/:id/approve', adminAuthMiddleware, async (req: AdminAuthRequ
         author_id: post.author_id,
         type: 'approved',
         post_title: post.title,
-        message: 'Your list has been verified and published!',
-        reason: 'Authorized by Moderator',
+        message: 'Your list is live! Your list has been verified and published.',
+        reason: reason || 'Authorized by Moderator',
       });
 
-      return res.json({ success: true, post });
+      return res.json({ 
+        success: true, 
+        post: {
+          ...post.toObject(),
+          id: post._id,
+          category: post.category_id ? {
+            id: (post.category_id as any)._id || post.category_id,
+            name: (post.category_id as any).name,
+            slug: (post.category_id as any).slug,
+            icon: (post.category_id as any).icon
+          } : null
+        } 
+      });
     } else {
       // REJECT = DELETE
       // 1. Create Notification for the author before destruction

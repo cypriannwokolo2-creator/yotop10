@@ -45,120 +45,124 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-      <div className="w-full px-6 h-16 flex items-center">
-        {/* Left: Logo */}
-        <Logo size="md" className="flex-shrink-0" />
+    <>
+      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+        <div className="w-full px-6 h-16 flex items-center">
+          {/* Left: Logo */}
+          <Logo size="md" className="flex-shrink-0" />
 
-        {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-7 flex-1 justify-center mx-8">
-          <Link href="/feed" className="nav-link text-base font-semibold text-muted-foreground px-3 py-1" data-text="Explore">
-            <span>Explore</span>
-          </Link>
-          <Link href="/trending" className="text-base font-semibold text-muted-foreground flex items-center gap-1.5 group">
-            <TrendingUp size={16} className="group-hover:text-primary transition-colors" />
-            <span className="nav-link px-1" data-text="Trending">Trending</span>
-          </Link>
-          <Link href="/categories" className="nav-link text-base font-semibold text-muted-foreground px-3 py-1" data-text="Categories">
-            <span>Categories</span>
-          </Link>
-        </nav>
-
-        {/* Right side */}
-        <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
-          {/* Create List button (authenticated only) */}
-          {user && (
-            <Link
-              href="/submit"
-              className="hidden md:flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors"
-            >
-              <Plus size={16} />
-              <span>Create List</span>
-            </Link>
-          )}
-
-          {/* Notifications (authenticated only) */}
-          {user && (
-            <NotificationBell />
-          )}
-
-          {/* Quick Actions dropdown (authenticated only) */}
-          {user && (
-            <div className="relative hidden md:block">
-              <button
-                onClick={() => setQuickActionsOpen(!quickActionsOpen)}
-                className="p-2 rounded-full hover:bg-muted transition-colors"
-              >
-                <ChevronDown size={18} className={cn('text-muted-foreground transition-transform', quickActionsOpen && 'rotate-180')} />
-              </button>
-
-              {quickActionsOpen && (
-                <div className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-xl shadow-lg py-1.5 z-50">
-                  <Link
-                    href="/bookmarks"
-                    onClick={() => setQuickActionsOpen(false)}
-                    className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors"
-                  >
-                    <Bookmark size={15} className="text-muted-foreground" />
-                    <span>Bookmarks</span>
-                  </Link>
-                  <Link
-                    href="/history"
-                    onClick={() => setQuickActionsOpen(false)}
-                    className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors"
-                  >
-                    <Clock size={15} className="text-muted-foreground" />
-                    <span>History</span>
-                  </Link>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Search icon (hidden on homepage) */}
+          {/* Desktop Nav (Hidden on homepage) */}
           {!isHomePage && (
-            <button
-              onClick={() => setSearchModalOpen(true)}
-              className="p-2 rounded-full hover:bg-muted transition-colors"
-              aria-label="Search"
-            >
-              <Search size={18} className="text-muted-foreground" />
-            </button>
+            <nav className="hidden md:flex items-center gap-7 flex-1 justify-center mx-8">
+              <Link href="/feed" className="nav-link text-base font-semibold text-muted-foreground px-3 py-1" data-text="Explore">
+                <span>Explore</span>
+              </Link>
+              <Link href="/trending" className="text-base font-semibold text-muted-foreground flex items-center gap-1.5 group">
+                <TrendingUp size={16} className="group-hover:text-primary transition-colors" />
+                <span className="nav-link px-1" data-text="Trending">Trending</span>
+              </Link>
+              <Link href="/categories" className="nav-link text-base font-semibold text-muted-foreground px-3 py-1" data-text="Categories">
+                <span>Categories</span>
+              </Link>
+            </nav>
           )}
 
-          {/* Theme toggle */}
-          <button
-            onClick={toggleTheme}
-            className="p-2 rounded-full hover:bg-muted transition-colors"
-            aria-label="Toggle theme"
-          >
-            {darkMode ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
+          {/* Right side */}
+          <div className={cn("flex items-center gap-2 flex-shrink-0 ml-auto", isHomePage && "flex-1 justify-end")}>
+            {/* Create List button (authenticated only, hidden on homepage) */}
+            {user && !isHomePage && (
+              <Link
+                href="/submit"
+                className="hidden md:flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary text-white text-sm font-semibold hover:bg-primary-dark transition-colors"
+              >
+                <Plus size={16} />
+                <span>Create List</span>
+              </Link>
+            )}
 
-          {/* User avatar (everyone) */}
-          {user ? (
-            <UserMenu username={user.username} />
-          ) : (
-            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-muted/50">
-              <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-                <User size={13} className="text-primary" />
+            {/* Notifications (authenticated only, hidden on homepage) */}
+            {user && !isHomePage && (
+              <NotificationBell />
+            )}
+
+            {/* Quick Actions dropdown (authenticated only, hidden on homepage) */}
+            {user && !isHomePage && (
+              <div className="relative hidden md:block">
+                <button
+                  onClick={() => setQuickActionsOpen(!quickActionsOpen)}
+                  className="p-2 rounded-full hover:bg-muted transition-colors"
+                >
+                  <ChevronDown size={18} className={cn('text-muted-foreground transition-transform', quickActionsOpen && 'rotate-180')} />
+                </button>
+
+                {quickActionsOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-xl shadow-lg py-1.5 z-50">
+                    <Link
+                      href="/bookmarks"
+                      onClick={() => setQuickActionsOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors"
+                    >
+                      <Bookmark size={15} className="text-muted-foreground" />
+                      <span>Bookmarks</span>
+                    </Link>
+                    <Link
+                      href="/history"
+                      onClick={() => setQuickActionsOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors"
+                    >
+                      <Clock size={15} className="text-muted-foreground" />
+                      <span>History</span>
+                    </Link>
+                  </div>
+                )}
               </div>
-              <span className="text-xs text-muted-foreground font-mono">
-                {user?.user_id ? `#${user.user_id.slice(-4)}` : 'Guest'}
-              </span>
-            </div>
-          )}
+            )}
 
-          {/* Mobile menu toggle */}
-          <button
-            onClick={() => setMobileMenuOpen(true)}
-            className="md:hidden p-2 rounded-full hover:bg-muted transition-colors"
-            aria-label="Open menu"
-          >
-            <Menu size={20} />
-          </button>
+            {/* Search icon (hidden on homepage) */}
+            {!isHomePage && (
+              <button
+                onClick={() => setSearchModalOpen(true)}
+                className="p-2 rounded-full hover:bg-muted transition-colors"
+                aria-label="Search"
+              >
+                <Search size={18} className="text-muted-foreground" />
+              </button>
+            )}
+
+            {/* Theme toggle */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-full hover:bg-muted transition-colors"
+              aria-label="Toggle theme"
+            >
+              {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+
+            {/* User avatar (everyone) */}
+            {user ? (
+              <UserMenu username={user.username} />
+            ) : (
+              <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-muted/50">
+                <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                  <User size={13} className="text-primary" />
+                </div>
+                <span className="text-xs text-muted-foreground font-mono">
+                  {user?.user_id ? `#${user.user_id.slice(-4)}` : 'Guest'}
+                </span>
+              </div>
+            )}
+
+            {/* Mobile menu toggle */}
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="md:hidden p-2.5 rounded-xl hover:bg-muted/50 border border-border/50 transition-all active:scale-95 flex items-center justify-center"
+              aria-label="Open menu"
+            >
+              <Menu size={20} strokeWidth={1.5} className="text-foreground/80" />
+            </button>
+          </div>
         </div>
-      </div>
+      </header>
 
       {/* Mobile Menu Drawer */}
       <MobileMenu isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
@@ -207,6 +211,6 @@ export default function Header() {
           </div>
         </div>
       )}
-    </header>
+    </>
   );
 }

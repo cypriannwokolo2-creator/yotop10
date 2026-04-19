@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { API, Post, Category } from '@/lib/api';
 import { Save, Loader2, ArrowLeft, Plus, Trash2, LayoutList, MessageSquareQuote } from 'lucide-react';
 import Link from 'next/link';
-import { StatusModal } from '@/components/ui';
+import { StatusModal, ImageUpload } from '@/components/ui';
 
 export default function AdminEditPostPage() {
   const router = useRouter();
@@ -17,6 +17,8 @@ export default function AdminEditPostPage() {
   const [intro, setIntro] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [minItemsRequired, setMinItemsRequired] = useState(3);
+  const [coverImage, setCoverImage] = useState('');
+  const [reason, setReason] = useState('');
   const [items, setItems] = useState<any[]>([]);
   
   const [loading, setLoading] = useState(true);
@@ -37,7 +39,8 @@ export default function AdminEditPostPage() {
         
         setTitle(postRes.post.title);
         setIntro(postRes.post.intro);
-        setCategoryId(postRes.post.category?.id || '');
+        setCategoryId(postRes.post.category?.id || postRes.post.category_id || '');
+        setCoverImage(postRes.post.cover_image || '');
         setMinItemsRequired(postRes.post.min_items_required || 3);
         setItems(postRes.items || []);
         setCategories(catsRes.categories || []);
@@ -54,7 +57,7 @@ export default function AdminEditPostPage() {
 
   const handleAddItem = () => {
     const newRank = items.length + 1;
-    setItems([...items, { rank: newRank, title: '', justification: '' }]);
+    setItems([...items, { rank: newRank, title: '', justification: '', image_url: '' }]);
   };
 
   const handleRemoveItem = (index: number) => {
@@ -93,7 +96,9 @@ export default function AdminEditPostPage() {
         intro,
         category_id: categoryId,
         min_items_required: minItemsRequired,
-        items
+        cover_image: coverImage,
+        items,
+        reason
       } as any);
       
       setModalOpen(true);
@@ -163,6 +168,31 @@ export default function AdminEditPostPage() {
             </div>
           </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8 border-t border-border/50 pt-8 mt-4">
+             <div className="md:col-span-1">
+              <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Hero Cover Image</label>
+              <ImageUpload
+                value={coverImage}
+                onChange={setCoverImage}
+                aspectRatio="video"
+                className="mt-2"
+              />
+            </div>
+            <div className="md:col-span-2 space-y-6">
+              <div className="space-y-2">
+                <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Editorial Status (One-Liner / Reason for edit)</label>
+                <input 
+                  type="text" 
+                  value={reason} 
+                  onChange={(e) => setReason(e.target.value)} 
+                  placeholder="e.g., Grammar cleanup and icon alignment..."
+                  className="w-full h-14 px-5 rounded-2xl border border-border bg-background focus:outline-none focus:ring-4 focus:ring-primary/10 font-medium"
+                />
+                <p className="text-[10px] text-muted-foreground ml-2 italic">This message is dispatched to the author upon saving.</p>
+              </div>
+            </div>
+          </div>
+
           <div className="space-y-2 mb-8">
             <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Editorial Preface (Introduction)</label>
             <textarea 
@@ -218,27 +248,38 @@ export default function AdminEditPostPage() {
                   <Trash2 size={18} />
                 </button>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Placement Name</label>
-                    <input 
-                      type="text" 
-                      required 
-                      value={item.title} 
-                      onChange={(e) => handleUpdateItem(index, 'title', e.target.value)}
-                      className="w-full h-11 px-4 rounded-xl border border-border bg-background font-bold text-sm"
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mt-4">
+                  <div className="md:col-span-3">
+                    <label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Visual Evidence</label>
+                    <ImageUpload
+                      value={item.image_url}
+                      onChange={(url) => handleUpdateItem(index, 'image_url', url)}
+                      aspectRatio="square"
+                      className="mt-1"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase text-muted-foreground ml-1 flex items-center gap-1">
-                      <MessageSquareQuote size={10} /> Editorial Justification
-                    </label>
-                    <textarea 
-                      required 
-                      value={item.justification} 
-                      onChange={(e) => handleUpdateItem(index, 'justification', e.target.value)}
-                      className="w-full p-4 rounded-xl border border-border bg-background min-h-[100px] text-sm leading-relaxed"
-                    ></textarea>
+                  <div className="md:col-span-9 space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Placement Name</label>
+                      <input 
+                        type="text" 
+                        required 
+                        value={item.title} 
+                        onChange={(e) => handleUpdateItem(index, 'title', e.target.value)}
+                        className="w-full h-11 px-4 rounded-xl border border-border bg-background font-bold text-sm shadow-sm"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase text-muted-foreground ml-1 flex items-center gap-1">
+                        <MessageSquareQuote size={10} /> Editorial Justification
+                      </label>
+                      <textarea 
+                        required 
+                        value={item.justification} 
+                        onChange={(e) => handleUpdateItem(index, 'justification', e.target.value)}
+                        className="w-full p-4 rounded-xl border border-border bg-background min-h-[100px] text-sm leading-relaxed shadow-sm"
+                      ></textarea>
+                    </div>
                   </div>
                 </div>
               </div>

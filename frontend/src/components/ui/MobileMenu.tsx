@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { X, TrendingUp, Star, Settings, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface MobileMenuProps {
   isOpen: boolean;
@@ -19,18 +20,19 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
   }, []);
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(min-width: 768px)');
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
 
+    const mediaQuery = window.matchMedia('(min-width: 768px)');
     const syncMenuStateWithViewport = () => {
-      if (mediaQuery.matches) {
-        document.body.style.overflow = '';
-        if (isOpen) onClose();
-      } else {
-        document.body.style.overflow = isOpen ? 'hidden' : '';
+      if (mediaQuery.matches && isOpen) {
+        onClose();
       }
     };
 
-    syncMenuStateWithViewport();
     mediaQuery.addEventListener('change', syncMenuStateWithViewport);
 
     return () => {
@@ -59,80 +61,89 @@ export default function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
   ];
 
   return (
-    <>
-      {/* Backdrop */}
-      <div
-        className={cn(
-          'fixed inset-0 bg-black/75 z-[60] transition-opacity md:hidden',
-          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        )}
-        onClick={onClose}
-      />
-
-      {/* Drawer */}
-      <div
-        className={cn(
-          'fixed inset-0 w-screen bg-background border-l border-border z-[70] shadow-2xl',
-          'transform transition-transform duration-300 ease-out md:hidden',
-          'flex flex-col',
-          isOpen ? 'translate-x-0' : 'translate-x-full'
-        )}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-          <span className="font-bold text-xl">Menu</span>
-          <button
+    <AnimatePresence mode="wait">
+      {isOpen && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] md:hidden"
             onClick={onClose}
-            className="p-2.5 rounded-full hover:bg-muted transition-colors"
-            aria-label="Close menu"
-          >
-            <X size={22} />
-          </button>
-        </div>
+          />
 
-        {/* Menu Items */}
-        <nav className="flex-1 py-5 px-2">
-          {menuItems.map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              onClick={onClose}
-              className="flex items-center gap-4 px-4 py-3.5 text-base font-semibold rounded-xl hover:bg-muted transition-colors"
-            >
-              <item.icon size={20} className="text-muted-foreground" />
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-
-        {/* Footer */}
-        <div className="p-5 border-t border-border space-y-5">
-          {/* Dark Mode Toggle */}
-          <button
-            onClick={toggleTheme}
-            className="flex items-center justify-between w-full py-2.5"
+          {/* Drawer */}
+          <motion.div
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+            className={cn(
+              'fixed top-0 right-0 bottom-0 w-[50vw] bg-background border-l border-border z-[110] shadow-2xl md:hidden',
+              'flex flex-col overflow-hidden'
+            )}
           >
-            <span className="text-base font-semibold">Dark Mode</span>
-            <div
-              className={cn(
-                'w-12 h-6 rounded-full transition-colors relative',
-                darkMode ? 'bg-primary' : 'bg-muted'
-              )}
-            >
-              <div
-                className={cn(
-                  'absolute top-1 w-4 h-4 rounded-full bg-white transition-transform',
-                  darkMode ? 'left-7' : 'left-1'
-                )}
-              />
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 h-16 border-b border-border">
+              <span className="font-bold text-lg">Menu</span>
+              <button
+                onClick={onClose}
+                className="p-2 rounded-full hover:bg-muted transition-colors"
+                aria-label="Close menu"
+              >
+                <X size={20} strokeWidth={2.5} />
+              </button>
             </div>
-          </button>
 
-          <p className="text-xs text-muted-foreground text-center">
-            YoTop10 v1.0.0
-          </p>
-        </div>
-      </div>
-    </>
+            {/* Menu Items */}
+            <nav className="flex-1 py-6 px-4 space-y-2">
+              {menuItems.map((item) => (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  onClick={onClose}
+                  className="flex items-center gap-4 px-4 py-4 text-base font-semibold rounded-2xl hover:bg-muted transition-all active:scale-[0.97]"
+                >
+                  <item.icon size={22} className="text-primary" />
+                  <span className="text-foreground">{item.label}</span>
+                </Link>
+              ))}
+            </nav>
+
+            {/* Footer */}
+            <div className="p-6 border-t border-border space-y-6">
+              {/* Dark Mode Toggle */}
+              <button
+                onClick={toggleTheme}
+                className="flex items-center justify-between w-full py-1"
+              >
+                <span className="text-base font-semibold">Dark Mode</span>
+                <div
+                  className={cn(
+                    'w-12 h-6 rounded-full transition-colors relative flex items-center',
+                    darkMode ? 'bg-primary' : 'bg-muted'
+                  )}
+                >
+                  <div
+                    className={cn(
+                      'absolute w-4.5 h-4.5 rounded-full bg-white shadow-sm transition-transform',
+                      darkMode ? 'translate-x-6.5' : 'translate-x-1'
+                    )}
+                  />
+                </div>
+              </button>
+
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground font-medium">
+                  YoTop10 v1.0.0
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
   );
 }
