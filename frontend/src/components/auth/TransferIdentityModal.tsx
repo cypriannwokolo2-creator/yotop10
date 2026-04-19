@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { X, QrCode, Loader2, Check, Smartphone, ShieldCheck, Camera, Keyboard } from 'lucide-react';
+import { X, QrCode, Loader2, Check, CheckCircle2, Smartphone, ShieldCheck, Camera, Keyboard } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { API, type TransferSession } from '@/lib/api';
@@ -21,10 +21,10 @@ export default function TransferIdentityModal({ onClose }: TransferIdentityModal
     <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
 
-      <div className="relative bg-card/95 backdrop-blur-xl border border-border shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] rounded-[2rem] w-full max-w-md p-8 overflow-hidden ring-1 ring-white/10">
+      <div className="relative bg-card/95 backdrop-blur-xl border border-border shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] rounded-[2rem] w-full max-w-md p-8 overflow-y-auto max-h-[calc(100dvh-2rem)] ring-1 ring-white/10 custom-scrollbar self-center">
         <button
           onClick={onClose}
-          className="absolute top-6 right-6 p-2 rounded-full hover:bg-muted transition-all active:scale-90"
+          className="absolute top-6 right-6 p-2 rounded-full hover:bg-muted transition-all active:scale-90 z-10"
         >
           <X size={20} className="text-muted-foreground" />
         </button>
