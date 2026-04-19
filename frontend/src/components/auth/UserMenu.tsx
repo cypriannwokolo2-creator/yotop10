@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { Key, User, QrCode, ChevronDown, Monitor, LogOut } from 'lucide-react';
+import { Key, User, QrCode, ChevronDown, Monitor, LogOut, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/PublicAuthContext';
 import TransferIdentityModal from './TransferIdentityModal';
@@ -55,6 +55,16 @@ export default function UserMenu() {
             >
               <User size={15} className="text-muted-foreground" />
               <span>My Profile</span>
+            </Link>
+
+            {/* Settings link */}
+            <Link
+              href="/settings"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors"
+            >
+              <Settings size={15} className="text-muted-foreground" />
+              <span>Settings</span>
             </Link>
 
 

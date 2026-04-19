@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { X, Key, Copy, Check, ShieldAlert, RotateCcw, Loader2 } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { X, Key, Copy, Check, ShieldAlert, RotateCcw, Loader2, FileUp, Info } from 'lucide-react';
 import { useAuth } from '@/context/PublicAuthContext';
+import { cn } from '@/lib/utils';
 
 interface RecoveryModalProps {
   onClose: () => void;
@@ -16,6 +17,7 @@ export default function RecoveryModal({ onClose }: RecoveryModalProps) {
   const [loading, setLoading] = useState(false);
   const [claimKey, setClaimKey] = useState('');
   const [error, setError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleGenerate = async () => {
     setLoading(true);
@@ -35,6 +37,25 @@ export default function RecoveryModal({ onClose }: RecoveryModalProps) {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      // Extract key using regex: "Key: [uuid]"
+      const match = content.match(/Key:\s*([a-f0-9-]{36})/i);
+      if (match && match[1]) {
+        setClaimKey(match[1]);
+        setError('');
+      } else {
+        setError('Could not find a valid key in that file.');
+      }
+    };
+    reader.readAsText(file);
+  };
+
   const handleClaim = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!claimKey.trim()) return;
@@ -44,7 +65,7 @@ export default function RecoveryModal({ onClose }: RecoveryModalProps) {
       const success = await claimAccount(claimKey.trim());
       if (success) {
         onClose();
-        // reload handled by context
+        window.location.reload();
       } else {
         setError('Invalid recovery key');
       }
@@ -127,6 +148,11 @@ export default function RecoveryModal({ onClose }: RecoveryModalProps) {
                 <p className="text-[11px] text-center text-muted-foreground">
                   Store this key somewhere safe (e.g., a password manager).
                 </p>
+                <div className="pt-2 text-center">
+                  <Link href="/settings" className="text-xs text-primary font-bold hover:underline" onClick={onClose}>
+                    Go to Settings for more backup options
+                  </Link>
+                </div>
               </div>
             ) : (
               <button
@@ -145,7 +171,7 @@ export default function RecoveryModal({ onClose }: RecoveryModalProps) {
               Enter your recovery key below to move your scholar identity to this device.
             </p>
             
-            <div>
+            <div className="space-y-3">
               <input
                 type="text"
                 value={claimKey}
@@ -153,7 +179,33 @@ export default function RecoveryModal({ onClose }: RecoveryModalProps) {
                 placeholder="Paste your secret key here..."
                 className="w-full h-12 px-4 rounded-xl border border-border bg-background font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
-              {error && <p className="text-xs text-red-500 mt-2 ml-1">{error}</p>}
+              
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-border" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">Or</span>
+                </div>
+              </div>
+
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileUpload} 
+                accept=".txt" 
+                className="hidden" 
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full py-3 rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/5 transition-all flex items-center justify-center gap-2 text-sm font-medium"
+              >
+                <FileUp size={16} className="text-primary" />
+                Upload Recovery File (.txt)
+              </button>
+              
+              {error && <p className="text-xs text-red-500 mt-2 ml-1 flex items-center gap-1.5"><ShieldAlert size={12} /> {error}</p>}
             </div>
 
             <button
@@ -171,7 +223,4 @@ export default function RecoveryModal({ onClose }: RecoveryModalProps) {
   );
 }
 
-// Utility
-function cn(...classes: any[]) {
-  return classes.filter(Boolean).join(' ');
-}
+import Link from 'next/link';
