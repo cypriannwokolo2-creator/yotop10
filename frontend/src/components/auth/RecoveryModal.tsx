@@ -93,7 +93,7 @@ export default function RecoveryModal({ onClose }: RecoveryModalProps) {
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={onClose} />
 
-      <div className="relative bg-card/95 backdrop-blur-xl border border-border shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] rounded-[2.5rem] w-full max-w-md p-8 overflow-y-auto max-h-[calc(100dvh-2rem)] ring-1 ring-white/10 custom-scrollbar self-center">
+      <div className="relative my-auto bg-card/95 backdrop-blur-xl border border-border shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] rounded-[2.5rem] w-full max-w-md p-8 overflow-y-auto max-h-[calc(100dvh-2rem)] ring-1 ring-white/10 custom-scrollbar">
         <button
           onClick={onClose}
           className="absolute top-6 right-6 p-2 rounded-full hover:bg-muted transition-all active:scale-90 z-10"
