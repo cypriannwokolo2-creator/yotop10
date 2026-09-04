@@ -225,7 +225,7 @@ if (typeof window !== 'undefined') {
         }).catch(() => {});
       }).catch(() => {
         const fallback = 'fp_' + Math.random().toString(36).substring(2) + Date.now().toString(36);
-        localStorage.setItem('yotop10_fp', fallback);
+        try { localStorage.setItem('yotop10_fp', fallback); } catch {}
       });
     }, 3000);
   });

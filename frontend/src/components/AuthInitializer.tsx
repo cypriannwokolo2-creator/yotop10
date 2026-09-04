@@ -9,24 +9,27 @@ export default function AuthInitializer() {
   const initialized = useAuthStore((s) => s.initialized);
 
   useEffect(() => {
-    if (initialized) return;
+    const state = useAuthStore.getState();
+    if (state.initialized && state.user) return;
 
     // Option A: backend now creates user even without fingerprint, so fetch immediately
     // Do not gate on fingerprint — run in parallel and ensure fetchUser always runs even if fingerprint fails
-    fetchUser().catch(() => {});
+    if (!state.initialized) {
+      fetchUser().catch(() => {});
+    } else if (!state.user) {
+      // Already initialized but still no user (previous 425/500) — retry immediately
+      fetchUser().catch(() => {});
+    }
 
     const initFingerprint = () => {
       getFingerprint()
         .then(() => {
-          // Refresh user after fingerprint is known (ensures X-Device-Fingerprint header on next fetch)
-          // Only refetch if still not initialized with a real user (avoid double fetch if already succeeded)
-          const state = useAuthStore.getState();
-          if (!state.user) fetchUser().catch(() => {});
+          const s = useAuthStore.getState();
+          if (!s.user) fetchUser().catch(() => {});
         })
         .catch(() => {
-          // Fingerprint blocked (private mode / AudioContext) — still ensure user is fetched
-          const state = useAuthStore.getState();
-          if (!state.user && !state.initialized) fetchUser().catch(() => {});
+          const s = useAuthStore.getState();
+          if (!s.user) fetchUser().catch(() => {});
         });
     };
 
@@ -35,6 +38,24 @@ export default function AuthInitializer() {
     } else {
       setTimeout(initFingerprint, 300);
     }
+
+    // Poll while still guest: retry on focus/visibility and every 4s (covers grace 425 race)
+    const onFocus = () => {
+      const s = useAuthStore.getState();
+      if (!s.user) fetchUser().catch(() => {});
+    };
+    const interval = setInterval(() => {
+      const s = useAuthStore.getState();
+      if (!s.user) fetchUser().catch(() => {});
+      else clearInterval(interval);
+    }, 4000);
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onFocus);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onFocus);
+      clearInterval(interval);
+    };
   }, [initialized, fetchUser]);
 
   return null;

@@ -95,15 +95,19 @@ export function DesktopSidebar() {
             </div>
           </Link>
         ) : (
-          <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-zinc-600">
-            <span className="flex items-center justify-center w-8 h-8 rounded-full bg-white/5 shrink-0">
+          <button
+            onClick={() => useAuthStore.getState().fetchUser()}
+            className="flex w-full items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 transition text-left"
+            title="Tap to retry — profile not loaded"
+          >
+            <span className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-500/20 border border-amber-500/30 shrink-0">
               <Icon name="User" size={16} />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-zinc-600">Guest</p>
-              <p className="text-3xs text-zinc-700 font-mono truncate">retrying…</p>
+              <p className="text-sm font-semibold">Tap to retry</p>
+              <p className="text-3xs text-amber-300/70 font-mono truncate">profile failed to load</p>
             </div>
-          </div>
+          </button>
         )}
 
         {/* Settings + Theme */}

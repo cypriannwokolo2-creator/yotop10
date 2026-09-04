@@ -46,17 +46,14 @@ export default function DesktopTopBarMinimal() {
               <Icon name="User" size={18} />
             </Link>
           ) : (
-            <Link
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                useAuthStore.getState().fetchUser();
-              }}
-              className="flex items-center justify-center w-9 h-9 rounded-full bg-white/5 border border-white/10 text-zinc-400 hover:text-white transition"
+            <button
+              onClick={() => useAuthStore.getState().fetchUser()}
+              className="flex items-center justify-center w-9 h-9 rounded-full bg-amber-500/20 border border-amber-500/30 text-amber-400 hover:bg-amber-500/30 transition"
               aria-label="Retry profile"
+              title="Tap to retry — profile not loaded"
             >
               <Icon name="User" size={18} />
-            </Link>
+            </button>
           )}
         </div>
       </div>
