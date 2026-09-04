@@ -29,7 +29,7 @@ export function SlideMenuPanel() {
   const cleanUsername = rawUsername.replace(/^a_/, '');
 
   const navItems = [
-    { icon: 'User' as const, label: 'Profile', href: user ? `/a/${cleanUsername}` : '/a' },
+    ...(user ? [{ icon: 'User' as const, label: 'Profile', href: `/a/${cleanUsername}` }] : []),
     { icon: 'Folder' as const, label: 'Categories', href: '/categories' },
     { icon: 'MessageCircle' as const, label: 'Argument', href: '/arguments', badge: 'Hot' },
     { icon: 'Search' as const, label: 'Explore', href: '/explore' },

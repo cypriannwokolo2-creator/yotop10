@@ -21,7 +21,30 @@ const router: Router = Router();
  */
 router.get('/me', async (req, res) => {
   if (!req.user) {
-    return res.status(404).json({ error: 'User not found' });
+    // Grace path fallback: if fingerprint is present but req.user wasn't set (race / old cookie),
+    // try to hydrate from DB before failing. Mirrors fingerprintMiddleware Branch A logic.
+    if (req.fingerprint) {
+      try {
+        const u = await User.findOne({ device_fingerprint: req.fingerprint });
+        if (u) {
+          (req as any).user = {
+            user_id: u.user_id,
+            username: u.username,
+            custom_display_name: u.custom_display_name,
+            device_fingerprint: u.device_fingerprint,
+            trust_score: u.trust_score,
+            trust_locked: u.trust_locked,
+            rate_limit_override: u.rate_limit_override,
+            is_admin: u.is_admin,
+            restricted_until: u.restricted_until || null,
+            created_at: u.created_at,
+          };
+        }
+      } catch {}
+    }
+    if (!req.user) {
+      return res.status(425).json({ error: 'User identity still initializing', retry_after: 0.5 });
+    }
   }
 
   try {

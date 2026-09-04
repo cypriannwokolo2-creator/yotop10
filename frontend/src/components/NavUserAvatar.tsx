@@ -9,9 +9,17 @@ export function NavUserAvatar() {
   const initial = user?.custom_display_name?.[0] || user?.username?.[0] || '?';
   const profileSlug = user?.custom_display_name?.replace(/^a_/, '') || user?.username?.replace(/^a_/, '') || '';
 
+  if (!profileSlug) {
+    return (
+      <span className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-white/5 text-3xs font-semibold text-zinc-400">
+        {initial.toUpperCase()}
+      </span>
+    );
+  }
+
   return (
     <Link
-      href={user ? `/a/${profileSlug}` : '/profile'}
+      href={`/a/${profileSlug}`}
       className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-white/5 text-3xs font-semibold text-zinc-400 transition hover:border-orange-500/30 hover:text-orange-400"
     >
       {user?.profile_image_url ? (

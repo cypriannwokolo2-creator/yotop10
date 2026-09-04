@@ -144,10 +144,40 @@ export const fingerprintMiddleware = async (req: Request, res: Response, next: N
       const username = `a_${userId.substring(0, 4)}_${userId.substring(4, 8)}`;
 
       // Pre-create the user record so subsequent requests find it
+      // Option A: also set req.user immediately so the *current* request succeeds (no 404)
+      let createdUser: any = null;
       try {
-        await User.create({ user_id: userId, username, device_fingerprint: newFingerprint, trust_score: 1.0, is_admin: false });
-      } catch (createErr) {
-        console.error('[Fingerprint] Failed to pre-create user during grace period:', (createErr as Error).message);
+        createdUser = await User.create({ user_id: userId, username, device_fingerprint: newFingerprint, trust_score: 1.0, is_admin: false });
+      } catch (createErr: any) {
+        if (createErr?.code === 11000) {
+          // Duplicate key race (concurrent grace requests) — fetch the winner
+          try {
+            createdUser = await User.findOne({ device_fingerprint: newFingerprint });
+            if (!createdUser) {
+              // Fallback: try by user_id (username collision edge case)
+              createdUser = await User.findOne({ user_id: userId });
+            }
+          } catch (findErr) {
+            console.error('[Fingerprint] Failed to fetch user after duplicate key:', (findErr as Error).message);
+          }
+        } else {
+          console.error('[Fingerprint] Failed to pre-create user during grace period:', (createErr as Error).message);
+        }
+      }
+
+      if (createdUser) {
+        req.user = {
+          user_id: createdUser.user_id,
+          username: createdUser.username,
+          custom_display_name: createdUser.custom_display_name,
+          device_fingerprint: createdUser.device_fingerprint,
+          trust_score: createdUser.trust_score,
+          trust_locked: createdUser.trust_locked,
+          rate_limit_override: createdUser.rate_limit_override,
+          is_admin: createdUser.is_admin,
+          restricted_until: createdUser.restricted_until || null,
+          created_at: createdUser.created_at,
+        };
       }
 
       res.cookie('device_fingerprint', newFingerprint, {

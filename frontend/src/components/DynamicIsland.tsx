@@ -34,7 +34,9 @@ export function DynamicIsland() {
     { icon: 'House' as const, label: 'Home', href: '/', isActive: pathname === '/' },
     { icon: 'Search' as const, label: 'Search', action: () => setSearchOpen(true) },
     { icon: 'MessageCircle' as const, label: 'Arguments', href: '/arguments', isActive: pathname.startsWith('/arguments') },
-    { icon: 'User' as const, label: 'Profile', href: username ? `/a/${username.replace(/^a_/, '')}` : '/a', isActive: pathname.startsWith('/a/') || pathname === '/a' },
+    ...(username
+      ? [{ icon: 'User' as const, label: 'Profile', href: `/a/${username.replace(/^a_/, '')}`, isActive: pathname.startsWith('/a/') || pathname === '/a' }]
+      : []),
   ];
 
   const isNotifsActive = pathname.startsWith('/notifications');

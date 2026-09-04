@@ -65,25 +65,37 @@ export function DesktopSidebar() {
         <hr className="border-white/5 mx-1" />
 
         {/* User section */}
-        <Link
-          href={user ? `/a/${cleanUsername}` : '/a'}
-          className="flex items-center gap-3 px-4 py-2.5 rounded-xl transition text-sm text-zinc-400 hover:text-white hover:bg-white/5"
-        >
-          {user?.profile_image_url ? (
-            <Image src={user.profile_image_url} alt="" width={32} height={32} className="w-8 h-8 rounded-full object-cover shrink-0" unoptimized />
-          ) : (
-            <span className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold text-xs shrink-0">
-              {displayName[0].toUpperCase()}
-            </span>
-          )}
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1">
-              <span className="text-sm font-semibold text-zinc-300 truncate">{displayName}</span>
-              {(user?.posts_approved ?? 0) >= 3 && <Icon name="BadgeCheck" size={12} className="text-orange-400 shrink-0" />}
+        {user ? (
+          <Link
+            href={`/a/${cleanUsername}`}
+            className="flex items-center gap-3 px-4 py-2.5 rounded-xl transition text-sm text-zinc-400 hover:text-white hover:bg-white/5"
+          >
+            {user.profile_image_url ? (
+              <Image src={user.profile_image_url} alt="" width={32} height={32} className="w-8 h-8 rounded-full object-cover shrink-0" unoptimized />
+            ) : (
+              <span className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold text-xs shrink-0">
+                {displayName[0].toUpperCase()}
+              </span>
+            )}
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1">
+                <span className="text-sm font-semibold text-zinc-300 truncate">{displayName}</span>
+                {user.posts_approved >= 3 && <Icon name="BadgeCheck" size={12} className="text-orange-400 shrink-0" />}
+              </div>
+              <p className="text-3xs text-zinc-600 font-mono truncate">@{cleanUsername}</p>
             </div>
-            <p className="text-3xs text-zinc-600 font-mono truncate">@{cleanUsername}</p>
+          </Link>
+        ) : (
+          <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-zinc-600">
+            <span className="flex items-center justify-center w-8 h-8 rounded-full bg-white/5 shrink-0">
+              <Icon name="User" size={16} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-zinc-600">Guest</p>
+              <p className="text-3xs text-zinc-700 font-mono truncate">sign in to comment</p>
+            </div>
           </div>
-        </Link>
+        )}
 
         {/* Settings + Theme */}
         <div className="flex items-center justify-between px-4 py-1">
