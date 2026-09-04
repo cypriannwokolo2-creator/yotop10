@@ -119,8 +119,11 @@ export default function UserProfileClient({ initialProfile }: { initialProfile: 
 
   return (
     <div className="mx-auto min-h-screen max-w-4xl bg-[var(--color-bg)] text-white px-6 sm:px-8 py-12 sm:py-16">
-      {/* ─── Banner ─── */}
-      <div className="h-28 sm:h-36 rounded-3xl bg-gradient-to-br from-zinc-900 via-zinc-800 to-black border border-white/5" />
+      {/* ─── Banner — tier aurora + subtle sparkline ─── */}
+      <div className="relative h-28 sm:h-36 rounded-3xl bg-gradient-to-br from-zinc-900 via-zinc-800 to-black border border-white/5 overflow-hidden">
+        <div className={`absolute inset-0 opacity-20 bg-gradient-to-r ${tier.bg} blur-2xl`} />
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }} />
+      </div>
 
       {/* ─── Profile Header ─── */}
       <div className="flex items-start gap-6 md:gap-8 -mt-12 mb-10 px-2">
@@ -179,29 +182,83 @@ export default function UserProfileClient({ initialProfile }: { initialProfile: 
         </div>
       </div>
 
-      {/* ─── Trust gauge (own profile only) ─── */}
-      {isOwn && (
-        <div className="mb-8">
-          {profile.trust_level === 'newbie' || profile.trust_level === 'ghost' ? (
-            <div className="flex h-2.5 w-full rounded-full bg-white/10 overflow-hidden">
-              <div className="bg-gradient-to-r from-orange-500 to-pink-500 transition-all" style={{ width: '100%' }} />
-            </div>
-          ) : (
-            <div className="flex h-2.5 w-full rounded-full bg-white/10 overflow-hidden">
-              <div className="bg-gradient-to-r from-orange-500 to-pink-500 transition-all duration-500" style={{ width: `${Math.min(100, Math.max(0, ((trustScore - 0.1) / 1.9) * 100))}%` }} />
+      {/* ─── Bento Layout: Left Rail (sticky) + Right Feed ─── */}
+      <div className="lg:flex lg:gap-8">
+        {/* Left rail — trust + authority (sticky on desktop) */}
+        <div className="lg:w-[320px] lg:shrink-0 lg:sticky lg:top-24 lg:self-start space-y-6 mb-8 lg:mb-0">
+          {/* Trust gauge — Spectrum Slider (own profile only) */}
+          {isOwn && (
+            <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-5 backdrop-blur-sm">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">Reputation</span>
+                <span className={`text-xs font-mono font-bold ${tier.text}`}>{trustScore.toFixed(2)} · {tier.label}</span>
+              </div>
+
+              {profile.trust_level === 'newbie' || profile.trust_level === 'ghost' ? (
+                <>
+                  <div className="relative flex h-2.5 w-full rounded-full bg-white/5 overflow-hidden border border-dashed border-white/10">
+                    <div className="bg-gradient-to-r from-orange-500/50 to-pink-500/50 opacity-50" style={{ width: '45%' }} />
+                  </div>
+                  <div className="mt-2 flex items-center justify-between text-xs">
+                    <span className="text-zinc-500">Calibration: {Math.max(0, 3 - profile.posts.length)} reviews until Neutral</span>
+                    <span className="font-mono text-zinc-400">{trustScore.toFixed(2)} / 2.00</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div
+                    className="relative flex h-2.5 w-full rounded-full bg-white/10 overflow-hidden"
+                    role="progressbar"
+                    aria-valuenow={trustScore}
+                    aria-valuemin={0.1}
+                    aria-valuemax={2.0}
+                    aria-valuetext={`${tier.label} ${trustScore.toFixed(2)}`}
+                  >
+                    {/* Segmented track: Troll | Newbie | Neutral | Scholar */}
+                    <div className="flex w-full">
+                      <div className={`flex-1 ${trustScore >= 0.1 ? 'bg-amber-500/40' : 'bg-white/5'} border-r border-black/20`} />
+                      <div className={`flex-1 ${trustScore >= 0.5 ? 'bg-zinc-500/40' : 'bg-white/5'} border-r border-black/20`} />
+                      <div className={`flex-[1.6] ${trustScore >= 1.0 ? 'bg-white/20' : 'bg-white/5'} border-r border-black/20`} />
+                      <div className={`flex-[0.4] ${trustScore >= 1.8 ? 'bg-gradient-to-r from-orange-500 to-pink-500' : 'bg-white/5'}`} />
+                    </div>
+                    {/* Progress fill overlay */}
+                    <div
+                      className="absolute inset-y-0 left-0 bg-gradient-to-r from-orange-500/20 to-pink-500/20 transition-all duration-700 ease-out"
+                      style={{ width: `${Math.min(100, Math.max(0, ((trustScore - 0.1) / 1.9) * 100))}%` }}
+                    />
+                    {/* Knob */}
+                    <div
+                      className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-white shadow-lg ring-2 ring-white/20 transition-all duration-700 ease-out"
+                      style={{ left: `calc(${Math.min(100, Math.max(0, ((trustScore - 0.1) / 1.9) * 100))}% - 6px)` }}
+                    />
+                    {/* Ticks */}
+                    <span className="absolute top-0 bottom-0 w-px bg-white/20" style={{ left: '21%' }} />
+                    <span className="absolute top-0 bottom-0 w-px bg-white/20" style={{ left: '47%' }} />
+                    <span className="absolute top-0 bottom-0 w-px bg-white/30" style={{ left: '89%' }} />
+                  </div>
+                  <div className="flex justify-between mt-2 text-[10px] font-mono text-zinc-500">
+                    <span>0.1</span>
+                    <span className={trustScore < 0.5 ? 'text-amber-400 font-bold' : ''}>Troll 0.5</span>
+                    <span className={trustScore >= 0.5 && trustScore < 1.0 ? 'text-zinc-300 font-bold' : ''}>1.0</span>
+                    <span className={trustScore >= 1.8 ? 'text-orange-400 font-bold' : ''}>Scholar 1.8</span>
+                    <span>2.0</span>
+                  </div>
+                </>
+              )}
             </div>
           )}
-          <div className="flex justify-between mt-2 text-xs text-zinc-500">
-            {profile.trust_level === 'newbie' || profile.trust_level === 'ghost' ? (
-              <span className="text-zinc-500">Building reputation — {trustScore.toFixed(2)}</span>
-            ) : (
-              <><span>Troll</span><span className="font-medium text-zinc-300">{trustScore.toFixed(2)}</span><span>Scholar</span></>
-            )}
-          </div>
-        </div>
-      )}
 
-      {/* ─── Tabs ─── */}
+          {/* SecureMyAuthority — moved from bottom to rail for own profile */}
+          {isOwn && (
+            <div className="hidden lg:block">
+              <SecureMyAuthority />
+            </div>
+          )}
+        </div>
+
+        {/* Right feed — tabs + posts/comments/stats */}
+        <div className="flex-1 min-w-0">
+          {/* ─── Tabs ─── */}
       <div className="sticky top-14 z-10 mb-8 flex border-b border-white/5 bg-[var(--color-bg)]/80 backdrop-blur-xl -mx-4 sm:-mx-6 px-4 sm:px-6" role="tablist">
         <button role="tab" aria-selected={activeTab === 'posts'} onClick={() => setActiveTab('posts')} className={`relative px-5 sm:px-6 py-3.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 ${activeTab === 'posts' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}>
           Posts ({profile.posts.length})
@@ -265,8 +322,8 @@ export default function UserProfileClient({ initialProfile }: { initialProfile: 
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-5">
-              {filteredPosts.map(post => (
-                <Link key={post.id} href={post.status !== 'approved' ? `/pending/${post.id}` : `/${post.slug}`} className="group rounded-2xl border border-white/5 bg-white/5 backdrop-blur-sm p-6 transition hover:border-orange-500/20 hover:shadow-lg hover:shadow-orange-500/5 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500">
+              {filteredPosts.map((post, idx) => (
+                <Link key={post.id} href={post.status !== 'approved' ? `/pending/${post.id}` : `/${post.slug}`} className={`group p-6 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 card-deck-enter ${idx < 2 ? 'rounded-2xl glass-slab spatial-depth border border-white/5' : 'rounded-2xl border border-white/5 bg-white/5 backdrop-blur-sm hover:border-orange-500/20 hover:shadow-lg hover:shadow-orange-500/5 hover:-translate-y-0.5'}`} style={{ animationDelay: `${idx * 40}ms` }}>
                   <div className="flex items-start gap-2 mb-3">
                     <span className={`shrink-0 rounded-md px-2 py-1 text-2xs font-bold font-mono ${
                       post.post_type === 'best_of' ? 'bg-emerald-500/10 text-emerald-400' :
@@ -395,8 +452,10 @@ export default function UserProfileClient({ initialProfile }: { initialProfile: 
         </div>
       )}
 
-      {/* ─── Secure My Authority ─── */}
-      {isOwn && <div className="mt-8"><SecureMyAuthority /></div>}
+      {/* ─── Secure My Authority — mobile only (desktop in rail) ─── */}
+      {isOwn && <div className="mt-8 lg:hidden"><SecureMyAuthority /></div>}
+        </div>
+      </div>
     </div>
   );
 }
