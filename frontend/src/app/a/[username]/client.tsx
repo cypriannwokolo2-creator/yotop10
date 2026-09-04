@@ -150,17 +150,47 @@ export default function UserProfileClient({ initialProfile }: { initialProfile: 
 
   return (
     <div className="mx-auto min-h-screen max-w-4xl bg-[var(--color-bg)] text-white px-6 sm:px-8 py-12 sm:py-16">
-      {/* ─── Hero — Ledger Strip (unique, editorial) ─── */}
-      <div className="relative h-20 rounded-2xl bg-white/[0.02] border border-white/5 overflow-hidden mb-8">
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-orange-500/20 to-transparent" />
-        <div className="absolute inset-0 flex items-center justify-between px-6 text-[10px] font-mono uppercase tracking-widest text-zinc-500">
-          <span>FILE // {toPublicSlug(profile.username)} · SINCE {new Date(profile.created_at).getFullYear()}</span>
-          <span className={`hidden sm:inline-flex items-center gap-1.5 ${tier.text}`}>
-            <span className={`h-1.5 w-1.5 rounded-full ${tier.dot}`} /> {tier.label} · {trustScore.toFixed(2)}
-          </span>
-        </div>
-        <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }} />
-      </div>
+      {/* ─── Hero — Focus Card (useful, not rehash) ─── */}
+      {(() => {
+        const topPost = [...profile.posts].sort((a, b) => (b.view_count ?? 0) - (a.view_count ?? 0))[0];
+        const catCount: Record<string, number> = {};
+        profile.posts.forEach((p) => {
+          const slug = p.category?.slug || 'uncategorized';
+          catCount[slug] = (catCount[slug] || 0) + 1;
+        });
+        const topCatSlug = Object.entries(catCount).sort((a, b) => b[1] - a[1])[0]?.[0];
+        const topCatName = profile.posts.find((p) => p.category?.slug === topCatSlug)?.category?.name || topCatSlug || 'Exploring';
+        return (
+          <div className="relative rounded-2xl bg-white/[0.02] border border-white/5 p-5 mb-8 overflow-hidden">
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 mb-1">Focus · Since {new Date(profile.created_at).getFullYear()}</p>
+                <p className="text-sm font-semibold text-white">{topCatName}</p>
+                <p className="text-xs text-zinc-500">{profile.stats.total_posts} lists · {profile.stats.total_views ?? 0} views · {profile.stats.total_comments} comments</p>
+              </div>
+              {topPost ? (
+                <div className="sm:text-right sm:max-w-[320px]">
+                  <p className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 mb-1">Top List</p>
+                  <Link href={`/${topPost.slug}`} className="text-sm font-medium text-white hover:text-orange-400 transition line-clamp-2 sm:line-clamp-1">
+                    {topPost.title}
+                  </Link>
+                  <p className="text-xs text-zinc-500">{topPost.view_count ?? 0} views · {topPost.comment_count} comments</p>
+                </div>
+              ) : (
+                <div className="sm:text-right">
+                  <p className="text-xs text-zinc-500">No lists yet</p>
+                  {isOwn && (
+                    <Link href="/new" className="text-xs text-orange-400 hover:text-orange-300">
+                      Create your first →
+                    </Link>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ─── Profile Header — inline, no overlap ─── */}
       <div className="flex items-start gap-6 md:gap-8 mb-10 px-2">
@@ -234,11 +264,19 @@ export default function UserProfileClient({ initialProfile }: { initialProfile: 
               {profile.trust_level === 'newbie' || profile.trust_level === 'ghost' ? (
                 <>
                   <div className="relative flex h-2.5 w-full rounded-full bg-white/5 overflow-hidden border border-dashed border-white/10">
-                    <div className="bg-gradient-to-r from-orange-500/50 to-pink-500/50 opacity-50" style={{ width: '45%' }} />
+                    <div className="bg-gradient-to-r from-orange-500/50 to-pink-500/50 opacity-50" style={{ width: `${Math.min(100, ((trustScore) / 1.0) * 45)}%` }} />
                   </div>
-                  <div className="mt-2 flex items-center justify-between text-xs">
-                    <span className="text-zinc-500">Calibration: {Math.max(0, 3 - profile.posts.length)} reviews until Neutral</span>
-                    <span className="font-mono text-zinc-400">{trustScore.toFixed(2)} / 2.00</span>
+                  <div className="mt-3 space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-zinc-400">Next: Neutral at 1.0</span>
+                      <span className="font-mono text-white font-bold">{trustScore.toFixed(2)} / 1.00</span>
+                    </div>
+                    <p className="text-xs text-zinc-500 leading-relaxed">
+                      {Math.max(0, 3 - profile.posts.filter((p) => p.status === 'approved').length)} more approved posts to unlock custom name & higher limits.
+                    </p>
+                    <div className="flex items-center gap-2 text-[11px] font-mono text-zinc-600">
+                      <Icon name="Zap" size={12} className="text-orange-400" /> Higher rate limits, no a_ prefix required
+                    </div>
                   </div>
                 </>
               ) : (
@@ -279,6 +317,14 @@ export default function UserProfileClient({ initialProfile }: { initialProfile: 
                     <span className={trustScore >= 0.5 && trustScore < 1.0 ? 'text-zinc-300 font-bold' : ''}>1.0</span>
                     <span className={trustScore >= 1.8 ? 'text-orange-400 font-bold' : ''}>Scholar 1.8</span>
                     <span>2.0</span>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between text-xs">
+                    <span className="text-zinc-500">
+                      {trustScore >= 1.8 ? 'Peak — maintain with approvals' : trustScore >= 1.0 ? `Scholar in ${(1.8 - trustScore).toFixed(2)}` : trustScore >= 0.5 ? `Neutral in ${(1.0 - trustScore).toFixed(2)}` : `Neutral in ${(0.5 - trustScore).toFixed(2)}`}
+                    </span>
+                    <span className="font-mono text-zinc-400">
+                      {rateLimitStatus ? `${rateLimitStatus.limits.posts.remaining}/${rateLimitStatus.limits.posts.total} posts` : '—'}
+                    </span>
                   </div>
                 </>
               )}
