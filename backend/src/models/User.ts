@@ -5,6 +5,7 @@ export interface IUser extends Document {
   user_id: string;
   username: string;
   custom_display_name?: string;
+  short_username?: string;
   device_fingerprint: string;
   trust_score: number;
   trust_version: number;
@@ -51,6 +52,11 @@ const userSchema = new Schema<IUser>(
     custom_display_name: {
       type: String,
       sparse: true,
+    },
+    short_username: {
+      type: String,
+      sparse: true,
+      index: true,
     },
     device_fingerprint: {
       type: String,
@@ -122,5 +128,6 @@ const userSchema = new Schema<IUser>(
 // Indexes for efficient queries
 userSchema.index({ updated_at: -1 });
 userSchema.index({ trust_score: 1 });
+userSchema.index({ short_username: 1 }, { unique: true, sparse: true });
 
 export const User = registerModel<IUser>('User', userSchema);
