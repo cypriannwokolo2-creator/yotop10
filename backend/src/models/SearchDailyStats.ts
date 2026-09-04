@@ -24,7 +24,7 @@ export interface ISearchDailyStats extends Document {
 
 const searchDailyStatsSchema = new Schema<ISearchDailyStats>(
   {
-    date: { type: String, required: true, unique: true, index: true },
+    date: { type: String, required: true, unique: true },
     total_searches: { type: Number, required: true },
     unique_searchers: { type: Number, required: true },
     zero_result_searches: { type: Number, required: true },

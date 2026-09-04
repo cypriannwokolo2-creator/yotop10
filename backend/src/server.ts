@@ -150,7 +150,7 @@ const startServer = async () => {
     const { runAdminMigration } = await import('./lib/adminAuth');
     const { processAiModerationQueue } = await import('./lib/aiModerationWorker');
 
-    const asyncWrap = (fn: () => void) => async () => { fn(); };
+    const asyncWrap = (fn: () => void | Promise<void>) => async () => { await fn(); };
 
     cronRegistry.register({
       name: 'spark-score',

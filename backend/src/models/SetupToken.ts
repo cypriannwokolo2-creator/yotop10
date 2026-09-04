@@ -14,7 +14,6 @@ const setupTokenSchema = new Schema<ISetupToken>(
       type: String,
       required: true,
       unique: true,
-      index: true,
     },
     expires_at: {
       type: Date,

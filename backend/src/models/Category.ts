@@ -24,7 +24,7 @@ export interface ICategory extends Document {
 const categorySchema = new Schema<ICategory>(
   {
     name: { type: String, required: true },
-    slug: { type: String, required: true, unique: true, index: true },
+    slug: { type: String, required: true, unique: true },
     description: { type: String },
     icon: { type: String },
     parent_id: { type: Schema.Types.ObjectId, ref: 'Category', index: true },

@@ -28,7 +28,7 @@ const articleSchema = new Schema<IArticle>(
     author_username: { type: String, required: true, index: true },
     author_display_name: { type: String, required: true },
     title: { type: String, required: true, index: true },
-    slug: { type: String, unique: true, index: true },
+    slug: { type: String, unique: true },
     body: { type: String, required: true },
     reading_time: { type: Number, default: 1 },
     cover_image: { type: String },

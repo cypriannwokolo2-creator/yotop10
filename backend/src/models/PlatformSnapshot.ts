@@ -14,7 +14,7 @@ export interface IPlatformSnapshot extends Document {
 
 const platformSnapshotSchema = new Schema<IPlatformSnapshot>(
   {
-    date: { type: String, required: true, unique: true, index: true },
+    date: { type: String, required: true, unique: true },
     generated_at: { type: Date, required: true },
     content: { type: Schema.Types.Mixed, default: {} },
     community: { type: Schema.Types.Mixed, default: {} },

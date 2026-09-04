@@ -13,7 +13,7 @@ export interface IHallOfFame extends Document {
 
 const hallOfFameSchema = new Schema<IHallOfFame>(
   {
-    post_id: { type: Schema.Types.ObjectId, ref: 'Post', required: true, unique: true, index: true },
+    post_id: { type: Schema.Types.ObjectId, ref: 'Post', required: true, unique: true },
     editorial_note: { type: String, default: null },
     featured_at: { type: Date, default: Date.now },
     sort_order: { type: Number, default: 0 },

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import { Anton, Monoton } from "next/font/google";
 import "./globals.css";
@@ -18,12 +18,16 @@ import { FingerprintMergeDetector } from "@/components/FingerprintMergeDialog";
 const anton = Anton({ weight: '400', subsets: ['latin'], display: 'swap', variable: '--font-display' });
 const monoton = Monoton({ weight: '400', subsets: ['latin'], display: 'swap', variable: '--font-accent' });
 
+export const viewport: Viewport = {
+  themeColor: "#05050f",
+  colorScheme: "dark",
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://yotop10.com'),
   title: "YoTop10 — Fact Mine. Debate Ground.",
   description: "The open catalog of ranked lists. Submit your list. Defend your rankings.",
   manifest: "/manifest.json",
-  themeColor: "#05050f",
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },

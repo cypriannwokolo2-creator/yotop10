@@ -24,10 +24,13 @@ const nextConfig: NextConfig = {
     INTERNAL_API_URL: process.env.INTERNAL_API_URL || 'http://backend:8000/api',
   },
   async rewrites() {
+    const backendUrl = process.env.INTERNAL_API_URL || 'http://backend:8000/api';
+    // Strip trailing /api for rewrite destination base (source already has /api)
+    const base = backendUrl.replace(/\/api\/?$/, '');
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:8000/api/:path*',
+        destination: `${base}/api/:path*`,
       },
     ];
   },

@@ -22,7 +22,6 @@ const adminUserSchema = new Schema<IAdminUser>(
       type: String,
       required: true,
       unique: true,
-      index: true,
     },
     password_hash: {
       type: String,
