@@ -12,6 +12,7 @@ import { calculateEffectivePostLimit, calculateEffectiveCommentLimit, RateLimitS
 import { getCategoryNameMap } from '../lib/categoryCache';
 import { checkAndPromoteUser } from '../lib/trustScore';
 import { redis } from '../lib/redis';
+import { toShortUsername } from '../lib/username';
 
 const router: Router = Router();
 
@@ -146,11 +147,17 @@ router.patch('/me', ...validateDisplayName as any[], async (req, res) => {
       displayName = `a_${displayName}`;
     }
 
-    // Check availability
+    // Check availability (full) and short prefix availability (Option B)
     const availability = await isUsernameAvailable(displayName, req.user.user_id);
     
     if (!availability.available) {
       return res.status(409).json({ error: 'Display name already taken' });
+    }
+
+    const shortForNew = toShortUsername(displayName);
+    const shortOwner = await User.findOne({ short_username: shortForNew, user_id: { $ne: req.user.user_id } }).select('_id').lean();
+    if (shortOwner) {
+      return res.status(409).json({ error: 'Display name short prefix already taken — choose another (first 4 chars must be unique)' });
     }
 
     const oldUsername = req.user.custom_display_name || req.user.username || null;
@@ -163,7 +170,7 @@ router.patch('/me', ...validateDisplayName as any[], async (req, res) => {
           { custom_display_name: { $exists: false }, username: oldUsername },
         ],
       },
-      { custom_display_name: displayName },
+      { custom_display_name: displayName, short_username: shortForNew },
       { new: true }
     );
 
@@ -202,19 +209,37 @@ router.get('/:username', async (req, res) => {
     console.log(`[USER PROFILE] Requested: ${username} - User from middleware: ${req.user ? req.user.username : 'NO USER'}`);
     
     // Find user by user_id (full or partial), username, or custom_display_name
+    // Option B: support short a_e3ga via short_username field
     const cleanUsername = username.replace(/^a_/, '');
+    const isShort = cleanUsername.length === 4;
     
-    console.log(`[USER PROFILE] Search variations: ${username}, ${cleanUsername}, a_${cleanUsername}`);
+    console.log(`[USER PROFILE] Search variations: ${username}, ${cleanUsername}, a_${cleanUsername} (short=${isShort})`);
     
-    const user = await User.findOne({
-      $or: [
-        { user_id: username },
-        { username },
-        { username: `a_${cleanUsername}` },
-        { custom_display_name: username },
-        { custom_display_name: `a_${cleanUsername}` }
-      ]
-    });
+    let user;
+    if (isShort) {
+      const short = `a_${cleanUsername.toLowerCase()}`;
+      user = await User.findOne({
+        $or: [
+          { short_username: short },
+          { short_username: username.toLowerCase() },
+          // Fallback for legacy users without short_username: regex on full
+          { username: { $regex: `^a_${cleanUsername}(_|$)`, $options: 'i' } },
+          { custom_display_name: { $regex: `^a_${cleanUsername}(_|$)`, $options: 'i' } }
+        ]
+      });
+    } else {
+      user = await User.findOne({
+        $or: [
+          { user_id: username },
+          { username },
+          { username: `a_${cleanUsername}` },
+          { custom_display_name: username },
+          { custom_display_name: `a_${cleanUsername}` },
+          { short_username: username.toLowerCase() },
+          { short_username: `a_${cleanUsername.toLowerCase()}` }
+        ]
+      });
+    }
 
 
     
@@ -266,7 +291,7 @@ router.get('/:username', async (req, res) => {
     const approvalRate = decidedCount > 0 ? postsApproved / decidedCount : -1;
 
     const currentUsername = user.custom_display_name || user.username;
-    const cleanCurrentUsername = currentUsername.replace(/^a_/, '');
+    const cleanCurrentUsername = toShortUsername(currentUsername).replace(/^a_/, '');
 
     // Get user comments
     const userComments = await Comment.find({ author_id: user.user_id })
