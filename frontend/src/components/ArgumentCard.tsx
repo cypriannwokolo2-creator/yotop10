@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Icon } from './icons/Icon';
 import { ArgumentBar } from './ArgumentBar';
 import { relativeTime } from '@/lib/dates';
+import { toPublicSlug } from '@/lib/username';
 import type { ArgumentPost } from '@/lib/api/types';
 
 const POST_TYPE_CONFIG: Record<string, { label: string; borderClass: string }> = {
@@ -68,7 +69,7 @@ export const ArgumentCard = memo(function ArgumentCard({ argument }: ArgumentCar
           </p>
           <div className="flex items-center gap-3">
             <span className="text-3xs font-mono text-zinc-500">
-              @{topComment.author_username}
+              @{toPublicSlug(topComment.author_username)}
             </span>
             <span className="flex items-center gap-1 text-3xs text-zinc-600">
               <Icon name="Flame" size={11} />
@@ -88,7 +89,7 @@ export const ArgumentCard = memo(function ArgumentCard({ argument }: ArgumentCar
             {(argument.author_display_name || argument.author_username || '?')[0].toUpperCase()}
           </span>
           <span className="text-xs text-zinc-500">
-            @{argument.author_username}
+            @{toPublicSlug(argument.author_username)}
           </span>
         </div>
         <div className="flex items-center gap-3 font-mono tabular-nums text-2xs text-zinc-600">

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Icon } from './icons/Icon';
 import { relativeTime } from '@/lib/dates';
+import { toPublicSlug } from '@/lib/username';
 import type { HallOfFameEntry } from '@/lib/api/types';
 
 interface HallOfFameCardProps {
@@ -123,7 +124,7 @@ export const HallOfFameCard = memo(function HallOfFameCard({
 
             {hasPost && (
               <span className="text-3xs text-zinc-500">
-                @{post.author_username}
+                @{toPublicSlug(post.author_username)}
               </span>
             )}
           </div>
@@ -214,7 +215,7 @@ export const HallOfFameCard = memo(function HallOfFameCard({
       {hasPost && (
         <div className="flex items-center gap-3 mt-2">
           <span className="text-3xs text-zinc-500">
-            @{post.author_username}
+            @{toPublicSlug(post.author_username)}
           </span>
           <span className="flex items-center gap-1 font-mono tabular-nums text-2xs text-zinc-600">
             <Icon name="MessageCircle" size={10} />

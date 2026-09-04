@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth';
 import { Icon } from './icons/Icon';
 import { CommandSearch } from './CommandSearch';
+import { toPublicSlug } from '@/lib/username';
 
 export function DynamicIsland() {
   const pathname = usePathname();
@@ -38,7 +39,7 @@ export function DynamicIsland() {
     ...(!initialized
       ? [{ icon: 'User' as const, label: 'Profile', href: '#', isActive: false, disabled: true as const }]
       : username
-        ? [{ icon: 'User' as const, label: 'Profile', href: `/a/${username.replace(/^a_/, '')}`, isActive: pathname.startsWith('/a/') || pathname === '/a' }]
+        ? [{ icon: 'User' as const, label: 'Profile', href: `/a/${toPublicSlug(username)}`, isActive: pathname.startsWith('/a/') || pathname === '/a' }]
         : []),
   ];
 

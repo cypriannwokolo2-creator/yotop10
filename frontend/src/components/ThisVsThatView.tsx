@@ -7,6 +7,7 @@ import { Icon } from './icons/Icon';
 import { BookmarkButton } from './BookmarkButton';
 import { ShareButton } from './ShareButton';
 import { relativeTime } from '@/lib/dates';
+import { toPublicSlug } from '@/lib/username';
 
 interface ListItem {
   id: string;
@@ -120,7 +121,7 @@ export function ThisVsThatView({ slug, post, items }: ThisVsThatViewProps) {
         <div className="flex flex-wrap items-center justify-between gap-3 mt-4 pt-4 border-t border-white/5">
           <span className="text-sm text-zinc-400">
             By{' '}
-            <Link href={`/a/${post.author_username.replace(/^a_/, '')}`} className="font-semibold text-orange-400 hover:text-orange-300 transition">
+            <Link href={`/a/${toPublicSlug(post.author_username)}`} className="font-semibold text-orange-400 hover:text-orange-300 transition">
               {post.author_display_name}
             </Link>
             <span className="ml-3 text-xs text-zinc-600">{post.view_count} views</span>

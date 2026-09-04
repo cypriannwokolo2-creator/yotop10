@@ -7,6 +7,7 @@ import { Icon } from '@/components/icons/Icon';
 import { formatDate } from '@/lib/dates';
 import { SafeHTML } from '@/components/SafeHTML';
 import { API } from '@/lib/api';
+import { toPublicSlug } from '@/lib/username';
 interface SearchResult {
   id: string; title: string; intro?: string; content?: string;
   slug: string; category_slug?: string; category_name?: string; post_type?: string;
@@ -421,7 +422,7 @@ export default function SearchClient() {
                       <SafeHTML html={r.highlight?.intro?.[0] || (r.intro || '').substring(0, 200)} variant="highlight" />
                     </div>
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-600">
-                      <span>By {r.author_username}</span>
+                      <span>By {toPublicSlug(r.author_username)}</span>
                       {r.category_slug && (
                         <span className="inline-flex items-center gap-1">
                           <Icon name="Folder" size={12} />
@@ -455,7 +456,7 @@ export default function SearchClient() {
                       <SafeHTML html={r.highlight?.content?.[0] || (r.content || '').substring(0, 200)} variant="highlight" />
                     </div>
                     <div className="text-xs text-zinc-600">
-                      By {r.author_username} &middot; <span suppressHydrationWarning>{formatDate(r.created_at)}</span>
+                      By {toPublicSlug(r.author_username)} &middot; <span suppressHydrationWarning>{formatDate(r.created_at)}</span>
                     </div>
                   </Link>
                 )}

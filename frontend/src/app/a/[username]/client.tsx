@@ -10,6 +10,7 @@ import { Icon } from '@/components/icons/Icon';
 import { useAuthStore } from '@/stores/auth';
 import { useRateLimitStore } from '@/stores/rateLimit';
 import { SecureMyAuthority } from '@/components/SecureMyAuthority';
+import { toPublicSlug } from '@/lib/username';
 
 interface UserProfile {
   username: string;
@@ -134,7 +135,7 @@ export default function UserProfileClient({ initialProfile }: { initialProfile: 
         {/* Info */}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-lg font-bold leading-tight truncate">{profile.username}</h1>
+            <h1 className="text-lg font-bold leading-tight truncate">{toPublicSlug(profile.username)}</h1>
             <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-2xs font-semibold capitalize border ${tier.bg} ${tier.text}`}>
               <span className={`h-1.5 w-1.5 rounded-full ${tier.dot}`} />
               {tier.label}

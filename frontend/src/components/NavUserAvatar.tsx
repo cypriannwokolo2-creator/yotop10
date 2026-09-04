@@ -3,12 +3,13 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuthStore } from '@/stores/auth';
+import { toPublicSlug } from '@/lib/username';
 
 export function NavUserAvatar() {
   const user = useAuthStore((s) => s.user);
   const initialized = useAuthStore((s) => s.initialized);
   const initial = user?.custom_display_name?.[0] || user?.username?.[0] || '?';
-  const profileSlug = user?.custom_display_name?.replace(/^a_/, '') || user?.username?.replace(/^a_/, '') || '';
+  const profileSlug = (user?.custom_display_name ? toPublicSlug(user.custom_display_name) : '') || (user?.username ? toPublicSlug(user.username) : '') || '';
 
   if (!initialized) {
     return <span className="flex h-7 w-7 rounded-full bg-white/10 animate-pulse" aria-label="Loading" />;

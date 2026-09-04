@@ -7,6 +7,7 @@ import { WORDLIST } from '@/lib/bip39Wordlist';
 import { API } from '@/lib/api';
 import { Icon } from '@/components/icons/Icon';
 import { useAuthStore } from '@/stores/auth';
+import { toPublicSlug } from '@/lib/username';
 
 export default function ClaimPage() {
   const router = useRouter();
@@ -125,7 +126,7 @@ export default function ClaimPage() {
               <button
                 onClick={() => {
                   const raw = String(recoveredUser?.custom_display_name || recoveredUser?.username || '');
-                  const clean = raw.replace(/^a_/, '');
+                  const clean = toPublicSlug(raw);
                   router.push(`/a/${clean}`);
                 }}
                 className="rounded-xl bg-gradient-to-r from-orange-500 to-pink-500 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-orange-500/25 transition hover:shadow-xl hover:shadow-orange-500/40 active:scale-[0.98]"

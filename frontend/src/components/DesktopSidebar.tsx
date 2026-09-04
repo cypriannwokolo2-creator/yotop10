@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth';
 import { Icon } from './icons/Icon';
 import { ThemeToggle } from './ThemeToggle';
+import { toPublicSlug } from '@/lib/username';
 
 const NAV_ITEMS = [
   { icon: 'Flame' as const, label: 'Home', href: '/' },
@@ -23,7 +24,7 @@ export function DesktopSidebar() {
   const initialized = useAuthStore(s => s.initialized);
   const displayName = user?.custom_display_name || user?.username || 'User';
   const rawUsername = user?.username || 'unknown';
-  const cleanUsername = rawUsername.replace(/^a_/, '');
+  const cleanUsername = toPublicSlug(rawUsername);
 
   return (
     <aside className="fixed top-0 left-0 z-50 h-full w-64 lg:w-72 bg-[var(--color-bg)]/95 backdrop-blur-2xl border-r border-white/5 flex flex-col overflow-y-auto -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-out">

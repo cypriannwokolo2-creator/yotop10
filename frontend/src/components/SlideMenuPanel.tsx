@@ -8,6 +8,7 @@ import { useAuthStore } from '@/stores/auth';
 import { useSlideMenu } from '@/stores/slideMenu';
 import { Icon } from './icons/Icon';
 import { ThemeToggle } from './ThemeToggle';
+import { toPublicSlug } from '@/lib/username';
 
 export function SlideMenuPanel() {
   const open = useSlideMenu((s) => s.open);
@@ -26,7 +27,7 @@ export function SlideMenuPanel() {
 
   const displayName = user?.custom_display_name || user?.username || 'User';
   const rawUsername = user?.username || 'unknown';
-  const cleanUsername = rawUsername.replace(/^a_/, '');
+  const cleanUsername = toPublicSlug(rawUsername);
 
   const navItems = [
     ...(user ? [{ icon: 'User' as const, label: 'Profile', href: `/a/${cleanUsername}` }] : []),

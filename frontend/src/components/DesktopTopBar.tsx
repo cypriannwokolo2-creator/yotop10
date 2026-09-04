@@ -7,13 +7,14 @@ import HeaderBells from './HeaderBells';
 import Link from 'next/link';
 import { Icon } from './icons/Icon';
 import { SlideMenuTrigger } from './SlideMenu';
+import { toPublicSlug } from '@/lib/username';
 
 export default function DesktopTopBar() {
   const router = useRouter();
   const [query, setQuery] = useState('');
   const user = useAuthStore(s => s.user);
   const initialized = useAuthStore(s => s.initialized);
-  const cleanUsername = user?.username?.replace(/^a_/, '') || '';
+  const cleanUsername = user ? toPublicSlug(user.username) : '';
 
   const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && query.trim()) {

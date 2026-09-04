@@ -4,6 +4,7 @@ import PostDetailClient from './client';
 import { API } from '@/lib/api';
 import { RESERVED_ROUTES } from '@/lib/reservedRoutes';
 import { absoluteUrl } from '@/lib/urls';
+import { toPublicSlug } from '@/lib/username';
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -98,7 +99,7 @@ export default async function PostDetailPage({ params }: PageProps) {
               "description": ((item.justification as string) || '').substring(0, 300),
             },
           })),
-          "author": { "@type": "Person", "name": post.author_display_name || post.author_username, "url": absoluteUrl(`/a/${post.author_username.replace(/^a_/, '')}`) },
+          "author": { "@type": "Person", "name": post.author_display_name || post.author_username, "url": absoluteUrl(`/a/${toPublicSlug(post.author_username)}`) },
           "datePublished": post.created_at,
           "image": post.hero_image_url || undefined,
         },

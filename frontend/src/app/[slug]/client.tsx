@@ -16,6 +16,7 @@ import { BattleView } from '@/components/BattleView';
 import { CounterListSection } from '@/components/CounterListSection';
 import { AuthorityFlipBanner } from '@/components/AuthorityFlipBanner';
 import { RESERVED_ROUTES } from '@/lib/reservedRoutes';
+import { toPublicSlug } from '@/lib/username';
 
 interface ListItem {
   id: string;
@@ -443,7 +444,7 @@ export default function PostDetailClient({
               <span className="text-sm text-zinc-400">
                 By{' '}
                 <Link
-                  href={`/a/${post.author_username.replace(/^a_/, '')}`}
+                  href={`/a/${toPublicSlug(post.author_username)}`}
                   className="font-semibold text-orange-400 hover:text-orange-300 transition"
                 >
                   {post.author_display_name}

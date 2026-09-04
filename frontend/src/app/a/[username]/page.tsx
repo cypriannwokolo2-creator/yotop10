@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { redirect, notFound } from 'next/navigation';
 import UserProfileClient from './client';
+import { toPublicSlug } from '@/lib/username';
 
 interface UserProfile {
   username: string;
@@ -48,7 +49,7 @@ export default async function UserProfileServer({ params }: PageProps) {
 
   // Strip a_ prefix to normalize URLs — prevents flash redirect
   if (username.startsWith('a_')) {
-    redirect(`/a/${username.slice(2)}`);
+    redirect(`/a/${toPublicSlug(username)}`);
   }
 
   // Forward device_fingerprint cookie so backend can identify the viewer

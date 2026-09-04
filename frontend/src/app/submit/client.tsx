@@ -6,6 +6,7 @@ import { API, PostSubmission, PostSubmissionResponse, TitleCheckResponse } from 
 import { Icon } from '@/components/icons/Icon';
 import { useAuthStore } from '@/stores/auth';
 import { toast } from '@/lib/toast';
+import { toPublicSlug } from '@/lib/username';
 const DRAFT_KEY = 'yotop10_submit_draft';
 const DEBOUNCE_MS = 500;
 const DRAFT_EXPIRY_MS = 3600000;
@@ -365,7 +366,7 @@ export default function SubmitClient({ initialType, parentSlug }: { initialType?
           </div>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             {submitted.username && (
-              <Link href={`/a/${submitted.username.replace(/^a_/, '')}`} className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-pink-500 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-orange-500/25 transition hover:shadow-xl active:scale-[0.98]">
+              <Link href={`/a/${toPublicSlug(submitted.username)}`} className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-pink-500 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-orange-500/25 transition hover:shadow-xl active:scale-[0.98]">
                 View My Profile
               </Link>
             )}

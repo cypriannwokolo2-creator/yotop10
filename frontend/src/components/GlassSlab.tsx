@@ -4,6 +4,7 @@ import { useRef, useEffect, useState } from 'react';
 import Image from 'next/image';
 import { Icon } from './icons/Icon';
 import { relativeTime } from '@/lib/dates';
+import { toPublicSlug } from '@/lib/username';
 import type { Post } from '@/lib/api/types';
 
 interface GlassSlabProps {
@@ -157,7 +158,7 @@ export function GlassSlab({ post, variant = 'compact', observe = false, rank, ac
                 variant === 'featured' ? 'text-xs text-zinc-500' : 'text-3xs text-zinc-600'
               }
             >
-              @{post.author_username}
+              @{toPublicSlug(post.author_username)}
             </span>
           </div>
           <div className="flex items-center gap-3 font-mono tabular-nums text-2xs text-zinc-600">

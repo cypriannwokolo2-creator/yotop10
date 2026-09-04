@@ -16,6 +16,8 @@ export function categoryUrl(slug: string): string {
   return absoluteUrl(`/c/${slug}`);
 }
 
+import { toPublicSlug } from './username';
+
 export function profileUrl(username: string): string {
-  return absoluteUrl(`/a/${username}`);
+  return absoluteUrl(`/a/${toPublicSlug(username)}`);
 }
