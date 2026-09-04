@@ -150,52 +150,13 @@ export default function UserProfileClient({ initialProfile }: { initialProfile: 
 
   return (
     <div className="mx-auto min-h-screen max-w-4xl bg-[var(--color-bg)] text-white px-6 sm:px-8 py-12 sm:py-16">
-      {/* ─── Hero — Focus Card (useful, not rehash) ─── */}
-      {(() => {
-        const topPost = [...profile.posts].sort((a, b) => (b.view_count ?? 0) - (a.view_count ?? 0))[0];
-        const catCount: Record<string, number> = {};
-        profile.posts.forEach((p) => {
-          const slug = p.category?.slug || 'uncategorized';
-          catCount[slug] = (catCount[slug] || 0) + 1;
-        });
-        const topCatSlug = Object.entries(catCount).sort((a, b) => b[1] - a[1])[0]?.[0];
-        const topCatName = profile.posts.find((p) => p.category?.slug === topCatSlug)?.category?.name || topCatSlug || 'Exploring';
-        return (
-          <div className="relative rounded-2xl bg-white/[0.02] border border-white/5 p-5 mb-8 overflow-hidden">
-            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <p className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 mb-1">Focus · Since {new Date(profile.created_at).getFullYear()}</p>
-                <p className="text-sm font-semibold text-white">{topCatName}</p>
-                <p className="text-xs text-zinc-500">{profile.stats.total_posts} lists · {profile.stats.total_views ?? 0} views · {profile.stats.total_comments} comments</p>
-              </div>
-              {topPost ? (
-                <div className="sm:text-right sm:max-w-[320px]">
-                  <p className="text-[10px] font-mono uppercase tracking-widest text-zinc-500 mb-1">Top List</p>
-                  <Link href={`/${topPost.slug}`} className="text-sm font-medium text-white hover:text-orange-400 transition line-clamp-2 sm:line-clamp-1">
-                    {topPost.title}
-                  </Link>
-                  <p className="text-xs text-zinc-500">{topPost.view_count ?? 0} views · {topPost.comment_count} comments</p>
-                </div>
-              ) : (
-                <div className="sm:text-right">
-                  <p className="text-xs text-zinc-500">No lists yet</p>
-                  {isOwn && (
-                    <Link href="/new" className="text-xs text-orange-400 hover:text-orange-300">
-                      Create your first →
-                    </Link>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        );
-      })()}
+      {/* ─── Banner ─── */}
+      <div className="h-28 sm:h-36 rounded-3xl bg-gradient-to-br from-zinc-900 via-zinc-800 to-black border border-white/5" />
 
-      {/* ─── Profile Header — inline, no overlap ─── */}
-      <div className="flex items-start gap-6 md:gap-8 mb-10 px-2">
-        {/* Avatar — glass slab, not overlapping */}
-        <div className={`shrink-0 rounded-2xl p-1 glass-slab spatial-depth ${tier.ring}`}>
+      {/* ─── Profile Header ─── */}
+      <div className="flex items-start gap-6 md:gap-8 -mt-12 mb-10 px-2">
+        {/* Avatar — overlapping banner */}
+        <div className={`shrink-0 rounded-full ring-4 ring-[var(--color-bg)] shadow-xl ${tier.ring} p-0.5 bg-[var(--color-bg)]`}>
           {profile.profile_image_url ? (
             <Image src={profile.profile_image_url} alt="" width={96} height={96} className="h-20 w-20 sm:h-24 sm:w-24 rounded-xl object-cover" unoptimized />
           ) : (
