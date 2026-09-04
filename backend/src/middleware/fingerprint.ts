@@ -4,6 +4,7 @@ import { UserDevice } from '../models/UserDevice';
 import crypto from 'crypto';
 import { redis } from '../lib/redis';
 import { findMatchingUser } from '../lib/fingerprintMatching';
+import { toShortUsername } from '../lib/username';
 
 declare module 'express' {
   interface Request {
@@ -66,7 +67,7 @@ export const fingerprintMiddleware = async (req: Request, res: Response, next: N
       }
 
       if (!user) {
-        const userId = crypto.randomBytes(8).toString('hex');
+        let userId = crypto.randomBytes(8).toString('hex');
 
         let matchedUserId: string | null = null;
         if (Object.keys(tier0).length > 0) {
@@ -94,9 +95,19 @@ export const fingerprintMiddleware = async (req: Request, res: Response, next: N
           console.log(`[Fingerprint] Cross-browser merge pending for user ${matchedUserId}. Token: ${mergeToken.substring(0, 8)}...`);
         }
 
-        // Create new user regardless of match (no auto-link)
-        const username = `a_${userId.substring(0, 4)}_${userId.substring(4, 8)}`;
-        user = await User.create({ user_id: userId, username, device_fingerprint: fingerprint, trust_score: 1.0, is_admin: false });
+        // Create new user regardless of match (no auto-link) — enforce short uniqueness (Option B)
+        let username = `a_${userId.substring(0, 4)}_${userId.substring(4, 8)}`;
+        let shortUsername = toShortUsername(username);
+        // If short collides, regenerate userId until unique (max 5 attempts)
+        for (let attempt = 0; attempt < 5; attempt++) {
+          const existingShort = await User.findOne({ short_username: shortUsername }).select('_id').lean();
+          if (!existingShort) break;
+          const newId = crypto.randomBytes(8).toString('hex');
+          username = `a_${newId.substring(0, 4)}_${newId.substring(4, 8)}`;
+          shortUsername = toShortUsername(username);
+          userId = newId;
+        }
+        user = await User.create({ user_id: userId, username, short_username: shortUsername, device_fingerprint: fingerprint, trust_score: 1.0, is_admin: false });
       }
 
       req.user = {
@@ -139,15 +150,24 @@ export const fingerprintMiddleware = async (req: Request, res: Response, next: N
     }
 
     if (currentCount <= MAX_GRACE_REQUESTS) {
-      const newFingerprint = generateFingerprint();
-      const userId = crypto.randomBytes(8).toString('hex');
-      const username = `a_${userId.substring(0, 4)}_${userId.substring(4, 8)}`;
+      let newFingerprint = generateFingerprint();
+      let userId = crypto.randomBytes(8).toString('hex');
+      let username = `a_${userId.substring(0, 4)}_${userId.substring(4, 8)}`;
+      let shortUsername = toShortUsername(username);
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const existingShort = await User.findOne({ short_username: shortUsername }).select('_id').lean();
+        if (!existingShort) break;
+        const newId = crypto.randomBytes(8).toString('hex');
+        username = `a_${newId.substring(0, 4)}_${newId.substring(4, 8)}`;
+        shortUsername = toShortUsername(username);
+        userId = newId;
+      }
 
       // Pre-create the user record so subsequent requests find it
       // Option A: also set req.user immediately so the *current* request succeeds (no 404)
       let createdUser: any = null;
       try {
-        createdUser = await User.create({ user_id: userId, username, device_fingerprint: newFingerprint, trust_score: 1.0, is_admin: false });
+        createdUser = await User.create({ user_id: userId, username, short_username: shortUsername, device_fingerprint: newFingerprint, trust_score: 1.0, is_admin: false });
       } catch (createErr: any) {
         if (createErr?.code === 11000) {
           // Duplicate key race (concurrent grace requests) — fetch the winner
