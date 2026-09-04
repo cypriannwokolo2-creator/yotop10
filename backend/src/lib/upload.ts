@@ -4,13 +4,18 @@ import crypto from 'crypto';
 import sharp from 'sharp';
 import fs from 'fs/promises';
 
-const UPLOAD_DIR = path.resolve(process.cwd(), 'uploads');
+const UPLOAD_DIR = path.resolve(__dirname, '../../uploads');
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const ALLOWED_MIMES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
 
+// Ensure upload dir exists on module load (best-effort)
+fs.mkdir(UPLOAD_DIR, { recursive: true }).catch(() => {});
+
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {
-    cb(null, UPLOAD_DIR);
+    fs.mkdir(UPLOAD_DIR, { recursive: true })
+      .then(() => cb(null, UPLOAD_DIR))
+      .catch((err) => cb(err as Error, UPLOAD_DIR));
   },
   filename: (_req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase() || '.jpg';

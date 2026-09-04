@@ -13,6 +13,8 @@ import { connectRedis, disconnectRedis } from './lib/redis';
 import { es } from './lib/elasticsearch';
 import { routes } from './routes';
 import path from 'path';
+import fs from 'fs/promises';
+import multer from 'multer';
 
 dotenv.config();
 
@@ -54,7 +56,10 @@ app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads')));
+// Ensure uploads directory exists (fixes ENOENT in dev where cwd is /app/backend)
+const UPLOAD_DIR = path.resolve(__dirname, '../uploads');
+fs.mkdir(UPLOAD_DIR, { recursive: true }).catch(() => {});
+app.use('/uploads', express.static(UPLOAD_DIR));
 
 import { fingerprintMiddleware } from './middleware/fingerprint';
 import fingerprintMergeRouter from './routes/fingerprintMerge';
@@ -101,7 +106,14 @@ for (const route of routes) {
 
 console.log('\nAll routes mounted successfully\n');
 
-app.use((err: Error, _req: any, res: any, _next: any) => {
+app.use((err: any, _req: any, res: any, _next: any) => {
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ error: 'File too large. Max 10MB' });
+    return res.status(400).json({ error: err.message });
+  }
+  if (err?.message?.includes('File type')) {
+    return res.status(400).json({ error: err.message });
+  }
   console.error(err.stack);
   res.status(500).json({ error: 'Something went wrong!' });
 });

@@ -59,6 +59,11 @@ export async function apiFetch<T>(
   }
 
   if (response.status === 425) {
+    // Do not retry FormData (upload) — body stream may be consumed, and grace retry would create churn
+    if (isFormData) {
+      const t = await response.text().catch(() => '');
+      throw new Error(`API Error: 425 Too Early - ${t}`);
+    }
     if (retryCount >= MAX_RETRIES) {
       throw new Error(`API Error: 425 Too Early - Max retries (${MAX_RETRIES}) exceeded`);
     }

@@ -15,6 +15,8 @@ COPY frontend/postcss.config.mjs ./frontend/postcss.config.mjs
 COPY frontend/tsconfig.json ./frontend/tsconfig.json
 COPY frontend/next.config.ts ./frontend/next.config.ts
 
+RUN mkdir -p /app/uploads /app/backend/uploads && chown -R node:node /app/uploads /app/backend/uploads 2>/dev/null || mkdir -p /app/uploads /app/backend/uploads
+
 COPY scripts/dev-* /app/scripts/
 COPY ecosystem.config.dev.json /app/
 

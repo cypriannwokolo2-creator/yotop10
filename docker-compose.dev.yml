@@ -11,9 +11,16 @@ services:
       - NODE_ENV=development
       - CORS_ORIGINS=http://localhost:3100
       - MONGODB_URI=mongodb://mongodb:27017/yotop10
+      - MONGO_HOST=mongodb
+      - MONGO_PORT=27017
+      - MONGO_DATABASE=yotop10
+      - MONGO_USERNAME=yotop10_admin
+      - MONGO_PASSWORD=${MONGO_PASSWORD}
       - REDIS_URL=redis://redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
       - ELASTICSEARCH_URL=http://elasticsearch:9200
-      - JWT_SECRET=dev-jwt-secret-local-only
+      - ES_PASSWORD=${ES_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
       - INTERNAL_API_URL=http://localhost:8000/api
     volumes:
       - ./backend/src:/app/backend/src
@@ -23,9 +30,12 @@ services:
       - ./frontend/tsconfig.json:/app/frontend/tsconfig.json
       - ./frontend/next.config.ts:/app/frontend/next.config.ts
       - ./frontend/postcss.config.mjs:/app/frontend/postcss.config.mjs
+      - ./backend/uploads:/app/backend/uploads
+      - ./backend/uploads:/app/uploads
       - next_cache:/app/frontend/.next/cache
     networks:
-      - yotop10_net
+      - yotop10_frontend_net
+      - yotop10_backend_net
     extra_hosts:
       - "yotop10.fun:host-gateway"
     depends_on:
@@ -40,6 +50,9 @@ volumes:
   next_cache:
 
 networks:
-  yotop10_net:
+  yotop10_frontend_net:
     external: true
-    name: yotop10_yotop10_net
+    name: yotop10_frontend_net
+  yotop10_backend_net:
+    external: true
+    name: yotop10_backend_net

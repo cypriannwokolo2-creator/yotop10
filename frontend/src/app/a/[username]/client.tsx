@@ -97,13 +97,44 @@ export default function UserProfileClient({ initialProfile }: { initialProfile: 
   }, [activeTab, fetchRateStatus]);
 
   const handleProfileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]; if (!file) return;
-    setUploadingImage(true); setImageError(null);
+    const file = e.target.files?.[0];
+    const input = e.target as HTMLInputElement;
+    if (!file) return;
+    // Client-side validation before network
+    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowed.includes(file.type)) {
+      setImageError('Use JPEG, PNG, or WebP (max 10MB)');
+      input.value = '';
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setImageError('File too large. Max 10MB');
+      input.value = '';
+      return;
+    }
+    setUploadingImage(true);
+    setImageError(null);
     try {
-      const uploadRes = await API.uploadProfileImage(file) as { success: boolean; url: string };
-      await API.updateProfileImage(uploadRes.url); await fetchAuthUser();
-      setProfile(p => p ? { ...p, profile_image_url: uploadRes.url } : p);
-    } catch { setImageError('Upload failed.'); } finally { setUploadingImage(false); }
+      const uploadRes = (await API.uploadProfileImage(file)) as { success: boolean; url: string };
+      if (!uploadRes?.url) throw new Error('Upload failed: no url');
+      try {
+        await API.updateProfileImage(uploadRes.url);
+      } catch (patchErr: any) {
+        setImageError(patchErr?.message?.includes('404') ? 'Profile not found, retrying...' : 'Save failed');
+        throw patchErr;
+      }
+      await fetchAuthUser();
+      setProfile((p) => (p ? { ...p, profile_image_url: uploadRes.url } : p));
+    } catch (err: any) {
+      const msg = err?.message || '';
+      if (msg.includes('413') || msg.includes('too large')) setImageError('File too large. Max 10MB');
+      else if (msg.includes('400') || msg.includes('File type')) setImageError('Use JPEG, PNG, or WebP');
+      else if (msg.includes('425') || msg.includes('retry')) setImageError('Identity initializing, retrying...');
+      else setImageError('Upload failed.');
+    } finally {
+      setUploadingImage(false);
+      input.value = '';
+    }
   };
 
   const initials = (profile.username[0] || '?').toUpperCase();
@@ -119,20 +150,26 @@ export default function UserProfileClient({ initialProfile }: { initialProfile: 
 
   return (
     <div className="mx-auto min-h-screen max-w-4xl bg-[var(--color-bg)] text-white px-6 sm:px-8 py-12 sm:py-16">
-      {/* ─── Banner — tier aurora + subtle sparkline ─── */}
-      <div className="relative h-28 sm:h-36 rounded-3xl bg-gradient-to-br from-zinc-900 via-zinc-800 to-black border border-white/5 overflow-hidden">
-        <div className={`absolute inset-0 opacity-20 bg-gradient-to-r ${tier.bg} blur-2xl`} />
-        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }} />
+      {/* ─── Hero — Ledger Strip (unique, editorial) ─── */}
+      <div className="relative h-20 rounded-2xl bg-white/[0.02] border border-white/5 overflow-hidden mb-8">
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-orange-500/20 to-transparent" />
+        <div className="absolute inset-0 flex items-center justify-between px-6 text-[10px] font-mono uppercase tracking-widest text-zinc-500">
+          <span>FILE // {toPublicSlug(profile.username)} · SINCE {new Date(profile.created_at).getFullYear()}</span>
+          <span className={`hidden sm:inline-flex items-center gap-1.5 ${tier.text}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${tier.dot}`} /> {tier.label} · {trustScore.toFixed(2)}
+          </span>
+        </div>
+        <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }} />
       </div>
 
-      {/* ─── Profile Header ─── */}
-      <div className="flex items-start gap-6 md:gap-8 -mt-12 mb-10 px-2">
-        {/* Avatar — overlapping banner */}
-        <div className={`shrink-0 rounded-full ring-4 ring-[var(--color-bg)] shadow-xl ${tier.ring} p-0.5 bg-[var(--color-bg)]`}>
+      {/* ─── Profile Header — inline, no overlap ─── */}
+      <div className="flex items-start gap-6 md:gap-8 mb-10 px-2">
+        {/* Avatar — glass slab, not overlapping */}
+        <div className={`shrink-0 rounded-2xl p-1 glass-slab spatial-depth ${tier.ring}`}>
           {profile.profile_image_url ? (
-            <Image src={profile.profile_image_url} alt="" width={96} height={96} className="h-20 w-20 sm:h-24 sm:w-24 rounded-full object-cover" unoptimized />
+            <Image src={profile.profile_image_url} alt="" width={96} height={96} className="h-20 w-20 sm:h-24 sm:w-24 rounded-xl object-cover" unoptimized />
           ) : (
-            <div className="flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center rounded-full bg-gradient-to-br from-orange-500/20 to-red-600/20 text-2xl font-bold text-zinc-400">
+            <div className="flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center rounded-xl bg-gradient-to-br from-zinc-800 to-zinc-900 text-2xl font-bold text-zinc-400">
               {initials}
             </div>
           )}
