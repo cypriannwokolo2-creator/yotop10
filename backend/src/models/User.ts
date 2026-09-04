@@ -56,7 +56,6 @@ const userSchema = new Schema<IUser>(
     short_username: {
       type: String,
       sparse: true,
-      index: true,
     },
     device_fingerprint: {
       type: String,
@@ -128,6 +127,6 @@ const userSchema = new Schema<IUser>(
 // Indexes for efficient queries
 userSchema.index({ updated_at: -1 });
 userSchema.index({ trust_score: 1 });
-userSchema.index({ short_username: 1 }, { unique: true, sparse: true });
+userSchema.index({ short_username: 1 }, { sparse: true });
 
 export const User = registerModel<IUser>('User', userSchema);
