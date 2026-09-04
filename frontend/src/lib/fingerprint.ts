@@ -160,7 +160,7 @@ const collectAllSignals = async (): Promise<FingerprintData> => {
       canvasPixelRatio: window.devicePixelRatio,
       touchSupport: navigator.maxTouchPoints || 0,
       webglShaderPrecision: webglInfo.shaderPrecision,
-      audioSampleRate: new AudioContext().sampleRate,
+      audioSampleRate: (() => { try { return new (window.AudioContext || (window as any).webkitAudioContext)().sampleRate; } catch { return 0; } })(),
       colorDepth: window.screen.colorDepth,
       hardwareConcurrency: navigator.hardwareConcurrency || 0,
       localStorageAvailable: typeof localStorage !== 'undefined',

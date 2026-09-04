@@ -11,14 +11,29 @@ export default function AuthInitializer() {
   useEffect(() => {
     if (initialized) return;
 
-    const init = () => {
-      getFingerprint().then(() => fetchUser());
+    // Option A: backend now creates user even without fingerprint, so fetch immediately
+    // Do not gate on fingerprint — run in parallel and ensure fetchUser always runs even if fingerprint fails
+    fetchUser().catch(() => {});
+
+    const initFingerprint = () => {
+      getFingerprint()
+        .then(() => {
+          // Refresh user after fingerprint is known (ensures X-Device-Fingerprint header on next fetch)
+          // Only refetch if still not initialized with a real user (avoid double fetch if already succeeded)
+          const state = useAuthStore.getState();
+          if (!state.user) fetchUser().catch(() => {});
+        })
+        .catch(() => {
+          // Fingerprint blocked (private mode / AudioContext) — still ensure user is fetched
+          const state = useAuthStore.getState();
+          if (!state.user && !state.initialized) fetchUser().catch(() => {});
+        });
     };
 
     if (typeof requestIdleCallback !== 'undefined') {
-      requestIdleCallback(init, { timeout: 2000 });
+      requestIdleCallback(initFingerprint, { timeout: 2000 });
     } else {
-      setTimeout(init, 300);
+      setTimeout(initFingerprint, 300);
     }
   }, [initialized, fetchUser]);
 

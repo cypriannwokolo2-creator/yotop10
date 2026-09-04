@@ -12,6 +12,7 @@ export function DynamicIsland() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const user = useAuthStore((s) => s.user);
+  const initialized = useAuthStore((s) => s.initialized);
 
   useEffect(() => {
     const fetchCount = async () => {
@@ -34,9 +35,11 @@ export function DynamicIsland() {
     { icon: 'House' as const, label: 'Home', href: '/', isActive: pathname === '/' },
     { icon: 'Search' as const, label: 'Search', action: () => setSearchOpen(true) },
     { icon: 'MessageCircle' as const, label: 'Arguments', href: '/arguments', isActive: pathname.startsWith('/arguments') },
-    ...(username
-      ? [{ icon: 'User' as const, label: 'Profile', href: `/a/${username.replace(/^a_/, '')}`, isActive: pathname.startsWith('/a/') || pathname === '/a' }]
-      : []),
+    ...(!initialized
+      ? [{ icon: 'User' as const, label: 'Profile', href: '#', isActive: false, disabled: true as const }]
+      : username
+        ? [{ icon: 'User' as const, label: 'Profile', href: `/a/${username.replace(/^a_/, '')}`, isActive: pathname.startsWith('/a/') || pathname === '/a' }]
+        : []),
   ];
 
   const isNotifsActive = pathname.startsWith('/notifications');
@@ -46,14 +49,17 @@ export function DynamicIsland() {
       <nav
         className="fixed bottom-0 left-0 right-0 z-50 hide-desktop items-center justify-around px-4 h-[90px] bg-[var(--color-bg)] border-t border-white/10"
       >
-        {tabs.map((tab) => (
+        {tabs.map((tab: any) => (
           <button
             key={tab.label}
-            onClick={() => (tab.action ? tab.action() : router.push(tab.href!))}
-            className={`transition ${
-              tab.isActive ? 'text-orange-400' : 'text-white'
-            }`}
+            onClick={() => {
+              if (tab.disabled) return;
+              if (tab.action) tab.action();
+              else if (tab.href && tab.href !== '#') router.push(tab.href);
+            }}
+            className={`transition ${tab.disabled ? 'text-white/30 animate-pulse' : tab.isActive ? 'text-orange-400' : 'text-white'}`}
             aria-label={tab.label}
+            disabled={!!tab.disabled}
           >
             <Icon name={tab.icon} size={24} />
           </button>

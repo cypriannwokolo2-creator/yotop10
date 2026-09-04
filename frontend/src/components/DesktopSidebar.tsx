@@ -20,6 +20,7 @@ const NAV_ITEMS = [
 export function DesktopSidebar() {
   const pathname = usePathname();
   const user = useAuthStore(s => s.user);
+  const initialized = useAuthStore(s => s.initialized);
   const displayName = user?.custom_display_name || user?.username || 'User';
   const rawUsername = user?.username || 'unknown';
   const cleanUsername = rawUsername.replace(/^a_/, '');
@@ -65,7 +66,15 @@ export function DesktopSidebar() {
         <hr className="border-white/5 mx-1" />
 
         {/* User section */}
-        {user ? (
+        {!initialized ? (
+          <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl animate-pulse">
+            <span className="w-8 h-8 rounded-full bg-white/10 shrink-0" />
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <span className="block h-3 w-20 rounded bg-white/10" />
+              <span className="block h-2 w-16 rounded bg-white/5" />
+            </div>
+          </div>
+        ) : user ? (
           <Link
             href={`/a/${cleanUsername}`}
             className="flex items-center gap-3 px-4 py-2.5 rounded-xl transition text-sm text-zinc-400 hover:text-white hover:bg-white/5"
@@ -92,7 +101,7 @@ export function DesktopSidebar() {
             </span>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-zinc-600">Guest</p>
-              <p className="text-3xs text-zinc-700 font-mono truncate">sign in to comment</p>
+              <p className="text-3xs text-zinc-700 font-mono truncate">retrying…</p>
             </div>
           </div>
         )}

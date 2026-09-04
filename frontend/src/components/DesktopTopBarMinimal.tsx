@@ -11,6 +11,7 @@ export default function DesktopTopBarMinimal() {
   const router = useRouter();
   const [query, setQuery] = useState('');
   const user = useAuthStore(s => s.user);
+  const initialized = useAuthStore(s => s.initialized);
   const cleanUsername = user?.username?.replace(/^a_/, '') || '';
 
   const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -34,7 +35,9 @@ export default function DesktopTopBarMinimal() {
         </div>
         <div className="flex items-center gap-3 ml-3 shrink-0">
           <HeaderBells />
-          {cleanUsername ? (
+          {!initialized ? (
+            <span className="flex items-center justify-center w-9 h-9 rounded-full bg-white/10 animate-pulse" aria-label="Loading profile" />
+          ) : cleanUsername ? (
             <Link
               href={`/a/${cleanUsername}`}
               className="flex items-center justify-center w-9 h-9 rounded-full bg-white/5 border border-white/10 text-zinc-400 hover:text-white hover:bg-white/10 transition"
@@ -43,9 +46,17 @@ export default function DesktopTopBarMinimal() {
               <Icon name="User" size={18} />
             </Link>
           ) : (
-            <span className="flex items-center justify-center w-9 h-9 rounded-full bg-white/5 border border-white/10 text-zinc-600" aria-label="Profile loading">
+            <Link
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                useAuthStore.getState().fetchUser();
+              }}
+              className="flex items-center justify-center w-9 h-9 rounded-full bg-white/5 border border-white/10 text-zinc-400 hover:text-white transition"
+              aria-label="Retry profile"
+            >
               <Icon name="User" size={18} />
-            </span>
+            </Link>
           )}
         </div>
       </div>
