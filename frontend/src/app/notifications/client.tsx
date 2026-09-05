@@ -72,8 +72,7 @@ export default function NotificationsClient() {
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)] max-w-[700px] mx-auto px-3 sm:px-5 py-5">
-      <div className="flex items-center justify-between mb-5">
-        <h1 className="text-xl font-bold flex items-center gap-2 text-white"><Icon name="Bell" size={20} /> All Notifications</h1>
+      <div className="flex items-center justify-end mb-5">
         {notifs.some(n => !n.read) && (
           <button
             onClick={async () => {
