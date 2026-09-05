@@ -306,8 +306,8 @@ export default function ExploreClient({ initialPosts, initialHasMore }: ExploreC
   const filteredPosts = tab === 'all'
     ? posts
     : posts.filter((p) => {
-        if (tab === 'list') return ['top_list', 'best_of', 'worst_of'].includes(p.post_type);
-        if (tab === 'vs') return ['this_vs_that', 'counter_list'].includes(p.post_type);
+        if (tab === 'list') return ['top_list', 'best_of', 'worst_of', 'counter_list', 'hidden_gems'].includes(p.post_type);
+        if (tab === 'vs') return ['this_vs_that', 'who_is_better'].includes(p.post_type);
         return p.post_type === POST_TYPE_MAP[tab];
       });
 
