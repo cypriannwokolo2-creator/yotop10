@@ -13,6 +13,16 @@ router.get('/', async (req: any, res: any) => {
   try {
     const limit = Math.min(50, Math.max(5, parseInt(req.query.limit as string) || 20));
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const typeFilter = (req.query.type as string) || null;
+
+    // Map frontend filter tabs to actual post_types
+    const TYPE_MAP: Record<string, string[]> = {
+      list: ['top_list', 'best_of', 'worst_of', 'counter_list', 'hidden_gems'],
+      vs: ['this_vs_that', 'who_is_better'],
+      article: ['article'],
+      fact: ['fact_drop'],
+    };
+    const allowedTypes = typeFilter ? (TYPE_MAP[typeFilter] || null) : null;
 
     const categoryNameMap = await getCategoryNameMap();
     const catName = (slug: string) => categoryNameMap.get(slug) || slug;
@@ -108,6 +118,35 @@ router.get('/', async (req: any, res: any) => {
     }
 
     scores.sort((a, b) => b.score - a.score);
+
+    // If a type filter is active, skip diversity algorithm and just paginate filtered results
+    if (allowedTypes) {
+      const filtered = scores.filter(s => allowedTypes.includes(s.post_type));
+      const totalPages = Math.max(1, Math.ceil(filtered.length / limit));
+      const start = (page - 1) * limit;
+      const paginated = filtered.slice(start, start + limit);
+
+      return res.json({
+        posts: paginated.map((s) => ({
+          id: s.post_id,
+          slug: s.slug,
+          title: s.title,
+          post_type: s.post_type,
+          category_slug: s.category_slug,
+          category_name: catName(s.category_slug),
+          author_username: s.author_username,
+          author_display_name: s.author_display_name,
+          comment_count: s.comment_count,
+          view_count: s.view_count,
+          format: s.format,
+          hero_image_url: s.hero_image_url,
+          topItems: s.topItems,
+          explore_score: s.score,
+          created_at: s.created_at,
+        })),
+        pagination: { page, limit, total: filtered.length, totalPages },
+      });
+    }
 
     // ── DIVERSITY ALGORITHM ──
     // Group by type, sorted by score within each group

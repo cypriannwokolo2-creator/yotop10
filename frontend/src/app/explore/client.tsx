@@ -303,18 +303,10 @@ export default function ExploreClient({ initialPosts, initialHasMore }: ExploreC
   const [totalPages, setTotalPages] = useState(initialHasMore ? 2 : 1);
   const [loading, setLoading] = useState(false);
 
-  const filteredPosts = tab === 'all'
-    ? posts
-    : posts.filter((p) => {
-        if (tab === 'list') return ['top_list', 'best_of', 'worst_of', 'counter_list', 'hidden_gems'].includes(p.post_type);
-        if (tab === 'vs') return ['this_vs_that', 'who_is_better'].includes(p.post_type);
-        return p.post_type === POST_TYPE_MAP[tab];
-      });
-
-  const fetchPage = useCallback(async (pageNum: number) => {
+  const fetchPage = useCallback(async (pageNum: number, type?: string) => {
     setLoading(true);
     try {
-      const data = await API.getExplore(pageNum, 10);
+      const data = await API.getExplore(pageNum, 10, type && type !== 'all' ? type : undefined);
       setPosts(data.posts || []);
       setPage(pageNum);
       setTotalPages(data.pagination?.totalPages || 1);
@@ -325,9 +317,14 @@ export default function ExploreClient({ initialPosts, initialHasMore }: ExploreC
     }
   }, []);
 
+  const handleTabChange = (newTab: TabValue) => {
+    setTab(newTab);
+    fetchPage(1, newTab);
+  };
+
   const goToPage = (p: number) => {
     if (p < 1 || p > totalPages || loading) return;
-    fetchPage(p);
+    fetchPage(p, tab);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -345,7 +342,7 @@ export default function ExploreClient({ initialPosts, initialHasMore }: ExploreC
             <button
               key={t.value}
               type="button"
-              onClick={() => { setTab(t.value); goToPage(1); }}
+              onClick={() => handleTabChange(t.value)}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                 tab === t.value
                   ? 'bg-orange-500/15 text-orange-400 border border-orange-500/30'
@@ -362,7 +359,7 @@ export default function ExploreClient({ initialPosts, initialHasMore }: ExploreC
             <Icon name="Loader" size={24} className="animate-spin text-zinc-600 mb-3" />
             <p className="text-sm text-zinc-500">Loading...</p>
           </div>
-        ) : filteredPosts.length === 0 ? (
+        ) : posts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-white/[0.03] border border-white/[0.08]">
               <Icon name="Compass" size={32} className="text-zinc-600" />
@@ -372,7 +369,7 @@ export default function ExploreClient({ initialPosts, initialHasMore }: ExploreC
         ) : (
           <>
             <div className="space-y-5 pb-12">
-              {filteredPosts.map((post) => (
+              {posts.map((post) => (
                 <PostCard key={post.id} post={post} />
               ))}
             </div>
