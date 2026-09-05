@@ -3,7 +3,7 @@ import { API } from '@/lib/api';
 import type { ExplorePost } from '@/lib/api/types';
 import ExploreClient from './client';
 
-const PER_PAGE = 20;
+const PER_PAGE = 10;
 
 export const metadata: Metadata = {
   title: 'Explore — YoTop10',
