@@ -211,6 +211,7 @@ export interface ArgumentPost {
   }>;
   support_pct: number;
   contradict_pct: number;
+  hero_image_url?: string | null;
 }
 
 export interface ArgumentsResponse {

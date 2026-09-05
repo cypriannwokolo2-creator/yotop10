@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Icon } from '@/components/icons/Icon';
 import { CustomDropdown } from '@/components/CustomDropdown';
+import { ArgumentHeroSlider } from '@/components/ArgumentHeroSlider';
 import { ArgumentCard } from '@/components/ArgumentCard';
 import type { ArgumentPost, Category } from '@/lib/api/types';
 import { API } from '@/lib/api';
@@ -113,6 +114,10 @@ export default function ArgumentsClient({ initialPosts, initialCategories, initi
             The hottest debates happening right now
           </p>
         </div>
+
+        {posts.length > 0 && (
+          <ArgumentHeroSlider arguments={posts} />
+        )}
 
         <div className="flex flex-wrap items-center gap-2 mb-8">
           {TIME_OPTIONS.map((opt) => (
