@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { API } from '@/lib/api';
 import type { ArticleSubmission } from '@/lib/api/types';
 import { Icon } from '@/components/icons/Icon';
+import { CustomDropdown } from '@/components/CustomDropdown';
 import { ImageUploader } from '@/components/ImageUploader';
 
 interface SourceField {
@@ -182,19 +183,13 @@ export default function SubmitArticleClient() {
           <label htmlFor="article-category" className="mb-2 block text-sm font-medium text-zinc-400">
             Category
           </label>
-          <select
-            id="article-category"
+          <CustomDropdown
             value={categorySlug}
-            onChange={(e) => setCategorySlug(e.target.value)}
-            className={`w-full rounded-xl border bg-white/5 px-4 py-3 text-white ${errors.category ? 'border-red-500/50' : 'border-white/10'}`}
-          >
-            <option value="" className="bg-zinc-900">Select a category</option>
-            {CATEGORIES.map((cat) => (
-              <option key={cat} value={cat} className="bg-zinc-900 capitalize">
-                {cat}
-              </option>
-            ))}
-          </select>
+            onChange={setCategorySlug}
+            placeholder="Select a category"
+            options={CATEGORIES.map(c => ({ value: c, label: c.charAt(0).toUpperCase() + c.slice(1) }))}
+            className={errors.category ? 'border-red-500/50' : ''}
+          />
           {errors.category && (
             <p className="mt-1.5 text-xs text-red-400">{errors.category}</p>
           )}

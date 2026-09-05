@@ -8,6 +8,7 @@ import Image from 'next/image';
 import { API } from '@/lib/api';
 import { formatDate, relativeTime } from '@/lib/dates';
 import { Icon } from '@/components/icons/Icon';
+import { CustomDropdown } from '@/components/CustomDropdown';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { BookmarkButton } from '@/components/BookmarkButton';
 import { ShareButton } from '@/components/ShareButton';
@@ -596,16 +597,13 @@ export default function PostDetailClient({
             <h2 className="text-lg font-semibold text-white sm:text-xl">
               Comments ({post.comment_count})
             </h2>
-            <select
+            <CustomDropdown
               value={selectedItemId || ''}
-              onChange={(e) => setSelectedItemId(e.target.value || null)}
-              className="max-w-[220px] appearance-none rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-zinc-400 focus:border-orange-500/50 focus:outline-none"
-            >
-              <option value="">All comments</option>
-              {items.map(item => (
-                <option key={item.id} value={item.id}>#{item.rank} - {item.title.substring(0, 30)}</option>
-              ))}
-            </select>
+              onChange={v => setSelectedItemId(v || null)}
+              placeholder="All comments"
+              options={items.map(item => ({ value: item.id, label: `#${item.rank} - ${item.title.substring(0, 30)}` }))}
+              className="max-w-[220px]"
+            />
           </div>
 
           {/* Comment Form */}

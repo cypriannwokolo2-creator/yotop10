@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Icon } from '@/components/icons/Icon';
+import { CustomDropdown } from '@/components/CustomDropdown';
 import { formatDate } from '@/lib/dates';
 import { SafeHTML } from '@/components/SafeHTML';
 import { API } from '@/lib/api';
@@ -278,17 +279,21 @@ export default function SearchClient() {
                 <div className="space-y-3">
                   <div>
                     <label className="mb-1 block text-3xs font-semibold uppercase tracking-wider text-zinc-600">Category</label>
-                    <select value={categorySlug} onChange={e => { setCategorySlug(e.target.value); setPage(1); }} className={selectClasses}>
-                      <option value="">All</option>
-                      {(results?.facets.categories || []).map(f => <option key={f.key} value={f.key}>{f.key} ({f.count})</option>)}
-                    </select>
+                    <CustomDropdown
+                      value={categorySlug}
+                      onChange={v => { setCategorySlug(v); setPage(1); }}
+                      placeholder="All"
+                      options={[{ value: '', label: 'All' }, ...(results?.facets.categories || []).map(f => ({ value: f.key, label: `${f.key} (${f.count})` }))]}
+                    />
                   </div>
                   <div>
                     <label className="mb-1 block text-3xs font-semibold uppercase tracking-wider text-zinc-600">Post Type</label>
-                    <select value={postType} onChange={e => { setPostType(e.target.value); setPage(1); }} className={selectClasses}>
-                      <option value="">All</option>
-                      {(results?.facets.post_types || []).map(f => <option key={f.key} value={f.key}>{f.key} ({f.count})</option>)}
-                    </select>
+                    <CustomDropdown
+                      value={postType}
+                      onChange={v => { setPostType(v); setPage(1); }}
+                      placeholder="All"
+                      options={[{ value: '', label: 'All' }, ...(results?.facets.post_types || []).map(f => ({ value: f.key, label: `${f.key} (${f.count})` }))]}
+                    />
                   </div>
                   <div>
                     <label className="mb-1 block text-3xs font-semibold uppercase tracking-wider text-zinc-600">Author</label>
@@ -296,12 +301,16 @@ export default function SearchClient() {
                   </div>
                   <div>
                     <label className="mb-1 block text-3xs font-semibold uppercase tracking-wider text-zinc-600">Sort</label>
-                    <select value={sort} onChange={e => { setSort(e.target.value); setPage(1); }} className={selectClasses}>
-                      <option value="_score">Relevance</option>
-                      <option value="newest">Newest</option>
-                      <option value="most_comments">Most Comments</option>
-                      <option value="most_fire">Most Fire</option>
-                    </select>
+                    <CustomDropdown
+                      value={sort}
+                      onChange={v => { setSort(v); setPage(1); }}
+                      options={[
+                        { value: '_score', label: 'Relevance' },
+                        { value: 'newest', label: 'Newest' },
+                        { value: 'most_comments', label: 'Most Comments' },
+                        { value: 'most_fire', label: 'Most Fire' },
+                      ]}
+                    />
                   </div>
                   <button
                     onClick={() => { setCategorySlug(''); setPostType(''); setAuthor(''); setSort('_score'); setPage(1); }}
@@ -320,17 +329,21 @@ export default function SearchClient() {
             <div className="space-y-3">
               <div>
                 <label className="mb-1 block text-3xs font-semibold uppercase tracking-wider text-zinc-600">Category</label>
-                <select value={categorySlug} onChange={e => { setCategorySlug(e.target.value); setPage(1); }} className={selectClasses}>
-                  <option value="">All</option>
-                  {(results?.facets.categories || []).map(f => <option key={f.key} value={f.key}>{f.key} ({f.count})</option>)}
-                </select>
+                <CustomDropdown
+                  value={categorySlug}
+                  onChange={v => { setCategorySlug(v); setPage(1); }}
+                  placeholder="All"
+                  options={[{ value: '', label: 'All' }, ...(results?.facets.categories || []).map(f => ({ value: f.key, label: `${f.key} (${f.count})` }))]}
+                />
               </div>
               <div>
                 <label className="mb-1 block text-3xs font-semibold uppercase tracking-wider text-zinc-600">Post Type</label>
-                <select value={postType} onChange={e => { setPostType(e.target.value); setPage(1); }} className={selectClasses}>
-                  <option value="">All</option>
-                  {(results?.facets.post_types || []).map(f => <option key={f.key} value={f.key}>{f.key} ({f.count})</option>)}
-                </select>
+                <CustomDropdown
+                  value={postType}
+                  onChange={v => { setPostType(v); setPage(1); }}
+                  placeholder="All"
+                  options={[{ value: '', label: 'All' }, ...(results?.facets.post_types || []).map(f => ({ value: f.key, label: `${f.key} (${f.count})` }))]}
+                />
               </div>
               <div>
                 <label className="mb-1 block text-3xs font-semibold uppercase tracking-wider text-zinc-600">Author</label>
@@ -338,12 +351,16 @@ export default function SearchClient() {
               </div>
               <div>
                 <label className="mb-1 block text-3xs font-semibold uppercase tracking-wider text-zinc-600">Sort</label>
-                <select value={sort} onChange={e => { setSort(e.target.value); setPage(1); }} className={selectClasses}>
-                  <option value="_score">Relevance</option>
-                  <option value="newest">Newest</option>
-                  <option value="most_comments">Most Comments</option>
-                  <option value="most_fire">Most Fire</option>
-                </select>
+                <CustomDropdown
+                  value={sort}
+                  onChange={v => { setSort(v); setPage(1); }}
+                  options={[
+                    { value: '_score', label: 'Relevance' },
+                    { value: 'newest', label: 'Newest' },
+                    { value: 'most_comments', label: 'Most Comments' },
+                    { value: 'most_fire', label: 'Most Fire' },
+                  ]}
+                />
               </div>
               <button
                 onClick={() => { setCategorySlug(''); setPostType(''); setAuthor(''); setSort('_score'); setPage(1); }}

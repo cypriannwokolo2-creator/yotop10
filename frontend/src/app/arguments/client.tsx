@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Icon } from '@/components/icons/Icon';
+import { CustomDropdown } from '@/components/CustomDropdown';
 import { ArgumentCard } from '@/components/ArgumentCard';
 import type { ArgumentPost, Category } from '@/lib/api/types';
 import { API } from '@/lib/api';
@@ -130,22 +131,13 @@ export default function ArgumentsClient({ initialPosts, initialCategories, initi
 
           <span className="w-px h-5 bg-white/10 mx-1 hidden sm:block" />
 
-          <div className="relative">
-            <select
+          <div className="w-44">
+            <CustomDropdown
               value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="bg-white/[0.03] border border-white/[0.08] rounded-full px-4 py-2 text-sm text-zinc-400 outline-none focus:border-orange-500/50 transition-colors appearance-none cursor-pointer"
-            >
-              <option value="" className="bg-[#05050f] text-zinc-300">
-                All Categories
-              </option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.slug} className="bg-[#05050f] text-zinc-300">
-                  {cat.name}
-                </option>
-              ))}
-            </select>
-            <Icon name="ChevronDown" size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
+              onChange={setCategory}
+              placeholder="All Categories"
+              options={categories.map(c => ({ value: c.slug, label: c.name }))}
+            />
           </div>
         </div>
 
