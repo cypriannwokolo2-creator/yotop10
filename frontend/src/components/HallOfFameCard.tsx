@@ -4,7 +4,7 @@ import { memo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Icon } from './icons/Icon';
-import { relativeTime } from '@/lib/dates';
+import { relativeTime, cleanTitle } from '@/lib/dates';
 import { toPublicSlug } from '@/lib/username';
 import type { HallOfFameEntry } from '@/lib/api/types';
 
@@ -57,7 +57,7 @@ export const HallOfFameCard = memo(function HallOfFameCard({
           {hasPost ? (
             <Link href={`/${post.slug}`} className="block group">
               <h2 className="text-xl lg:text-2xl font-bold text-white group-hover:text-amber-400 transition-colors mb-2">
-                {post.title}
+                {cleanTitle(post.title)}
               </h2>
             </Link>
           ) : (
@@ -115,7 +115,7 @@ export const HallOfFameCard = memo(function HallOfFameCard({
             {hasPost ? (
               <Link href={`/${post.slug}`} className="block group">
                 <h3 className="text-sm font-semibold text-white group-hover:text-orange-400 transition-colors truncate">
-                  {post.title}
+                  {cleanTitle(post.title)}
                 </h3>
               </Link>
             ) : (
@@ -199,7 +199,7 @@ export const HallOfFameCard = memo(function HallOfFameCard({
       {hasPost ? (
         <Link href={`/${post.slug}`} className="block group">
           <h3 className="text-sm font-semibold text-white group-hover:text-orange-400 transition-colors line-clamp-2">
-            {post.title}
+            {cleanTitle(post.title)}
           </h3>
         </Link>
       ) : (

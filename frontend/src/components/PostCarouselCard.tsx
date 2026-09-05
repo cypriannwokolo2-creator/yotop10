@@ -4,7 +4,7 @@ import { memo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Icon, type LucideIconName } from './icons/Icon';
-import { formatDate } from '@/lib/dates';
+import { formatDate, cleanTitle } from '@/lib/dates';
 import type { Post } from '@/lib/api/types';
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -34,7 +34,7 @@ export const PostCarouselCard = memo(function PostCarouselCard({ post }: { post:
       {/* Section A: Title + Description */}
       <div className="px-4 lg:px-5 pt-4 lg:pt-5 pb-3 lg:pb-4">
         <h3 className="text-lg lg:text-2xl font-bold text-white leading-snug lg:leading-tight line-clamp-2">
-          {post.title}
+          {cleanTitle(post.title)}
         </h3>
         {post.intro && (
           <p className="mt-1.5 lg:mt-2 text-xs lg:text-sm text-zinc-500 leading-relaxed line-clamp-2 lg:line-clamp-3">

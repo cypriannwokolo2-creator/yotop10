@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Icon } from './icons/Icon';
+import { cleanTitle } from '@/lib/dates';
 
 interface ArticleItem {
   slug: string;
@@ -50,7 +51,7 @@ export function DesktopArticles({ articles, className = '' }: { articles: Articl
             </div>
             <div className="p-4">
               <h3 className="text-sm font-bold text-zinc-200 leading-snug line-clamp-2 group-hover:text-white transition mb-2">
-                {a.title}
+                {cleanTitle(a.title)}
               </h3>
               <p className="text-3xs text-zinc-600">
                 {a.author_display_name || a.author_username || ''}

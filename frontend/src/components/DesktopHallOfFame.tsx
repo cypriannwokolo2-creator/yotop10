@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Icon } from './icons/Icon';
+import { cleanTitle } from '@/lib/dates';
 
 interface HofEntry {
   id: string;
@@ -53,7 +54,7 @@ export function DesktopHallOfFame({ className = '' }: { className?: string }) {
               </span>
               <span className="text-3xs text-yellow-500/60 uppercase tracking-wider font-semibold">Featured</span>
             </div>
-            <h3 className="text-sm font-semibold text-zinc-200 leading-snug line-clamp-2 mb-1">{entry.post.title}</h3>
+            <h3 className="text-sm font-semibold text-zinc-200 leading-snug line-clamp-2 mb-1">{cleanTitle(entry.post.title)}</h3>
             {entry.editorial_note && (
               <p className="text-2xs text-zinc-500 line-clamp-2 leading-relaxed mb-2">{entry.editorial_note}</p>
             )}

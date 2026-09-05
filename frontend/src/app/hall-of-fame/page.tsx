@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api/client';
-import { formatDate, relativeTime } from '@/lib/dates';
+import { formatDate, relativeTime, cleanTitle } from '@/lib/dates';
 import type { HallOfFameEntry } from '@/lib/api/types';
 
 interface HallOfFameResponse {
@@ -73,7 +73,7 @@ export default async function HallOfFamePage() {
                   </div>
 
                   <h2 className="text-2xl font-bold text-white mb-3 group-hover:text-orange-400 transition-colors">
-                    {post.title}
+                    {cleanTitle(post.title)}
                   </h2>
 
                   {entry.editorial_note && (
@@ -139,7 +139,7 @@ export default async function HallOfFamePage() {
                   </div>
 
                   <h3 className="text-white font-semibold text-sm leading-snug mb-2 line-clamp-2 group-hover:text-orange-400 transition-colors">
-                    {post.title}
+                    {cleanTitle(post.title)}
                   </h3>
 
                   {entry.editorial_note && (

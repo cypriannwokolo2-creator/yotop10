@@ -3,7 +3,7 @@
 import { useRef, useEffect, useState } from 'react';
 import Image from 'next/image';
 import { Icon } from './icons/Icon';
-import { relativeTime } from '@/lib/dates';
+import { relativeTime, cleanTitle } from '@/lib/dates';
 import { toPublicSlug } from '@/lib/username';
 import type { Post } from '@/lib/api/types';
 
@@ -78,7 +78,7 @@ export function GlassSlab({ post, variant = 'compact', observe = false, rank, ac
             variant === 'featured' ? 'text-xl sm:text-2xl mb-3' : 'text-sm sm:text-base mb-2'
           }`}
         >
-          {post.title}
+          {cleanTitle(post.title)}
         </h3>
 
         {/* Hero image (featured only) */}

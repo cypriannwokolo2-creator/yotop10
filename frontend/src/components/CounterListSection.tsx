@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Icon } from './icons/Icon';
+import { cleanTitle } from '@/lib/dates';
 
 interface CounterInfo {
   id: string;
@@ -47,7 +48,7 @@ export function CounterListSection({ slug }: { slug: string }) {
           <div key={c.id} className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] px-4 py-3 transition hover:border-orange-500/20">
             <div className="min-w-0 flex-1 mr-3">
               <Link href={`/${c.slug}`} className="text-sm font-medium text-zinc-200 hover:text-orange-400 transition truncate block">
-                {c.title}
+                {cleanTitle(c.title)}
               </Link>
               <p className="text-2xs text-zinc-600 mt-0.5">
                 by {c.author_display_name || c.author_username}

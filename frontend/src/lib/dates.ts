@@ -1,5 +1,9 @@
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
+export function cleanTitle(title: string): string {
+  return title.replace(/\s*[—–-]\s*My Counter List\s*\d*$/i, '').trim();
+}
+
 export function formatDate(d: string | Date): string {
   const date = new Date(d);
   const m = MONTHS[date.getUTCMonth()];

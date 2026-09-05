@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Icon } from './icons/Icon';
+import { cleanTitle } from '@/lib/dates';
 import type { ArgumentPost } from '@/lib/api/types';
 
 const GRADIENTS = [
@@ -41,7 +42,7 @@ function SlideCard({ d, gradient, voted, onVote }: {
 
       {/* Debate Info */}
       <Link href={`/${d.slug}`} className="block mb-3">
-        <h3 className="text-base font-bold text-white leading-snug mb-1">{d.title}</h3>
+        <h3 className="text-base font-bold text-white leading-snug mb-1">{cleanTitle(d.title)}</h3>
         <p className="text-xs text-zinc-500 leading-relaxed">
           {d.top_comments?.[0]?.item_title
             ? `Top debate on "${d.top_comments[0].item_title}" — which side are you on?`

@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Icon } from '@/components/icons/Icon';
 import { relativeTime } from '@/lib/dates';
+import { cleanTitle } from '@/lib/dates';
 import type { ExplorePost } from '@/lib/api/types';
 import { API } from '@/lib/api';
 
@@ -149,7 +150,7 @@ export default function ExploreClient({ initialPosts, initialHasMore }: ExploreC
 
                           {/* Title */}
                           <h2 className="text-lg sm:text-xl font-bold text-white leading-snug mb-3 group-hover:text-orange-400 transition-colors line-clamp-2">
-                            {post.title}
+                            {cleanTitle(post.title)}
                           </h2>
 
                           {/* Top items as ranked list */}
@@ -207,16 +208,9 @@ export default function ExploreClient({ initialPosts, initialHasMore }: ExploreC
                   const badge = TYPE_BADGES[post.post_type] || { label: post.post_type?.toUpperCase(), cls: 'bg-white/5 text-zinc-400' };
                   return (
                     <Link key={post.id} href={`/${post.slug}`} className="block group">
-                      <div className="flex items-stretch rounded-xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/[0.1] transition-all">
-                        {/* Score column */}
-                        <div className="flex items-center justify-center w-16 sm:w-20 shrink-0 border-r border-white/[0.06]">
-                          <span className="text-lg sm:text-xl font-black font-mono text-white/[0.06] tabular-nums leading-none">
-                            {post.explore_score ?? 0}
-                          </span>
-                        </div>
-
+                      <div className="flex items-center rounded-xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/[0.1] transition-all px-4 py-3">
                         {/* Content */}
-                        <div className="flex-1 min-w-0 px-4 py-3">
+                        <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${badge.cls}`}>
                               {badge.label}
@@ -228,7 +222,7 @@ export default function ExploreClient({ initialPosts, initialHasMore }: ExploreC
                             )}
                           </div>
                           <h3 className="text-sm font-semibold text-white leading-snug line-clamp-1 group-hover:text-orange-400 transition-colors mb-1">
-                            {post.title}
+                            {cleanTitle(post.title)}
                           </h3>
                           <div className="flex items-center gap-2 text-[11px] text-zinc-600">
                             <span className="font-mono">

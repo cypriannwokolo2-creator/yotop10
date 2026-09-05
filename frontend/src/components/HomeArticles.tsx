@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Icon } from './icons/Icon';
+import { cleanTitle } from '@/lib/dates';
 
 interface ArticleItem {
   slug: string;
@@ -42,7 +43,7 @@ export function HomeArticles({ articles }: { articles: ArticleItem[] }) {
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-zinc-300 leading-snug line-clamp-2 group-hover:text-white transition">{a.title}</p>
+              <p className="text-sm text-zinc-300 leading-snug line-clamp-2 group-hover:text-white transition">{cleanTitle(a.title)}</p>
               <p className="text-3xs text-zinc-600 mt-1">
                 {a.author_display_name || a.author_username || ''}
                 {a.reading_time ? ` · ${a.reading_time} min read` : ''}

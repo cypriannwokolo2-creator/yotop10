@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Icon } from './icons/Icon';
+import { cleanTitle } from '@/lib/dates';
 
 interface DebateItem {
   id?: string;
@@ -89,7 +90,7 @@ export function DesktopDebates({ debates, className = '' }: { debates: DebateIte
               </Link>
               <div className="px-4 lg:px-5 pb-4 lg:pb-5">
                 <Link href={`/${d.slug}`} className="block mt-3 lg:mt-4 mb-3 lg:mb-4">
-                  <h3 className="text-sm lg:text-xl font-bold text-white leading-snug line-clamp-2">{d.title}</h3>
+                  <h3 className="text-sm lg:text-xl font-bold text-white leading-snug line-clamp-2">{cleanTitle(d.title)}</h3>
                 </Link>
                 <div className="flex items-center gap-3 mb-3">
                   <span className="flex items-center justify-center w-5 h-5 rounded-full bg-white/10 text-2xs font-mono text-zinc-400 shrink-0">

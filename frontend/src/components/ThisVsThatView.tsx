@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Icon } from './icons/Icon';
+import { cleanTitle } from '@/lib/dates';
 import { BookmarkButton } from './BookmarkButton';
 import { ShareButton } from './ShareButton';
 import { relativeTime } from '@/lib/dates';
@@ -111,7 +112,7 @@ export function ThisVsThatView({ slug, post, items }: ThisVsThatViewProps) {
         </div>
 
         <h1 className="text-2xl font-bold leading-tight text-white mb-3 sm:text-3xl sm:leading-tight">
-          {post.title}
+          {cleanTitle(post.title)}
         </h1>
 
         <p className="text-sm leading-relaxed text-zinc-400 sm:text-base sm:leading-relaxed">

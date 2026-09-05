@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { API } from '@/lib/api';
 import { DataCard } from './DataCard';
 import { Icon } from './icons/Icon';
+import { cleanTitle } from '@/lib/dates';
 import { toPublicSlug } from '@/lib/username';
 import type { Post } from '@/lib/api/types';
 
@@ -24,7 +25,7 @@ function VsMiniCard({ post }: { post: Post }) {
         <span className="rounded-md border border-orange-500/20 bg-orange-500/10 px-2 py-0.5 text-2xs font-bold text-orange-400">VS</span>
         <span className="text-2xs text-zinc-600">{post.comment_count} comments</span>
       </div>
-      <h3 className="text-sm font-bold text-white leading-snug mb-2">{post.title}</h3>
+      <h3 className="text-sm font-bold text-white leading-snug mb-2">{cleanTitle(post.title)}</h3>
       <div className="flex items-center gap-2">
         {items.slice(0, 2).map((item, i) => (
           <div

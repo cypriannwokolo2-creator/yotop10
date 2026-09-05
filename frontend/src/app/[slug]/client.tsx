@@ -6,7 +6,7 @@ import NotFound from '@/components/NotFound';
 import Link from 'next/link';
 import Image from 'next/image';
 import { API } from '@/lib/api';
-import { formatDate, relativeTime } from '@/lib/dates';
+import { formatDate, relativeTime, cleanTitle } from '@/lib/dates';
 import { Icon } from '@/components/icons/Icon';
 import { CustomDropdown } from '@/components/CustomDropdown';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
@@ -433,7 +433,7 @@ export default function PostDetailClient({
           </div>
 
           <h1 className="text-2xl font-bold leading-tight text-white mb-3 sm:text-3xl sm:leading-tight">
-            {post.title}
+            {cleanTitle(post.title)}
           </h1>
 
           <p className="text-sm leading-relaxed text-zinc-400 sm:text-base sm:leading-relaxed">

@@ -5,7 +5,7 @@ import { API } from '@/lib/api';
 import type { Article } from '@/lib/api/types';
 import Link from 'next/link';
 import Image from 'next/image';
-import { relativeTime } from '@/lib/dates';
+import { relativeTime, cleanTitle } from '@/lib/dates';
 
 const PAGE_SIZE = 10;
 
@@ -103,7 +103,7 @@ export default function ArticlesClient({ initialArticles, initialHasMore }: Arti
               )}
             </div>
 
-            <h2 className="mb-2 text-2xl font-bold text-white">{article.title}</h2>
+            <h2 className="mb-2 text-2xl font-bold text-white">{cleanTitle(article.title)}</h2>
 
             <p className="mb-3 text-sm text-zinc-500">
               by {article.author_display_name}

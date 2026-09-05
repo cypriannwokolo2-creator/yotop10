@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Icon } from './icons/Icon';
+import { cleanTitle } from '@/lib/dates';
 
 interface DebateItem {
   id?: string;
@@ -36,7 +37,7 @@ export function DesktopActiveDebates({ debates, className = '' }: { debates: Deb
               className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/[0.02] px-4 py-3 transition hover:border-orange-500/20 hover:bg-white/[0.05]"
             >
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-zinc-300 leading-snug line-clamp-1 group-hover:text-white transition">{d.title}</p>
+                <p className="text-sm font-medium text-zinc-300 leading-snug line-clamp-1 group-hover:text-white transition">{cleanTitle(d.title)}</p>
                 <div className="flex items-center gap-3 mt-1.5">
                   <span className="flex items-center gap-1 text-3xs text-zinc-600">
                     <Icon name="Users" size={11} />

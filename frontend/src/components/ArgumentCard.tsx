@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Icon } from './icons/Icon';
 import { ArgumentBar } from './ArgumentBar';
 import { relativeTime } from '@/lib/dates';
+import { cleanTitle } from '@/lib/dates';
 import { toPublicSlug } from '@/lib/username';
 import type { ArgumentPost } from '@/lib/api/types';
 
@@ -42,7 +43,7 @@ export const ArgumentCard = memo(function ArgumentCard({ argument }: ArgumentCar
         <div className="flex-1 min-w-0 px-5 py-4">
           <div className="flex items-start justify-between gap-4 mb-2">
             <h3 className="text-base font-semibold text-white group-hover:text-orange-400 transition-colors leading-snug line-clamp-2">
-              {argument.title}
+              {cleanTitle(argument.title)}
             </h3>
             <div className="flex items-center gap-1.5 shrink-0">
               <span className="text-xs font-mono text-zinc-600 tabular-nums">

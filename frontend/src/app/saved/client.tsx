@@ -6,6 +6,7 @@ import type { SavedPost } from '@/lib/api/types';
 import Link from 'next/link';
 import { SavedSkeleton } from '@/components/SavedSkeleton';
 import { Icon } from '@/components/icons/Icon';
+import { cleanTitle } from '@/lib/dates';
 import { toast } from '@/lib/toast';
 
 export default function SavedClient() {
@@ -84,7 +85,7 @@ export default function SavedClient() {
                           <span>· {new Date(post.saved_at).toLocaleDateString()}</span>
                         </div>
                         <h2 className="text-base font-bold text-white leading-snug group-hover:text-orange-400 transition-colors line-clamp-2">
-                          {post.title}
+                          {cleanTitle(post.title)}
                         </h2>
                         <div className="flex items-center gap-3 mt-2 text-xs text-zinc-500">
                           <span>@{post.author_username}</span>

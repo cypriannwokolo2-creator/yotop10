@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Icon } from './icons/Icon';
+import { cleanTitle } from '@/lib/dates';
 
 interface DebateItem {
   id?: string;
@@ -111,7 +112,7 @@ export function HomeDebates({ debates }: { debates: DebateItem[] }) {
 
                 {/* C. Debate Info */}
                 <Link href={`/${d.slug}`} className="block mb-3">
-                  <h3 className="text-base font-bold text-white leading-snug mb-1">{d.title}</h3>
+                  <h3 className="text-base font-bold text-white leading-snug mb-1">{cleanTitle(d.title)}</h3>
                   <p className="text-xs text-zinc-500 leading-relaxed">
                     {d.item_a_title && d.item_b_title
                       ? `${d.item_a_title} vs ${d.item_b_title} — which side are you on?`
