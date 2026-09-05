@@ -15,10 +15,10 @@ import { SlideMenuRouter } from "@/components/SlideMenuRouter";
 // import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import { FingerprintMergeDetector } from "@/components/FingerprintMergeDialog";
 
-const anton = Anton({ weight: '400', subsets: ['latin'], display: 'swap', variable: '--font-anton' });
+const anton = Anton({ weight: '400', subsets: ['latin'], display: 'swap', variable: '--font-display' });
 const monoton = Monoton({ weight: '400', subsets: ['latin'], display: 'swap', variable: '--font-accent' });
 const ubuntu = Ubuntu({ subsets: ['latin'], display: 'swap', variable: '--font-ubuntu', weight: ['300', '400', '500', '700'] });
-const fraunces = Fraunces({ subsets: ['latin'], display: 'swap', variable: '--font-display', weight: ['400', '600', '700', '900'] });
+const fraunces = Fraunces({ subsets: ['latin'], display: 'swap', variable: '--font-serif', weight: ['400', '600', '700', '900'] });
 
 export const viewport: Viewport = {
   themeColor: "#05050f",

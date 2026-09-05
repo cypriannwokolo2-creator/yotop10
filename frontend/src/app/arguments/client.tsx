@@ -104,7 +104,7 @@ export default function ArgumentsClient({ initialPosts, initialCategories, initi
             <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-orange-500/10">
               <Icon name="Swords" size={20} className="text-orange-400" />
             </div>
-            <h1 className="font-display text-3xl sm:text-4xl font-bold text-white tracking-tight">
+            <h1 className="font-sans text-3xl sm:text-4xl font-bold text-white tracking-tight">
               Arguments
             </h1>
           </div>
@@ -136,11 +136,11 @@ export default function ArgumentsClient({ initialPosts, initialCategories, initi
               onChange={(e) => setCategory(e.target.value)}
               className="bg-white/[0.03] border border-white/[0.08] rounded-full px-4 py-2 text-sm text-zinc-400 outline-none focus:border-orange-500/50 transition-colors appearance-none cursor-pointer"
             >
-              <option value="" className="bg-zinc-900 text-zinc-300">
+              <option value="" className="bg-[#05050f] text-zinc-300">
                 All Categories
               </option>
               {categories.map((cat) => (
-                <option key={cat.id} value={cat.slug} className="bg-zinc-900 text-zinc-300">
+                <option key={cat.id} value={cat.slug} className="bg-[#05050f] text-zinc-300">
                   {cat.name}
                 </option>
               ))}

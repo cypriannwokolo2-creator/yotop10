@@ -15,8 +15,9 @@
 @theme {
   --font-sans: var(--font-ubuntu), ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'Geist Mono', ui-monospace, monospace;
-  --font-display: var(--font-display), serif;
+  --font-display: var(--font-display), sans-serif;
   --font-accent: var(--font-accent), cursive;
+  --font-serif: var(--font-serif), Georgia, serif;
   --color-bg: #05050f;
   --color-surface: rgba(255,255,255,0.05);
   --color-surface-2: rgba(255,255,255,0.03);
