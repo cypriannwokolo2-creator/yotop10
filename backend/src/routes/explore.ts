@@ -1,6 +1,7 @@
 /* eslint-disable no-restricted-syntax, @typescript-eslint/no-explicit-any -- Express middleware type chains */
 import { Router } from 'express';
 import { Post } from '../models/Post';
+import { Article } from '../models/Article';
 import { User } from '../models/User';
 import { ListItem } from '../models/ListItem';
 import { computeExploreScore, trackExploreView, type ExploreSignals } from '../lib/exploreScore';
@@ -21,7 +22,13 @@ router.get('/', async (req: any, res: any) => {
       .limit(200)
       .lean();
 
-    if (posts.length === 0) {
+    // Also fetch articles (separate model)
+    const articles = await Article.find({ status: 'approved' })
+      .sort({ created_at: -1 })
+      .limit(50)
+      .lean();
+
+    if (posts.length === 0 && articles.length === 0) {
       return res.json({ posts: [], pagination: { page: 1, limit, total: 0, totalPages: 0 } });
     }
 
@@ -56,6 +63,36 @@ router.get('/', async (req: any, res: any) => {
         return { ...score, slug: post.slug, title: post.title, post_type: post.post_type, category_slug: signals.category_slug, author_username: post.author_username, author_display_name: post.author_display_name, comment_count: signals.comment_count, view_count: signals.view_count, format: (post as any).format || 'list_only', hero_image_url: (post as any).hero_image_url || null, created_at: post.created_at, topItems: [] as Array<{ rank: number; title: string }> };
       })
     );
+
+    // Add articles to scores
+    for (const art of articles) {
+      const signals: ExploreSignals = {
+        published_at: (art as any).published_at || art.created_at,
+        comment_count: (art as any).comment_count || 0,
+        view_count: (art as any).view_count || 0,
+        bookmark_count: (art as any).bookmark_count || 0,
+        author_trust_score: 1.0,
+        category_slug: (art as any).category_slug || '',
+        bumped_at: null,
+      };
+      const score = await computeExploreScore((art._id as any).toString(), signals, recentlyViewed);
+      scores.push({
+        ...score,
+        post_id: (art._id as any).toString(),
+        slug: (art as any).slug || '',
+        title: (art as any).title || '',
+        post_type: 'article',
+        category_slug: signals.category_slug,
+        author_username: (art as any).author_username || '',
+        author_display_name: (art as any).author_display_name || (art as any).author_name || '',
+        comment_count: signals.comment_count,
+        view_count: signals.view_count,
+        format: 'article',
+        hero_image_url: (art as any).cover_image || null,
+        created_at: art.created_at,
+        topItems: [],
+      });
+    }
 
     const allItems = await ListItem.find({ post_id: { $in: posts.map((p) => p._id) } }).sort({ rank: 1 }).select('post_id rank title').lean();
     const itemsByPost: Record<string, Array<{ rank: number; title: string }>> = {};
