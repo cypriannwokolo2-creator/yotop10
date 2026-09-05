@@ -109,8 +109,8 @@ router.get('/', async (req: any, res: any) => {
 
     scores.sort((a, b) => b.score - a.score);
 
-    // Ensure each page features at least 1 of each post type via round-robin
-    const POST_TYPES = ['top_list', 'best_of', 'worst_of', 'this_vs_that', 'counter_list', 'fact_drop', 'article'];
+    // ── DIVERSITY ALGORITHM ──
+    // Group by type, sorted by score within each group
     const byType: Record<string, typeof scores> = {};
     for (const s of scores) {
       const t = s.post_type || 'top_list';
@@ -118,27 +118,76 @@ router.get('/', async (req: any, res: any) => {
       byType[t].push(s);
     }
 
-    // Build interleaved stream: round-robin across types, then fill with remaining by score
-    const interleaved: typeof scores = [];
-    const typeIdx: Record<string, number> = {};
-    for (const t of POST_TYPES) typeIdx[t] = 0;
+    const allTypes = Object.keys(byType);
+    const totalPages = Math.max(1, Math.ceil(scores.length / limit));
 
-    const maxPerType = Math.max(...POST_TYPES.map(t => (byType[t] || []).length));
-    for (let round = 0; round < maxPerType; round++) {
-      for (const t of POST_TYPES) {
-        const bucket = byType[t] || [];
-        if (round < bucket.length) interleaved.push(bucket[round]);
+    // Track how many posts of each type have been placed across all pages
+    const typeCounters: Record<string, number> = {};
+    for (const t of allTypes) typeCounters[t] = 0;
+
+    // Build every page up front
+    const pages: (typeof scores)[] = [];
+    for (let p = 0; p < totalPages; p++) {
+      const pagePosts: typeof scores = [];
+      const pageUsed = new Set<string>();
+
+      // Round 1: GUARANTEE — 1 from each type if available
+      for (const t of allTypes) {
+        const bucket = byType[t];
+        const idx = typeCounters[t];
+        if (idx < bucket.length) {
+          pagePosts.push(bucket[idx]);
+          pageUsed.add(bucket[idx].post_id);
+          typeCounters[t]++;
+        }
       }
+
+      // Round 2: FILLERS — only from types with excess
+      // A type has excess if it still has unused posts AND
+      // its total count > totalPages (meaning it CAN appear more than once)
+      if (pagePosts.length < limit) {
+        // Collect excess posts: types that have more than 1 post per page potential
+        const excessPosts: typeof scores = [];
+        for (const t of allTypes) {
+          const bucket = byType[t];
+          if (bucket.length > totalPages) {
+            // This type has excess — grab remaining unused
+            for (let i = typeCounters[t]; i < bucket.length; i++) {
+              if (!pageUsed.has(bucket[i].post_id)) {
+                excessPosts.push(bucket[i]);
+              }
+            }
+          }
+        }
+
+        // Sort excess by score descending and take what we need
+        excessPosts.sort((a, b) => b.score - a.score);
+        for (const post of excessPosts) {
+          if (pagePosts.length >= limit) break;
+          if (!pageUsed.has(post.post_id)) {
+            pagePosts.push(post);
+            pageUsed.add(post.post_id);
+            typeCounters[post.post_type] = (typeCounters[post.post_type] || 0) + 1;
+          }
+        }
+      }
+
+      // Round 3: LAST RESORT — fill remaining from any unused post by score
+      if (pagePosts.length < limit) {
+        for (const post of scores) {
+          if (pagePosts.length >= limit) break;
+          if (!pageUsed.has(post.post_id)) {
+            pagePosts.push(post);
+            pageUsed.add(post.post_id);
+          }
+        }
+      }
+
+      pages.push(pagePosts);
     }
 
-    // Append any types not in POST_TYPES
-    for (const s of scores) {
-      if (!POST_TYPES.includes(s.post_type)) interleaved.push(s);
-    }
-
-    const totalPages = Math.ceil(interleaved.length / limit);
-    const start = (page - 1) * limit;
-    const paginated = interleaved.slice(start, start + limit);
+    // Serve the requested page
+    const paginated = pages[page - 1] || [];
 
     res.json({
       posts: paginated.map((s) => ({
@@ -158,7 +207,7 @@ router.get('/', async (req: any, res: any) => {
         explore_score: s.score,
         created_at: s.created_at,
       })),
-      pagination: { page, limit, total: scores.length, totalPages: Math.ceil(scores.length / limit) },
+      pagination: { page, limit, total: scores.length, totalPages },
     });
   } catch (e) {
     console.error('Explore error:', e);
