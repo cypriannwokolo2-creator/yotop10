@@ -46,6 +46,7 @@ export default function NotificationDetailClient() {
   useEffect(() => {
     if (n && !n.is_admin && !n.read) {
       apiFetch(`/users/me/notifications/${n._id}/read`, { method: 'PATCH' }).catch(() => {});
+      window.dispatchEvent(new Event('notifications-changed'));
     }
   }, [n]);
 
@@ -54,6 +55,7 @@ export default function NotificationDetailClient() {
     try {
       await apiFetch(`/users/me/messages/${params.id}/dismiss`, { method: 'PATCH' });
       setN((prev) => prev ? { ...prev, dismissed: true } : null);
+      window.dispatchEvent(new Event('notifications-changed'));
     } catch {}
     setActionLoading(false);
   };

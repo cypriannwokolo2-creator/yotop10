@@ -61,7 +61,12 @@ export default function NotificationBell() {
   useEffect(() => {
     fetchCount();
     const interval = setInterval(fetchCount, 30000);
-    return () => clearInterval(interval);
+    const onNotifChange = () => fetchCount();
+    window.addEventListener('notifications-changed', onNotifChange);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('notifications-changed', onNotifChange);
+    };
   }, [fetchCount]);
 
   const handleClick = async (n: NotificationItem) => {

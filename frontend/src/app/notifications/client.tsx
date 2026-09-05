@@ -51,7 +51,11 @@ export default function NotificationsClient() {
 
   const handleClick = async (n: NotifItem) => {
     if (!n.is_admin && n.type !== 'admin_message') {
-      try { await apiFetch(`/users/me/notifications/${n._id}/read`, { method: 'PATCH' }); } catch {}
+      try {
+        await apiFetch(`/users/me/notifications/${n._id}/read`, { method: 'PATCH' });
+        setNotifications(prev => prev.map(x => x._id === n._id ? { ...x, read: true } : x));
+        window.dispatchEvent(new Event('notifications-changed'));
+      } catch {}
     }
     router.push(`/notifications/${n._id}`);
   };
@@ -65,6 +69,7 @@ export default function NotificationsClient() {
         await apiFetch(`/users/me/notifications/${n._id}/read`, { method: 'PATCH' });
       }
       setNotifications((prev) => prev.filter((x) => x._id !== n._id));
+      window.dispatchEvent(new Event('notifications-changed'));
     } catch {}
   };
 
@@ -79,6 +84,7 @@ export default function NotificationsClient() {
               try {
                 await apiFetch('/users/me/notifications/read-all', { method: 'PATCH' });
                 setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+                window.dispatchEvent(new Event('notifications-changed'));
               } catch { /* ignore */ }
             }}
             className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-2xs font-medium text-zinc-400 hover:text-white hover:bg-white/10 transition"
