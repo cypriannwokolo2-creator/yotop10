@@ -17,8 +17,8 @@ router.get('/', async (req: any, res: any) => {
 
     // Map frontend filter tabs to actual post_types
     const TYPE_MAP: Record<string, string[]> = {
-      list: ['top_list', 'best_of', 'worst_of', 'counter_list', 'hidden_gems'],
-      vs: ['this_vs_that', 'who_is_better'],
+      list: ['top_list', 'best_of', 'worst_of', 'counter_list', 'hidden_gems', 'who_is_better'],
+      vs: ['this_vs_that'],
       article: ['article'],
       fact: ['fact_drop'],
     };
