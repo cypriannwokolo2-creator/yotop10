@@ -64,7 +64,10 @@ export function ArgumentHeroSlider({ arguments: args }: ArgumentHeroSliderProps)
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <article className="rounded-2xl border border-white/5 bg-white/5 overflow-hidden transition hover:border-orange-500/20 hover:bg-white/[0.07]">
+      <article className="relative rounded-2xl border border-orange-500/20 bg-white/5 overflow-hidden transition-all duration-500 hover:border-orange-500/40 hover:shadow-[0_0_30px_rgba(249,115,22,0.12)]">
+        {/* Glow line at top */}
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-orange-500/60 to-transparent" />
+
         {/* Hero Image */}
         <Link href={`/${d.slug}`} className="block relative h-36 sm:h-44 w-full overflow-hidden bg-zinc-900">
           {d.hero_image_url ? (
@@ -74,9 +77,13 @@ export function ArgumentHeroSlider({ arguments: args }: ArgumentHeroSliderProps)
               <Icon name="MessageCircle" size={36} className="text-white/20" />
             </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-          <span className="absolute top-2 left-2 rounded-md bg-black/60 backdrop-blur-sm px-2 py-0.5 text-2xs font-bold text-orange-400 tracking-wider flex items-center gap-1">
-            <Icon name="Flame" size={11} />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+
+          {/* Bottom glow bleed */}
+          <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-orange-500/10 to-transparent" />
+
+          <span className="absolute top-3 left-3 rounded-md bg-orange-500/20 backdrop-blur-md border border-orange-500/30 px-2.5 py-1 text-2xs font-bold text-orange-400 tracking-wider flex items-center gap-1.5 shadow-[0_0_12px_rgba(249,115,22,0.3)]">
+            <Icon name="Flame" size={11} className="text-orange-400" />
             TRENDING
           </span>
         </Link>
@@ -84,16 +91,16 @@ export function ArgumentHeroSlider({ arguments: args }: ArgumentHeroSliderProps)
         <div className="px-4 pb-4">
           {/* Creator Row */}
           <div className="flex items-center gap-2 mt-3 mb-2">
-            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-white/10 text-2xs font-mono text-zinc-400 shrink-0">
+            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-orange-500/10 text-2xs font-mono text-orange-400 shrink-0 ring-1 ring-orange-500/20">
               {(d.author_display_name || d.author_username || 'A')[0].toUpperCase()}
             </span>
-            <span className="text-xs text-zinc-500">{d.author_display_name || d.author_username || 'anonymous'}</span>
-            <Icon name="BadgeCheck" size={12} className="text-blue-400/30" />
+            <span className="text-xs text-zinc-400">{d.author_display_name || d.author_username || 'anonymous'}</span>
+            <Icon name="BadgeCheck" size={12} className="text-blue-400/40" />
           </div>
 
           {/* Debate Info */}
           <Link href={`/${d.slug}`} className="block mb-3">
-            <h3 className="text-base font-bold text-white leading-snug mb-1">{d.title}</h3>
+            <h3 className="text-base font-bold text-white leading-snug mb-1 group-hover:text-orange-300 transition-colors">{d.title}</h3>
             <p className="text-xs text-zinc-500 leading-relaxed">
               {d.top_comments?.[0]?.item_title
                 ? `Top debate on "${d.top_comments[0].item_title}" — which side are you on?`
@@ -104,25 +111,28 @@ export function ArgumentHeroSlider({ arguments: args }: ArgumentHeroSliderProps)
           {/* Stacked Voting Options */}
           <div className="space-y-3 mb-3">
             {/* Option A (Support) */}
-            <div className="rounded-xl border border-red-500/10 bg-red-500/[0.03] px-3 py-2.5">
+            <div className="rounded-xl border border-red-500/15 bg-red-500/[0.04] px-3 py-2.5 transition-all hover:border-red-500/30 hover:shadow-[0_0_12px_rgba(239,68,68,0.08)]">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-sm font-medium text-zinc-200">Support</span>
-                <span className="text-sm font-bold font-mono text-red-400">{hasVotes ? `${supportPct}%` : '--'}</span>
+                <span className="text-sm font-bold font-mono text-red-400 tabular-nums">{hasVotes ? `${supportPct}%` : '--'}</span>
               </div>
               <div className="h-1.5 rounded-full bg-zinc-800 overflow-hidden mb-1.5">
                 <div
-                  className={`h-full rounded-full bg-gradient-to-r from-red-500 to-orange-500 transition-all ${!hasVotes ? 'opacity-0' : ''}`}
-                  style={{ width: `${hasVotes ? supportPct : 0}%` }}
+                  className="h-full rounded-full bg-gradient-to-r from-red-500 to-orange-500 transition-all duration-700 ease-out"
+                  style={{
+                    width: `${hasVotes ? supportPct : 0}%`,
+                    boxShadow: hasVotes ? '0 0 8px rgba(239,68,68,0.4)' : 'none',
+                  }}
                 />
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-2xs text-zinc-600 font-mono">{supportPct}% votes</span>
                 <button
                   onClick={() => handleVote('A')}
-                  className={`rounded-md px-2.5 py-1 text-2xs font-semibold transition ${
+                  className={`rounded-md px-2.5 py-1 text-2xs font-semibold transition-all ${
                     voted === 'A'
-                      ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                      : 'border border-white/10 text-zinc-400 hover:border-red-500/30 hover:text-red-400'
+                      ? 'bg-red-500/20 text-red-400 border border-red-500/40 shadow-[0_0_10px_rgba(239,68,68,0.2)]'
+                      : 'border border-white/10 text-zinc-400 hover:border-red-500/40 hover:text-red-400 hover:shadow-[0_0_8px_rgba(239,68,68,0.15)]'
                   }`}
                 >
                   {voted === 'A' ? 'Voted' : 'Vote'}
@@ -131,25 +141,28 @@ export function ArgumentHeroSlider({ arguments: args }: ArgumentHeroSliderProps)
             </div>
 
             {/* Option B (Contradict) */}
-            <div className="rounded-xl border border-blue-500/10 bg-blue-500/[0.03] px-3 py-2.5">
+            <div className="rounded-xl border border-blue-500/15 bg-blue-500/[0.04] px-3 py-2.5 transition-all hover:border-blue-500/30 hover:shadow-[0_0_12px_rgba(59,130,246,0.08)]">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-sm font-medium text-zinc-200">Contradict</span>
-                <span className="text-sm font-bold font-mono text-blue-400">{hasVotes ? `${contradictPct}%` : '--'}</span>
+                <span className="text-sm font-bold font-mono text-blue-400 tabular-nums">{hasVotes ? `${contradictPct}%` : '--'}</span>
               </div>
               <div className="h-1.5 rounded-full bg-zinc-800 overflow-hidden mb-1.5">
                 <div
-                  className={`h-full rounded-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all ${!hasVotes ? 'opacity-0' : ''}`}
-                  style={{ width: `${hasVotes ? contradictPct : 0}%` }}
+                  className="h-full rounded-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-700 ease-out"
+                  style={{
+                    width: `${hasVotes ? contradictPct : 0}%`,
+                    boxShadow: hasVotes ? '0 0 8px rgba(59,130,246,0.4)' : 'none',
+                  }}
                 />
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-2xs text-zinc-600 font-mono">{contradictPct}% votes</span>
                 <button
                   onClick={() => handleVote('B')}
-                  className={`rounded-md px-2.5 py-1 text-2xs font-semibold transition ${
+                  className={`rounded-md px-2.5 py-1 text-2xs font-semibold transition-all ${
                     voted === 'B'
-                      ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                      : 'border border-white/10 text-zinc-400 hover:border-blue-500/30 hover:text-blue-400'
+                      ? 'bg-blue-500/20 text-blue-400 border border-blue-500/40 shadow-[0_0_10px_rgba(59,130,246,0.2)]'
+                      : 'border border-white/10 text-zinc-400 hover:border-blue-500/40 hover:text-blue-400 hover:shadow-[0_0_8px_rgba(59,130,246,0.15)]'
                   }`}
                 >
                   {voted === 'B' ? 'Voted' : 'Vote'}
@@ -159,7 +172,7 @@ export function ArgumentHeroSlider({ arguments: args }: ArgumentHeroSliderProps)
           </div>
 
           {/* Engagement Footer */}
-          <div className="flex items-center justify-between pt-3 border-t border-zinc-800">
+          <div className="flex items-center justify-between pt-3 border-t border-white/5">
             <div className="flex items-center gap-4">
               <span className="flex items-center gap-1.5 text-3xs text-zinc-600">
                 <Icon name="MessageCircle" size={13} />
@@ -178,7 +191,7 @@ export function ArgumentHeroSlider({ arguments: args }: ArgumentHeroSliderProps)
                     onClick={() => setCurrent(i)}
                     className={`rounded-full transition-all duration-300 ${
                       i === current
-                        ? 'w-5 h-1.5 bg-orange-400'
+                        ? 'w-5 h-1.5 bg-orange-400 shadow-[0_0_8px_rgba(251,146,60,0.5)]'
                         : 'w-1.5 h-1.5 bg-white/30 hover:bg-white/50'
                     }`}
                   />
