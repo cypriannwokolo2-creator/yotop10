@@ -72,8 +72,36 @@ router.get('/', async (req: any, res: any) => {
 
     scores.sort((a, b) => b.score - a.score);
 
+    // Ensure each page features at least 1 of each post type via round-robin
+    const POST_TYPES = ['top_list', 'best_of', 'worst_of', 'this_vs_that', 'counter_list', 'fact_drop', 'article'];
+    const byType: Record<string, typeof scores> = {};
+    for (const s of scores) {
+      const t = s.post_type || 'top_list';
+      if (!byType[t]) byType[t] = [];
+      byType[t].push(s);
+    }
+
+    // Build interleaved stream: round-robin across types, then fill with remaining by score
+    const interleaved: typeof scores = [];
+    const typeIdx: Record<string, number> = {};
+    for (const t of POST_TYPES) typeIdx[t] = 0;
+
+    const maxPerType = Math.max(...POST_TYPES.map(t => (byType[t] || []).length));
+    for (let round = 0; round < maxPerType; round++) {
+      for (const t of POST_TYPES) {
+        const bucket = byType[t] || [];
+        if (round < bucket.length) interleaved.push(bucket[round]);
+      }
+    }
+
+    // Append any types not in POST_TYPES
+    for (const s of scores) {
+      if (!POST_TYPES.includes(s.post_type)) interleaved.push(s);
+    }
+
+    const totalPages = Math.ceil(interleaved.length / limit);
     const start = (page - 1) * limit;
-    const paginated = scores.slice(start, start + limit);
+    const paginated = interleaved.slice(start, start + limit);
 
     res.json({
       posts: paginated.map((s) => ({
