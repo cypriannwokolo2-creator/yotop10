@@ -55,10 +55,6 @@ export default function ArticlesClient({ initialArticles, initialHasMore }: Arti
 
   return (
     <main className="mx-auto min-h-screen max-w-3xl bg-[var(--color-bg)] px-4 py-12 sm:px-6 lg:py-16">
-      <header className="mb-12">
-        <h1 className="font-display text-3xl text-white">Articles</h1>
-        <p className="mt-2 text-zinc-500">Long-form knowledge pieces. Fact-checked. Sourced.</p>
-      </header>
 
       {articles.length === 0 && (
         <div className="rounded-2xl border border-white/5 bg-white/5 p-12 text-center backdrop-blur-xl">
