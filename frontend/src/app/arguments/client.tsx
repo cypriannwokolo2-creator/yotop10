@@ -136,7 +136,10 @@ export default function ArgumentsClient({ initialPosts, initialCategories, initi
               value={category}
               onChange={setCategory}
               placeholder="All Categories"
-              options={categories.map(c => ({ value: c.slug, label: c.name }))}
+              options={[
+                { value: '', label: 'All Categories' },
+                ...categories.map(c => ({ value: c.slug, label: c.name })),
+              ]}
             />
           </div>
         </div>
