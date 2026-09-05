@@ -101,20 +101,6 @@ export default function ArgumentsClient({ initialPosts, initialCategories, initi
   return (
     <div className="min-h-screen bg-[var(--color-bg)]">
       <div className="max-w-5xl mx-auto px-5 py-10 sm:px-8 sm:py-14">
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-orange-500/10">
-              <Icon name="Swords" size={20} className="text-orange-400" />
-            </div>
-            <h1 className="font-sans text-3xl sm:text-4xl font-bold text-white tracking-tight">
-              Arguments
-            </h1>
-          </div>
-          <p className="text-zinc-500 text-sm sm:text-base ml-[52px]">
-            The hottest debates happening right now
-          </p>
-        </div>
-
         {posts.length > 0 && (
           <ArgumentHeroSlider arguments={posts} />
         )}
