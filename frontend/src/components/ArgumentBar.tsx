@@ -17,28 +17,31 @@ export function ArgumentBar({ supportPct, contradictPct, className }: ArgumentBa
 
   const isZero = supportPct === 0 && contradictPct === 0;
 
+  if (isZero) {
+    return (
+      <div className={className}>
+        <div className="h-1.5 rounded-full bg-white/5" />
+        <div className="text-[10px] text-zinc-600 mt-1">No votes yet</div>
+      </div>
+    );
+  }
+
   return (
     <div className={className}>
-      {isZero ? (
-        <div className="text-2xs text-zinc-600">No arguments yet</div>
-      ) : (
-        <>
-          <div className="h-2 lg:h-3 rounded-full overflow-hidden bg-white/5 flex">
-            <div
-              className="argument-bar-support h-full transition-all duration-700 ease-out"
-              style={{ width: mounted ? `${supportPct}%` : '0%' }}
-            />
-            <div
-              className="argument-bar-contradict h-full transition-all duration-700 ease-out"
-              style={{ width: mounted ? `${contradictPct}%` : '0%' }}
-            />
-          </div>
-          <div className="text-2xs font-mono text-zinc-600 flex justify-between mt-1">
-            <span>{supportPct}% support</span>
-            <span>{contradictPct}% contradict</span>
-          </div>
-        </>
-      )}
+      <div className="h-1.5 rounded-full overflow-hidden bg-white/5 flex gap-px">
+        <div
+          className="h-full bg-emerald-500/70 transition-all duration-700 ease-out rounded-l-full"
+          style={{ width: mounted ? `${supportPct}%` : '0%' }}
+        />
+        <div
+          className="h-full bg-red-500/70 transition-all duration-700 ease-out rounded-r-full"
+          style={{ width: mounted ? `${contradictPct}%` : '0%' }}
+        />
+      </div>
+      <div className="flex justify-between mt-1">
+        <span className="text-[10px] font-mono text-emerald-500/70 tabular-nums">{supportPct}%</span>
+        <span className="text-[10px] font-mono text-red-500/70 tabular-nums">{contradictPct}%</span>
+      </div>
     </div>
   );
 }

@@ -98,43 +98,55 @@ export default function ArgumentsClient({ initialPosts, initialCategories, initi
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)]">
-      <div className="max-w-4xl mx-auto px-5 py-12 sm:px-8 sm:py-16">
-        <div className="mb-10">
-          <h1 className="font-display text-4xl sm:text-5xl font-bold text-white mb-3 tracking-tight">
-            Arguments
-          </h1>
-          <p className="text-zinc-500 text-base sm:text-lg">
+      <div className="max-w-5xl mx-auto px-5 py-10 sm:px-8 sm:py-14">
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-orange-500/10">
+              <Icon name="Swords" size={20} className="text-orange-400" />
+            </div>
+            <h1 className="font-display text-3xl sm:text-4xl font-bold text-white tracking-tight">
+              Arguments
+            </h1>
+          </div>
+          <p className="text-zinc-500 text-sm sm:text-base ml-[52px]">
             The hottest debates happening right now
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-3 mb-10">
-          <select
-            value={time}
-            onChange={(e) => setTime(e.target.value)}
-            className="bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-3 text-base text-zinc-300 outline-none focus:border-orange-500/50 transition-colors appearance-none min-h-12"
-          >
-            {TIME_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value} className="bg-zinc-900 text-zinc-300">
-                {opt.label}
-              </option>
-            ))}
-          </select>
+        <div className="flex flex-wrap items-center gap-2 mb-8">
+          {TIME_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => setTime(opt.value)}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                time === opt.value
+                  ? 'bg-orange-500/15 text-orange-400 border border-orange-500/30'
+                  : 'bg-white/[0.03] text-zinc-500 border border-transparent hover:text-zinc-300 hover:bg-white/[0.06]'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
 
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-3 text-base text-zinc-300 outline-none focus:border-orange-500/50 transition-colors appearance-none min-h-12"
-          >
-            <option value="" className="bg-zinc-900 text-zinc-300">
-              All Categories
-            </option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.slug} className="bg-zinc-900 text-zinc-300">
-                {cat.name}
+          <span className="w-px h-5 bg-white/10 mx-1 hidden sm:block" />
+
+          <div className="relative">
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="bg-white/[0.03] border border-white/[0.08] rounded-full px-4 py-2 text-sm text-zinc-400 outline-none focus:border-orange-500/50 transition-colors appearance-none cursor-pointer"
+            >
+              <option value="" className="bg-zinc-900 text-zinc-300">
+                All Categories
               </option>
-            ))}
-          </select>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.slug} className="bg-zinc-900 text-zinc-300">
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+            <Icon name="ChevronDown" size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
+          </div>
         </div>
 
         {posts.length === 0 ? (
@@ -155,7 +167,7 @@ export default function ArgumentsClient({ initialPosts, initialCategories, initi
           </div>
         ) : (
           <>
-            <div className="space-y-6 pb-24">
+            <div className="space-y-3 pb-24">
               {posts.map((post) => (
                 <ArgumentCard key={post.id} argument={post} />
               ))}

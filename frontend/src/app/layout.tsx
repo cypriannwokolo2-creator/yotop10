@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
-import { Sora, JetBrains_Mono, Fraunces } from "next/font/google";
+import { Anton, Monoton, Ubuntu, Fraunces } from "next/font/google";
 import "./globals.css";
 import AuthInitializer from "@/components/AuthInitializer";
 import ToastContainer from "@/components/Toast";
@@ -15,8 +15,9 @@ import { SlideMenuRouter } from "@/components/SlideMenuRouter";
 // import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import { FingerprintMergeDetector } from "@/components/FingerprintMergeDialog";
 
-const sora = Sora({ subsets: ['latin'], display: 'swap', variable: '--font-sora' });
-const jetbrains = JetBrains_Mono({ subsets: ['latin'], display: 'swap', variable: '--font-mono' });
+const anton = Anton({ weight: '400', subsets: ['latin'], display: 'swap', variable: '--font-anton' });
+const monoton = Monoton({ weight: '400', subsets: ['latin'], display: 'swap', variable: '--font-accent' });
+const ubuntu = Ubuntu({ subsets: ['latin'], display: 'swap', variable: '--font-ubuntu', weight: ['300', '400', '500', '700'] });
 const fraunces = Fraunces({ subsets: ['latin'], display: 'swap', variable: '--font-display', weight: ['400', '600', '700', '900'] });
 
 export const viewport: Viewport = {
@@ -117,7 +118,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           })();
         `}} />
       </head>
-      <body className={`${sora.variable} ${jetbrains.variable} ${fraunces.variable} min-h-screen flex flex-col bg-[var(--color-bg)] text-[#eaeaef]`} suppressHydrationWarning>
+      <body className={`${anton.variable} ${monoton.variable} ${ubuntu.variable} ${fraunces.variable} min-h-screen flex flex-col bg-[var(--color-bg)] text-[#eaeaef]`} suppressHydrationWarning>
         {/* Mobile top bar */}
         <Suspense fallback={<div className="h-14 bg-[var(--color-bg)] animate-pulse" />}>
           <div className="lg:hidden">
