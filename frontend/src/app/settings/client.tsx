@@ -10,6 +10,12 @@ const SECTIONS = [
     description: 'Display name, logout, identity transfer',
     href: '/settings/account',
   },
+  {
+    icon: 'BookOpen' as const,
+    label: 'Docs & Legal',
+    description: 'Terms, privacy, guides, and how-to articles',
+    href: '/docs',
+  },
 ];
 
 export default function SettingsClient() {
@@ -21,9 +27,7 @@ export default function SettingsClient() {
         </Link>
       </nav>
 
-      <h1 className="text-2xl font-bold text-white mb-8">Settings</h1>
-
-      <div className="space-y-3">
+      <div className="space-y-3 mb-6">
         {SECTIONS.map(s => (
           <Link
             key={s.href}
@@ -41,6 +45,14 @@ export default function SettingsClient() {
           </Link>
         ))}
       </div>
+
+      <Link
+        href="/query"
+        className="flex items-center justify-center gap-2 w-full rounded-xl border border-red-500/20 bg-red-500/10 px-5 py-4 text-sm font-medium text-red-400 transition hover:bg-red-500/15 hover:border-red-500/30"
+      >
+        <Icon name="MessageSquareWarning" size={18} />
+        Request a Feature / Report a Problem
+      </Link>
     </div>
   );
 }
