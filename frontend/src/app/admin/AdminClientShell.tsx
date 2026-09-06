@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { useAdminStore } from '@/stores/admin';
 import { Icon } from '@/components/icons/Icon';
 
 interface AdminData {
@@ -20,6 +21,7 @@ export default function AdminClientShell({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const logout = useAdminStore((s) => s.logout);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const linkClass = (active: boolean) =>
@@ -91,8 +93,7 @@ export default function AdminClientShell({
             {nav('/admin/profile', 'Profile', 'User')}
             <button
               onClick={async () => {
-                const { API } = await import('@/lib/api');
-                await API.adminLogout();
+                await logout();
                 router.push('/admin/login');
               }}
               className="block w-full text-left px-3 py-2 rounded-lg text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors"
@@ -119,8 +120,7 @@ export default function AdminClientShell({
           {nav('/admin/profile', 'Profile', 'User')}
           <button
             onClick={async () => {
-              const { API } = await import('@/lib/api');
-              await API.adminLogout();
+              await logout();
               router.push('/admin/login');
             }}
             className="block w-full text-left px-3 py-2 rounded-lg text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors cursor-pointer"
