@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { Category } from '../models/Category';
 import { Post } from '../models/Post';
 import { adminAuthMiddleware } from '../lib/adminAuth';
+import { autoPermissionGuard } from '../lib/permissionGuard';
 import { logAudit } from '../lib/auditWriter';
 import { getClientIp } from '../middleware/fingerprint';
 
@@ -88,7 +89,7 @@ const logCatAudit = (categoryId: string, action: string, changes: Record<string,
 };
 
 // Duplicate category
-router.post('/:id/duplicate', adminAuthMiddleware, async (req: any, res: any) => {
+router.post('/:id/duplicate', adminAuthMiddleware, autoPermissionGuard, async (req: any, res: any) => {
   try {
     const cat = await Category.findById(req.params.id);
     if (!cat) return res.status(404).json({ error: 'Category not found' });
@@ -106,7 +107,7 @@ router.post('/:id/duplicate', adminAuthMiddleware, async (req: any, res: any) =>
 });
 
 // Publish category
-router.post('/:id/publish', adminAuthMiddleware, async (req: any, res: any) => {
+router.post('/:id/publish', adminAuthMiddleware, autoPermissionGuard, async (req: any, res: any) => {
   try {
     const cat = await Category.findByIdAndUpdate(req.params.id, { status: 'published', publish_at: new Date() }, { new: true });
     if (!cat) return res.status(404).json({ error: 'Category not found' });
@@ -117,7 +118,7 @@ router.post('/:id/publish', adminAuthMiddleware, async (req: any, res: any) => {
 });
 
 // Hide category
-router.post('/:id/hide', adminAuthMiddleware, async (req: any, res: any) => {
+router.post('/:id/hide', adminAuthMiddleware, autoPermissionGuard, async (req: any, res: any) => {
   try {
     const cat = await Category.findByIdAndUpdate(req.params.id, { status: 'hidden' }, { new: true });
     if (!cat) return res.status(404).json({ error: 'Category not found' });
@@ -130,7 +131,7 @@ router.post('/:id/hide', adminAuthMiddleware, async (req: any, res: any) => {
 // ═══ Admin: Analytics ═════════════════════════════════════════════
 
 // All categories with health scores
-router.get('/stats', adminAuthMiddleware, async (req: any, res: any) => {
+router.get('/stats', adminAuthMiddleware, autoPermissionGuard, async (req: any, res: any) => {
   try {
     const cats = await Category.find({ is_archived: false }).sort({ sort_order: 1, name: 1 }).lean();
     const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000);
@@ -156,7 +157,7 @@ router.get('/stats', adminAuthMiddleware, async (req: any, res: any) => {
 });
 
 // Single category stats
-router.get('/:id/stats', adminAuthMiddleware, async (req: any, res: any) => {
+router.get('/:id/stats', adminAuthMiddleware, autoPermissionGuard, async (req: any, res: any) => {
   try {
     const cat = await Category.findById(req.params.id);
     if (!cat) return res.status(404).json({ error: 'Category not found' });
@@ -180,7 +181,7 @@ router.get('/:id/stats', adminAuthMiddleware, async (req: any, res: any) => {
 });
 
 // Health overview — dead, overloaded, alive
-router.get('/health', adminAuthMiddleware, async (req: any, res: any) => {
+router.get('/health', adminAuthMiddleware, autoPermissionGuard, async (req: any, res: any) => {
   try {
     const ninetyDaysAgo = new Date(Date.now() - 90 * 86400000);
     const [allCats, deadCats] = await Promise.all([
@@ -204,7 +205,7 @@ router.get('/health', adminAuthMiddleware, async (req: any, res: any) => {
 });
 
 // Content distribution
-router.get('/analytics', adminAuthMiddleware, async (req: any, res: any) => {
+router.get('/analytics', adminAuthMiddleware, autoPermissionGuard, async (req: any, res: any) => {
   try {
     const parents = await Category.find({ parent_id: null, is_archived: false }).lean();
     const distribution = await Promise.all(parents.map(async (p) => {
@@ -219,7 +220,7 @@ router.get('/analytics', adminAuthMiddleware, async (req: any, res: any) => {
 
 // ═══ Admin: Bulk Operations ═══════════════════════════════════════
 
-router.post('/bulk/feature', adminAuthMiddleware, async (req: any, res: any) => {
+router.post('/bulk/feature', adminAuthMiddleware, autoPermissionGuard, async (req: any, res: any) => {
   try {
     const { ids, featured_in } = req.body;
     if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: 'Provide category IDs' });
@@ -231,7 +232,7 @@ router.post('/bulk/feature', adminAuthMiddleware, async (req: any, res: any) => 
   } catch (e) { res.status(500).json({ error: 'Failed' }); }
 });
 
-router.post('/bulk/archive', adminAuthMiddleware, async (req: any, res: any) => {
+router.post('/bulk/archive', adminAuthMiddleware, autoPermissionGuard, async (req: any, res: any) => {
   try {
     const { ids } = req.body;
     if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: 'Provide category IDs' });
@@ -242,7 +243,7 @@ router.post('/bulk/archive', adminAuthMiddleware, async (req: any, res: any) => 
   } catch (e) { res.status(500).json({ error: 'Failed' }); }
 });
 
-router.post('/bulk/merge', adminAuthMiddleware, async (req: any, res: any) => {
+router.post('/bulk/merge', adminAuthMiddleware, autoPermissionGuard, async (req: any, res: any) => {
   try {
     const { source_id, target_id } = req.body;
     if (!source_id || !target_id) return res.status(400).json({ error: 'Provide source_id and target_id' });
@@ -260,7 +261,7 @@ router.post('/bulk/merge', adminAuthMiddleware, async (req: any, res: any) => {
   } catch (e) { res.status(500).json({ error: 'Failed' }); }
 });
 
-router.post('/bulk/reparent', adminAuthMiddleware, async (req: any, res: any) => {
+router.post('/bulk/reparent', adminAuthMiddleware, autoPermissionGuard, async (req: any, res: any) => {
   try {
     const { ids, new_parent_id } = req.body;
     if (!Array.isArray(ids) || !new_parent_id) return res.status(400).json({ error: 'Provide ids and new_parent_id' });
@@ -270,7 +271,7 @@ router.post('/bulk/reparent', adminAuthMiddleware, async (req: any, res: any) =>
   } catch (e) { res.status(500).json({ error: 'Failed' }); }
 });
 
-router.post('/import', adminAuthMiddleware, async (req: any, res: any) => {
+router.post('/import', adminAuthMiddleware, autoPermissionGuard, async (req: any, res: any) => {
   try {
     const { categories } = req.body;
     if (!Array.isArray(categories) || categories.length === 0) return res.status(400).json({ error: 'Provide categories array' });
@@ -286,7 +287,7 @@ router.post('/import', adminAuthMiddleware, async (req: any, res: any) => {
   } catch (e) { res.status(500).json({ error: 'Failed' }); }
 });
 
-router.get('/export', adminAuthMiddleware, async (req: any, res: any) => {
+router.get('/export', adminAuthMiddleware, autoPermissionGuard, async (req: any, res: any) => {
   try {
     const cats = await Category.find({}).sort({ parent_id: 1, sort_order: 1, name: 1 }).lean();
     const header = 'ID,Name,Slug,Description,Icon,ParentID,PostCount,Featured,Archived,Status,SortOrder\n';
@@ -299,7 +300,7 @@ router.get('/export', adminAuthMiddleware, async (req: any, res: any) => {
 
 // ═══ Admin: Quality ═══════════════════════════════════════════════
 
-router.get('/check-duplicate', adminAuthMiddleware, async (req: any, res: any) => {
+router.get('/check-duplicate', adminAuthMiddleware, autoPermissionGuard, async (req: any, res: any) => {
   try {
     const name = req.query.name as string;
     if (!name) return res.status(400).json({ error: 'Provide name query param' });
@@ -315,7 +316,7 @@ router.get('/check-duplicate', adminAuthMiddleware, async (req: any, res: any) =
   } catch (e) { res.status(500).json({ error: 'Failed' }); }
 });
 
-router.get('/orphans', adminAuthMiddleware, async (req: any, res: any) => {
+router.get('/orphans', adminAuthMiddleware, autoPermissionGuard, async (req: any, res: any) => {
   try {
     const allCats = await Category.find({}).lean();
     const archivedIds = new Set(allCats.filter(c => c.is_archived).map(c => c._id.toString()));
@@ -324,7 +325,7 @@ router.get('/orphans', adminAuthMiddleware, async (req: any, res: any) => {
   } catch (e) { res.status(500).json({ error: 'Failed' }); }
 });
 
-router.get('/:id/audit', adminAuthMiddleware, async (req: any, res: any) => {
+router.get('/:id/audit', adminAuthMiddleware, autoPermissionGuard, async (req: any, res: any) => {
   try {
     const logs = await CategoryAudit.find({ category_id: req.params.id }).sort({ created_at: -1 }).limit(50).lean();
     res.json({ audit: logs });
@@ -381,7 +382,7 @@ router.get('/:slug(*)', async (req: any, res: any) => {
 });
 
 // POST /api/categories — Create category (admin)
-router.post('/', adminAuthMiddleware, async (req: any, res: any) => {
+router.post('/', adminAuthMiddleware, autoPermissionGuard, async (req: any, res: any) => {
   try {
     const { name, slug, description, icon, parent_id, is_featured } = req.body;
 
@@ -415,7 +416,7 @@ router.post('/', adminAuthMiddleware, async (req: any, res: any) => {
 });
 
 // PATCH /api/categories/:id — Update category (admin)
-router.patch('/:id', adminAuthMiddleware, async (req: any, res: any) => {
+router.patch('/:id', adminAuthMiddleware, autoPermissionGuard, async (req: any, res: any) => {
   try {
     const { id } = req.params;
     const { name, description, icon, is_featured } = req.body;
@@ -440,7 +441,7 @@ router.patch('/:id', adminAuthMiddleware, async (req: any, res: any) => {
 });
 
 // DELETE /api/categories/:id — Archive category (admin)
-router.delete('/:id', adminAuthMiddleware, async (req: any, res: any) => {
+router.delete('/:id', adminAuthMiddleware, autoPermissionGuard, async (req: any, res: any) => {
   try {
     const { id } = req.params;
 
@@ -475,7 +476,7 @@ router.delete('/:id', adminAuthMiddleware, async (req: any, res: any) => {
 });
 
 // POST /api/categories/recalculate-post-counts — Recalculate post counts for all categories (maintenance)
-router.post('/recalculate-post-counts', adminAuthMiddleware, async (req: any, res: any) => {
+router.post('/recalculate-post-counts', adminAuthMiddleware, autoPermissionGuard, async (req: any, res: any) => {
   try {
     // Get all categories
     const categories = await Category.find({ is_archived: false }).lean();

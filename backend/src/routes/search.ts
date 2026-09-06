@@ -4,6 +4,7 @@ import { es } from '../lib/elasticsearch';
 import { INDEX_PREFIX, ensureIndices } from '../elasticsearch/lib/indexer';
 import { bulkReindexPosts, bulkReindexComments, bulkReindexCategories, bulkReindexUsers } from '../elasticsearch/lib/bulkWriter';
 import { adminAuthMiddleware } from '../lib/adminAuth';
+import { autoPermissionGuard } from '../lib/permissionGuard';
 import { searchRateLimit } from '../lib/searchRateLimit';
 import { searchQuerySchema, autocompleteQuerySchema, adminReindexSchema, adminPreviewQuerySchema, adminDeleteIndexSchema } from '../schemas/search';
 import { Post } from '../models/Post';
@@ -227,7 +228,7 @@ router.post('/click', async (req, res) => {
 // Admin
 // ══════════════════════════════════════════════════════════════════════
 
-router.get('/admin/status', adminAuthMiddleware, async (_req: any, res: any) => {
+router.get('/admin/status', adminAuthMiddleware, autoPermissionGuard, async (_req: any, res: any) => {
   try {
     const health = await es.cat.health({ format: 'json' });
     const indices = await es.cat.indices({ index: `${INDEX_PREFIX}_*`, format: 'json' });
@@ -263,6 +264,7 @@ router.get('/admin/status', adminAuthMiddleware, async (_req: any, res: any) => 
 router.post(
   '/admin/reindex',
   adminAuthMiddleware as any,
+  autoPermissionGuard as any,
   validate(adminReindexSchema),
   async (req: any, res: any) => {
     try {
@@ -308,6 +310,7 @@ router.post(
 router.delete(
   '/admin/index',
   adminAuthMiddleware as any,
+  autoPermissionGuard as any,
   validate(adminDeleteIndexSchema),
   async (req: any, res: any) => {
     try {
@@ -325,7 +328,7 @@ router.delete(
   }
 );
 
-router.get('/admin/mappings', adminAuthMiddleware, async (_req: any, res: any) => {
+router.get('/admin/mappings', adminAuthMiddleware, autoPermissionGuard, async (_req: any, res: any) => {
   try {
     const results: Record<string, unknown> = {};
     const allIndices = ['posts', 'comments', 'categories', 'users'];
@@ -346,6 +349,7 @@ router.get('/admin/mappings', adminAuthMiddleware, async (_req: any, res: any) =
 router.get(
   '/admin/preview',
   adminAuthMiddleware as any,
+  autoPermissionGuard as any,
   validate(adminPreviewQuerySchema),
   async (req: any, res: any) => {
     try {

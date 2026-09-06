@@ -3486,7 +3486,7 @@ router.get('/posts/battles', async (req, res) => {
 // ── Admin Queries ──
 import { Query } from '../models/Query';
 
-router.get('/queries', autoPermissionGuard, async (req: any, res: any) => {
+router.get('/queries',  async (req: any, res: any) => {
   try {
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
@@ -3514,7 +3514,7 @@ router.get('/queries', autoPermissionGuard, async (req: any, res: any) => {
   }
 });
 
-router.get('/queries/stats/unread', autoPermissionGuard, async (req: any, res: any) => {
+router.get('/queries/stats/unread',  async (req: any, res: any) => {
   try {
     const count = await Query.countDocuments({ status: 'new' });
     res.json({ count });
@@ -3523,7 +3523,7 @@ router.get('/queries/stats/unread', autoPermissionGuard, async (req: any, res: a
   }
 });
 
-router.get('/queries/:id', autoPermissionGuard, async (req: any, res: any) => {
+router.get('/queries/:id',  async (req: any, res: any) => {
   try {
     const query = await Query.findById(req.params.id).lean();
     if (!query) return res.status(404).json({ error: 'Not found' });
@@ -3536,7 +3536,7 @@ router.get('/queries/:id', autoPermissionGuard, async (req: any, res: any) => {
   }
 });
 
-router.patch('/queries/:id/archive', autoPermissionGuard, async (req: any, res: any) => {
+router.patch('/queries/:id/archive',  async (req: any, res: any) => {
   try {
     await Query.findByIdAndUpdate(req.params.id, { status: 'archived' });
     res.json({ success: true });
@@ -3545,7 +3545,7 @@ router.patch('/queries/:id/archive', autoPermissionGuard, async (req: any, res: 
   }
 });
 
-router.delete('/queries/:id', autoPermissionGuard, async (req: any, res: any) => {
+router.delete('/queries/:id',  async (req: any, res: any) => {
   try {
     await Query.findByIdAndDelete(req.params.id);
     res.json({ success: true });

@@ -37,10 +37,12 @@ export const ROUTE_PERMISSIONS: Record<string, string> = {
   'PATCH /posts/:id/approve': 'posts:approve',
   'PATCH /posts/:id/reject': 'posts:approve',
   'POST /posts/:id/retry': 'posts:approve',
+  'DELETE /posts/:id/cancel': 'posts:approve',
   'POST /posts/bulk/approve': 'posts:approve',
   'POST /posts/bulk/reject': 'posts:approve',
   'GET /posts': 'posts:read',
   'GET /posts/stats': 'posts:read',
+  'GET /posts/battles': 'posts:read',
   'PATCH /posts/:id': 'posts:edit',
   'DELETE /posts/:id': 'posts:delete',
   'POST /posts/:id/restore': 'posts:delete',
@@ -93,25 +95,26 @@ export const ROUTE_PERMISSIONS: Record<string, string> = {
   'PATCH /users/:user_id/trust': 'users:trust',
   'GET /users/:user_id/trust-history': 'users:read',
 
-  // Categories
-  'GET /categories/stats': 'categories:read',
-  'GET /categories/health': 'categories:read',
-  'GET /categories/analytics': 'categories:read',
-  'GET /categories/export': 'categories:read',
-  'GET /categories/orphans': 'categories:read',
-  'GET /categories/check-duplicate': 'categories:read',
-  'GET /categories/:id/audit': 'categories:read',
-  'POST /categories': 'categories:edit',
-  'PATCH /categories/:id': 'categories:edit',
-  'DELETE /categories/:id': 'categories:edit',
-  'POST /categories/:id/duplicate': 'categories:edit',
-  'POST /categories/:id/publish': 'categories:edit',
-  'POST /categories/:id/hide': 'categories:edit',
-  'POST /categories/bulk/feature': 'categories:bulk',
-  'POST /categories/bulk/archive': 'categories:bulk',
-  'POST /categories/bulk/merge': 'categories:bulk',
-  'POST /categories/bulk/reparent': 'categories:bulk',
-  'POST /categories/import': 'categories:bulk',
+  // Categories (mounted at /api/categories — paths relative to mount)
+  'GET /stats': 'categories:read',
+  'GET /health': 'categories:read',
+  'GET /analytics': 'categories:read',
+  'GET /export': 'categories:read',
+  'GET /orphans': 'categories:read',
+  'GET /check-duplicate': 'categories:read',
+  'GET /:id/audit': 'categories:read',
+  'POST /': 'categories:edit',
+  'PATCH /:id': 'categories:edit',
+  'DELETE /:id': 'categories:edit',
+  'POST /:id/duplicate': 'categories:edit',
+  'POST /:id/publish': 'categories:edit',
+  'POST /:id/hide': 'categories:edit',
+  'POST /bulk/feature': 'categories:bulk',
+  'POST /bulk/archive': 'categories:bulk',
+  'POST /bulk/merge': 'categories:bulk',
+  'POST /bulk/reparent': 'categories:bulk',
+  'POST /import': 'categories:bulk',
+  'POST /recalculate-post-counts': 'categories:edit',
 
   // Hall of Fame
   'GET /hall-of-fame': 'hof:read',
@@ -142,12 +145,12 @@ export const ROUTE_PERMISSIONS: Record<string, string> = {
   'GET /audit-logs/stats': 'audit:read',
   'GET /audit-logs/export': 'audit:export',
 
-  // Search
-  'GET /search/status': 'search:read',
-  'POST /search/reindex': 'search:manage',
-  'DELETE /search/index': 'search:manage',
-  'GET /search/mappings': 'search:read',
-  'GET /search/preview': 'search:read',
+  // Search (mounted at /api/search — paths relative to mount)
+  'GET /admin/status': 'search:read',
+  'POST /reindex': 'search:manage',
+  'DELETE /index': 'search:manage',
+  'GET /admin/mappings': 'search:read',
+  'GET /preview': 'search:read',
 
   // Notifications
   'GET /messages': 'notifications:read',
@@ -163,6 +166,13 @@ export const ROUTE_PERMISSIONS: Record<string, string> = {
   'PUT /config': 'config:write',
   'GET /config/impact': 'config:read',
   'GET /config/versions': 'config:read',
+  'GET /config/rate-analytics': 'config:read',
+
+  // AI Moderation
+  'GET /settings/ai-moderation': 'config:read',
+  'POST /settings/ai-moderation': 'config:write',
+  'POST /settings/ai-moderation/test': 'config:write',
+  'GET /stats/ai-moderation': 'statistics:read',
 
   // Mods (super admin only — but mapped for audit trail)
   'POST /mods': 'mods:manage',
