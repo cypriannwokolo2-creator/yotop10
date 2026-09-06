@@ -150,55 +150,9 @@ export const fingerprintMiddleware = async (req: Request, res: Response, next: N
     }
 
     if (currentCount <= MAX_GRACE_REQUESTS) {
-      let newFingerprint = generateFingerprint();
-      let userId = crypto.randomBytes(8).toString('hex');
-      let username = `a_${userId.substring(0, 4)}_${userId.substring(4, 8)}`;
-      let shortUsername = toShortUsername(username);
-      for (let attempt = 0; attempt < 5; attempt++) {
-        const existingShort = await User.findOne({ short_username: shortUsername }).select('_id').lean();
-        if (!existingShort) break;
-        const newId = crypto.randomBytes(8).toString('hex');
-        username = `a_${newId.substring(0, 4)}_${newId.substring(4, 8)}`;
-        shortUsername = toShortUsername(username);
-        userId = newId;
-      }
-
-      // Pre-create the user record so subsequent requests find it
-      // Option A: also set req.user immediately so the *current* request succeeds (no 404)
-      let createdUser: any = null;
-      try {
-        createdUser = await User.create({ user_id: userId, username, short_username: shortUsername, device_fingerprint: newFingerprint, trust_score: 1.0, is_admin: false });
-      } catch (createErr: any) {
-        if (createErr?.code === 11000) {
-          // Duplicate key race (concurrent grace requests) — fetch the winner
-          try {
-            createdUser = await User.findOne({ device_fingerprint: newFingerprint });
-            if (!createdUser) {
-              // Fallback: try by user_id (username collision edge case)
-              createdUser = await User.findOne({ user_id: userId });
-            }
-          } catch (findErr) {
-            console.error('[Fingerprint] Failed to fetch user after duplicate key:', (findErr as Error).message);
-          }
-        } else {
-          console.error('[Fingerprint] Failed to pre-create user during grace period:', (createErr as Error).message);
-        }
-      }
-
-      if (createdUser) {
-        req.user = {
-          user_id: createdUser.user_id,
-          username: createdUser.username,
-          custom_display_name: createdUser.custom_display_name,
-          device_fingerprint: createdUser.device_fingerprint,
-          trust_score: createdUser.trust_score,
-          trust_locked: createdUser.trust_locked,
-          rate_limit_override: createdUser.rate_limit_override,
-          is_admin: createdUser.is_admin,
-          restricted_until: createdUser.restricted_until || null,
-          created_at: createdUser.created_at,
-        };
-      }
+      // Grace period: just set the cookie, DON'T create a user.
+      // The user will be created on the next request when the cookie is present.
+      const newFingerprint = generateFingerprint();
 
       res.cookie('device_fingerprint', newFingerprint, {
         httpOnly: true,
