@@ -65,10 +65,23 @@ export default function AdminProfileClient() {
           <div className="flex justify-between text-sm">
             <span className="text-white/50">Permissions</span>
             <span className="text-white font-medium tabular-nums">
-              {admin?.permissions?.length ?? 0}
+              {admin?.role === 'super_admin' ? 'All' : (admin?.permissions?.length ?? 0)}
             </span>
           </div>
         </div>
+
+        {admin?.role !== 'super_admin' && admin?.permissions && admin.permissions.length > 0 && (
+          <div className="pt-2 border-t border-white/10">
+            <p className="text-white/40 text-xs mb-2">Granted permissions:</p>
+            <div className="flex flex-wrap gap-1.5">
+              {admin.permissions.map((p) => (
+                <span key={p} className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-[10px] font-mono text-zinc-400">
+                  {p}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <button

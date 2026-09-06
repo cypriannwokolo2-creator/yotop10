@@ -52,6 +52,8 @@ export const PERMISSION_CATALOG = [
   'config:read',
   'config:write',
   'mods:manage',
+  'queries:read',
+  'queries:manage',
   'profile:read',
 ] as const;
 

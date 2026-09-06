@@ -139,7 +139,7 @@ router.post('/login', async (req, res) => {
 
     res.json({
       success: true,
-      admin: { id: admin._id, username: admin.username, role: admin.role },
+      admin: { id: admin._id, username: admin.username, role: admin.role, permissions: admin.permissions || [], permissions_version: admin.permissions_version || 1 },
     });
   } catch (error) {
     console.error('Admin login error:', error);
@@ -207,7 +207,7 @@ router.post('/setup', async (req, res) => {
 
     res.json({
       success: true,
-      admin: { id: admin._id, username: admin.username, role: admin.role },
+      admin: { id: admin._id, username: admin.username, role: admin.role, permissions: admin.permissions || [], permissions_version: admin.permissions_version || 1 },
     });
   } catch (error) {
     console.error('Admin setup error:', error);
@@ -3480,6 +3480,77 @@ router.get('/posts/battles', async (req, res) => {
   } catch (error) {
     console.error('Battle monitor error:', error);
     res.status(500).json({ error: 'Failed to list battles' });
+  }
+});
+
+// ── Admin Queries ──
+import { Query } from '../models/Query';
+
+router.get('/queries', autoPermissionGuard, async (req: any, res: any) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
+    const status = req.query.status as string || '';
+    const type = req.query.type as string || '';
+
+    const filter: Record<string, any> = {};
+    if (status) filter.status = status;
+    if (type) filter.type = type;
+
+    const total = await Query.countDocuments(filter);
+    const queries = await Query.find(filter)
+      .sort({ created_at: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .lean();
+
+    res.json({
+      queries,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    });
+  } catch (error) {
+    console.error('[Admin] Queries list error:', error);
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
+router.get('/queries/stats/unread', autoPermissionGuard, async (req: any, res: any) => {
+  try {
+    const count = await Query.countDocuments({ status: 'new' });
+    res.json({ count });
+  } catch {
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
+router.get('/queries/:id', autoPermissionGuard, async (req: any, res: any) => {
+  try {
+    const query = await Query.findById(req.params.id).lean();
+    if (!query) return res.status(404).json({ error: 'Not found' });
+    if (query.status === 'new') {
+      await Query.findByIdAndUpdate(req.params.id, { status: 'read' });
+    }
+    res.json(query);
+  } catch {
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
+router.patch('/queries/:id/archive', autoPermissionGuard, async (req: any, res: any) => {
+  try {
+    await Query.findByIdAndUpdate(req.params.id, { status: 'archived' });
+    res.json({ success: true });
+  } catch {
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
+router.delete('/queries/:id', autoPermissionGuard, async (req: any, res: any) => {
+  try {
+    await Query.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
+  } catch {
+    res.status(500).json({ error: 'Failed' });
   }
 });
 

@@ -59,8 +59,8 @@ export default function AdminClientShell({
       {hasPermission('notifications:read') && nav('/admin/notifications', 'Notifications', 'Mail')}
       {hasPermission('search:read') && nav('/admin/search', 'Search', 'Search')}
       {hasPermission('hof:read') && nav('/admin/hall-of-fame', 'Hall of Fame', 'Star')}
-      {hasPermission('audit:read') && nav('/admin/audit', 'Audit Logs', 'ClipboardList')}
-      {admin.role === 'super_admin' && nav('/admin/queries', 'Queries', 'MessageSquareWarning')}
+          {hasPermission('audit:read') && nav('/admin/audit', 'Audit Logs', 'ClipboardList')}
+          {hasPermission('queries:read') && nav('/admin/queries', 'Queries', 'MessageSquareWarning')}
       {hasPermission('mods:manage') && nav('/admin/settings/mods', 'Moderators', 'Shield')}
       {admin.role === 'super_admin' && nav('/admin/settings/rate-limits', 'Rate Limits', 'Gauge')}
       {admin.role === 'super_admin' && nav('/admin/settings/ai-moderation', 'AI Moderation', 'Bot')}

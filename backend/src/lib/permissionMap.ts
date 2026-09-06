@@ -173,6 +173,13 @@ export const ROUTE_PERMISSIONS: Record<string, string> = {
   'POST /mods/:id/reset-password': 'mods:manage',
   'GET /mods/permissions': 'mods:manage',
   'GET /mods/presets': 'mods:manage',
+
+  // Queries
+  'GET /queries': 'queries:read',
+  'GET /queries/stats/unread': 'queries:read',
+  'GET /queries/:id': 'queries:read',
+  'PATCH /queries/:id/archive': 'queries:manage',
+  'DELETE /queries/:id': 'queries:manage',
 };
 
 // Any route not in the map defaults to requiring super_admin

@@ -46,7 +46,7 @@ export default function AdminQueriesClient() {
       const params = new URLSearchParams({ page: String(page), limit: '20' });
       if (statusFilter) params.set('status', statusFilter);
       if (typeFilter) params.set('type', typeFilter);
-      const data = await apiFetch<{ queries: Query[]; pagination: { totalPages: number } }>(`/queries?${params}`);
+      const data = await apiFetch<{ queries: Query[]; pagination: { totalPages: number } }>(`/admin/queries?${params}`);
       setQueries(data.queries || []);
       setTotalPages(data.pagination?.totalPages || 1);
     } catch { /* ignore */ }
@@ -57,7 +57,7 @@ export default function AdminQueriesClient() {
 
   const handleArchive = async (id: string) => {
     try {
-      await apiFetch(`/queries/${id}/archive`, { method: 'PATCH' });
+      await apiFetch(`/admin/queries/${id}/archive`, { method: 'PATCH' });
       setQueries((prev) => prev.map((q) => q._id === id ? { ...q, status: 'archived' } : q));
       if (selected?._id === id) setSelected((prev) => prev ? { ...prev, status: 'archived' } : null);
     } catch { /* ignore */ }
@@ -65,7 +65,7 @@ export default function AdminQueriesClient() {
 
   const handleDelete = async (id: string) => {
     try {
-      await apiFetch(`/queries/${id}`, { method: 'DELETE' });
+      await apiFetch(`/admin/queries/${id}`, { method: 'DELETE' });
       setQueries((prev) => prev.filter((q) => q._id !== id));
       if (selected?._id === id) setSelected(null);
     } catch { /* ignore */ }
@@ -75,7 +75,7 @@ export default function AdminQueriesClient() {
     setSelected(q);
     if (q.status === 'new') {
       try {
-        await apiFetch(`/queries/${q._id}`, { method: 'GET' });
+        await apiFetch(`/admin/queries/${q._id}`, { method: 'GET' });
         setQueries((prev) => prev.map((x) => x._id === q._id ? { ...x, status: 'read' } : x));
         setSelected((prev) => prev ? { ...prev, status: 'read' } : null);
       } catch { /* ignore */ }
