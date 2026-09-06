@@ -31,6 +31,7 @@ export interface ISystemConfig extends Document {
     auto_approve_threshold: number;
     auto_approve_mode: 'approve_only' | 'approve_reject' | 'approve_revision';
   };
+  fingerprint_enabled: boolean;
   version: number;
   updated_at: Date;
   updated_by: string;
@@ -68,6 +69,7 @@ const systemConfigSchema = new Schema<ISystemConfig>({
     double_blind: { type: Boolean, default: true },
   },
   ai_moderation: { type: Schema.Types.Mixed },
+  fingerprint_enabled: { type: Boolean, default: false },
   version: { type: Number, default: 1 },
   updated_at: { type: Date, default: Date.now },
   updated_by: { type: String, default: 'system' },

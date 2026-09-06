@@ -71,6 +71,7 @@ export const configUpdateSchema = z.object({
       double_blind: z.boolean().optional(),
     })
     .optional(),
+  fingerprint_enabled: z.boolean().optional(),
 });
 
 export const configImpactQuerySchema = z.object({

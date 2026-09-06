@@ -174,6 +174,10 @@ export const ROUTE_PERMISSIONS: Record<string, string> = {
   'POST /settings/ai-moderation/test': 'config:write',
   'GET /stats/ai-moderation': 'statistics:read',
 
+  // Fingerprint (super_admin only via handler check)
+  'GET /settings/fingerprint': 'config:read',
+  'PUT /settings/fingerprint': 'config:write',
+
   // Mods (super admin only — but mapped for audit trail)
   'POST /mods': 'mods:manage',
   'GET /mods': 'mods:manage',
