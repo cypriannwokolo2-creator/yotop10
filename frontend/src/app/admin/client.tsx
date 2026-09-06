@@ -23,6 +23,7 @@ const quickLinks = [
   { title: 'Mods', icon: 'Shield' as const, href: '/admin/settings/mods' },
   { title: 'AI Moderation', icon: 'Bot' as const, href: '/admin/settings/ai-moderation' },
   { title: 'Config', icon: 'Settings' as const, href: '/admin/config' },
+  { title: 'Queries', icon: 'MessageSquareWarning' as const, href: '/admin/queries' },
 ];
 
 export default function AdminClient() {
