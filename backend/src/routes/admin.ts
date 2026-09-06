@@ -254,14 +254,16 @@ router.get('/me', async (req, res) => {
  * Protected — invalidate admin session
  */
 router.post('/logout', async (req, res) => {
-  await AdminUser.findByIdAndUpdate(req.admin!.id, { $inc: { token_version: 1 } });
-  logAudit({
-    admin_id: req.admin!.id,
-    action: 'logout',
-    ip: getClientIp(req),
-    metadata: { username: req.admin!.username },
-  });
-  res.clearCookie('admin_token');
+  try {
+    await AdminUser.findByIdAndUpdate(req.admin!.id, { $inc: { token_version: 1 } });
+    logAudit({
+      admin_id: req.admin!.id,
+      action: 'logout',
+      ip: getClientIp(req),
+      metadata: { username: req.admin!.username },
+    });
+  } catch {}
+  res.clearCookie('admin_token', { path: '/', sameSite: 'strict', httpOnly: true });
   res.json({ success: true });
 });
 

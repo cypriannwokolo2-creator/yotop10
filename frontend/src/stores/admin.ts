@@ -89,7 +89,6 @@ export const useAdminStore = create<AdminState>((set) => ({
       console.warn('[AdminStore] Logout API call failed, clearing local state:', err);
     } finally {
       set({ admin: null, authenticated: false, loading: false, initialized: true });
-      document.cookie = 'admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     }
   },
 }));
