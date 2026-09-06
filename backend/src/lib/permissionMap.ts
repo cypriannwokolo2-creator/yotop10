@@ -4,6 +4,7 @@
 export const ROUTE_PERMISSIONS: Record<string, string> = {
   // Dashboard
   'GET /me': 'dashboard:read',
+  'POST /logout': 'dashboard:read',
   'GET /stats/overview': 'statistics:read',
   'GET /stats/health': 'statistics:read',
   'GET /stats/content': 'statistics:read',

@@ -40,6 +40,7 @@ import { indexPost, removePost, indexComment, removeComment } from '../elasticse
 const router: Router = Router();
 
 const PUBLIC_PATHS = new Set(['/login', '/setup', '/setup/validate']);
+const AUTH_ONLY_PATHS = new Set(['/logout']); // Require auth but skip permission check
 
 router.use((req, res, next) => {
   if (PUBLIC_PATHS.has(req.path)) return next();
@@ -47,7 +48,7 @@ router.use((req, res, next) => {
 });
 
 router.use((req, res, next) => {
-  if (PUBLIC_PATHS.has(req.path)) return next();
+  if (PUBLIC_PATHS.has(req.path) || AUTH_ONLY_PATHS.has(req.path)) return next();
   return autoPermissionGuard(req, res, next);
 });
 
