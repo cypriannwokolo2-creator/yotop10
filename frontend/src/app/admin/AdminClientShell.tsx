@@ -64,6 +64,7 @@ export default function AdminClientShell({
           {hasPermission('search:read') && nav('/admin/search', 'Search')}
           {hasPermission('hof:read') && nav('/admin/hall-of-fame', 'Hall of Fame')}
           {hasPermission('audit:read') && nav('/admin/audit', 'Audit Logs')}
+          {admin.role === 'super_admin' && nav('/admin/queries', 'Queries')}
           {hasPermission('mods:manage') && nav('/admin/settings/mods', 'Moderators')}
           {admin.role === 'super_admin' && nav('/admin/settings/rate-limits', 'Rate Limits')}
           {admin.role === 'super_admin' && nav('/admin/settings/ai-moderation', 'AI Moderation')}
