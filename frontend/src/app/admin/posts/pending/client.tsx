@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import React from 'react';
 import { apiFetch } from '@/lib/api';
 import { toast } from '@/lib/toast';
 import { Icon } from '@/components/icons/Icon';
 import { formatDate, relativeTime } from '@/lib/dates';
+import { CustomDropdown } from '@/components/CustomDropdown';
 
 interface PendingPost { _id: string; title: string; author_username: string; post_type: string; created_at: string; revision_count: number; category_slug: string; category_name?: string; intro?: string; ai_score?: number; ai_flags?: string[]; collision?: { title: string; submitted_at: string; first: boolean } }
 interface CategoryOption { slug: string; name: string; children?: Array<{ slug: string; name: string }> }
@@ -134,20 +134,28 @@ export default function PendingPostsClient() {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-2 flex-wrap">
-        <select value={filters.sort} onChange={e => { setFilters(f => ({ ...f, sort: e.target.value })); setPage(1); }} className={filterSelectClass}>
-          <option value="oldest" className="bg-zinc-900">Oldest First</option><option value="newest" className="bg-zinc-900">Newest First</option>
-        </select>
-        <select value={filters.post_type} onChange={e => { setFilters(f => ({ ...f, post_type: e.target.value })); setPage(1); }} className={filterSelectClass}>
-          <option value="" className="bg-zinc-900">All Types</option><option value="top_list" className="bg-zinc-900">Top List</option><option value="best_of" className="bg-zinc-900">Best Of</option><option value="worst_of" className="bg-zinc-900">Worst Of</option><option value="hidden_gems" className="bg-zinc-900">Hidden Gems</option><option value="counter_list" className="bg-zinc-900">Counter List</option>
-        </select>
+        <CustomDropdown
+          value={filters.sort}
+          onChange={v => { setFilters(f => ({ ...f, sort: v })); setPage(1); }}
+          options={[{ value: 'oldest', label: 'Oldest First' }, { value: 'newest', label: 'Newest First' }]}
+          placeholder="Sort"
+          className={filterSelectClass}
+        />
+        <CustomDropdown
+          value={filters.post_type}
+          onChange={v => { setFilters(f => ({ ...f, post_type: v })); setPage(1); }}
+          options={[{ value: '', label: 'All Types' }, { value: 'top_list', label: 'Top List' }, { value: 'best_of', label: 'Best Of' }, { value: 'worst_of', label: 'Worst Of' }, { value: 'hidden_gems', label: 'Hidden Gems' }, { value: 'counter_list', label: 'Counter List' }]}
+          placeholder="All Types"
+          className={filterSelectClass}
+        />
         <input placeholder="Author username" value={filters.author} onChange={e => { setFilters(f => ({ ...f, author: e.target.value })); setPage(1); }} className={`${filterInputClass} sm:w-[140px]`} />
-        <select value={filters.category_slug} onChange={e => { setFilters(f => ({ ...f, category_slug: e.target.value })); setPage(1); }} className={`${filterSelectClass} sm:max-w-[180px]`}>
-          <option value="" className="bg-zinc-900">All Categories</option>
-          {categories.map(c => (<React.Fragment key={c.slug}>
-            <option value={c.slug} className="bg-zinc-900">{c.name}</option>
-            {c.children?.map(ch => <option key={ch.slug} value={ch.slug} className="bg-zinc-900">&nbsp;&nbsp;{ch.name}</option>)}
-          </React.Fragment>))}
-        </select>
+        <CustomDropdown
+          value={filters.category_slug}
+          onChange={v => { setFilters(f => ({ ...f, category_slug: v })); setPage(1); }}
+          options={[{ value: '', label: 'All Categories' }, ...categories.flatMap(c => [{ value: c.slug, label: c.name }, ...(c.children?.map(ch => ({ value: ch.slug, label: `\u00a0\u00a0${ch.name}` })) || [])])]}
+          placeholder="All Categories"
+          className={`${filterSelectClass} sm:max-w-[180px]`}
+        />
         <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1); }} className={`${filterInputClass} sm:w-[130px]`} title="From date" />
         <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1); }} className={`${filterInputClass} sm:w-[130px]`} title="To date" />
       </div>

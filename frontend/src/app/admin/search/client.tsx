@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from '@/lib/api';
 import { toast } from '@/lib/toast';
 import { Icon } from '@/components/icons/Icon';
+import { CustomDropdown } from '@/components/CustomDropdown';
 
 interface IndexInfo { docs: number; size: string; }
 interface GapInfo { diff: number; pct: number; }
@@ -116,9 +117,18 @@ export default function AdminSearchClient() {
           <div className={sectionClass}>
             <h3 className="text-base2 font-bold mb-3 text-white flex items-center gap-2"><Icon name="RefreshCw" size={16} /> Reindex</h3>
             <div className="flex gap-2.5 items-center flex-wrap">
-              <select value={reindexScope} onChange={e => setReindexScope(e.target.value)} className={selClass}>
-                <option value="all" className="bg-zinc-900">All</option><option value="posts" className="bg-zinc-900">Posts</option><option value="comments" className="bg-zinc-900">Comments</option><option value="categories" className="bg-zinc-900">Categories</option><option value="users" className="bg-zinc-900">Users</option>
-              </select>
+              <CustomDropdown
+                value={reindexScope}
+                onChange={setReindexScope}
+                options={[
+                  { value: 'all', label: 'All' },
+                  { value: 'posts', label: 'Posts' },
+                  { value: 'comments', label: 'Comments' },
+                  { value: 'categories', label: 'Categories' },
+                  { value: 'users', label: 'Users' },
+                ]}
+                className={selClass}
+              />
               <button onClick={handleReindex} disabled={reindexing} className={primaryBtnClass(reindexing)}>{reindexing ? 'Reindexing...' : 'Reindex'}</button>
             </div>
           </div>
@@ -144,9 +154,18 @@ export default function AdminSearchClient() {
           <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl p-4 mb-4">
             <h3 className="text-base2 font-bold mb-3 text-white flex items-center gap-2"><Icon name="TriangleAlert" size={16} color="#e65100" /> Delete Index</h3>
             <div className="flex gap-2.5 items-center flex-wrap">
-              <select value={deleteIdx} onChange={e => setDeleteIdx(e.target.value)} className={selClass}>
-                <option value="" className="bg-zinc-900">Select...</option><option value="posts" className="bg-zinc-900">Posts</option><option value="comments" className="bg-zinc-900">Comments</option><option value="categories" className="bg-zinc-900">Categories</option><option value="users" className="bg-zinc-900">Users</option>
-              </select>
+              <CustomDropdown
+                value={deleteIdx}
+                onChange={setDeleteIdx}
+                options={[
+                  { value: '', label: 'Select...' },
+                  { value: 'posts', label: 'Posts' },
+                  { value: 'comments', label: 'Comments' },
+                  { value: 'categories', label: 'Categories' },
+                  { value: 'users', label: 'Users' },
+                ]}
+                className={selClass}
+              />
               <button onClick={handleDeleteIndex} disabled={!deleteIdx} className={`px-5 py-2 text-white border-none rounded-xl text-sm2 font-bold min-h-9 ${deleteIdx ? 'bg-red-700 cursor-pointer hover:bg-red-600' : 'bg-white/10 cursor-not-allowed'}`}>Delete & Recreate</button>
             </div>
           </div>

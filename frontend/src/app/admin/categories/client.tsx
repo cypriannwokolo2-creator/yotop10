@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from '@/lib/api';
 import { toast } from '@/lib/toast';
 import { Icon } from '@/components/icons/Icon';
+import { CustomDropdown } from '@/components/CustomDropdown';
 
 interface Cat {
   id: string; name: string; slug: string; description?: string; icon?: string;
@@ -167,7 +168,7 @@ export default function AdminCategoriesClient() {
         <div className="mb-4 p-4 bg-white/5 border border-white/5 rounded-2xl flex flex-col sm:flex-row gap-3 items-stretch sm:items-end">
           <div className="flex-1"><label className="text-3xs text-white/40 block mb-1">Name *</label><input value={newName} onChange={e => setNewName(e.target.value)} className={inputClass} /></div>
           <div className="flex-1"><label className="text-3xs text-white/40 block mb-1">Slug</label><input value={newSlug} onChange={e => setNewSlug(e.target.value)} className={inputClass} /></div>
-          <div className="flex-1"><label className="text-3xs text-white/40 block mb-1">Parent</label><select value={newParent} onChange={e => setNewParent(e.target.value)} className={inputClass}><option value="" className="bg-zinc-900">None (parent)</option>{parentOptions.map(p => <option key={p.id} value={p.id} className="bg-zinc-900">{p.name}</option>)}</select></div>
+          <div className="flex-1"><label className="text-3xs text-white/40 block mb-1">Parent</label><CustomDropdown value={newParent} onChange={(v) => setNewParent(v)} options={[{ value: '', label: 'None (parent)' }, ...parentOptions.map(p => ({ value: p.id, label: p.name }))]} className={inputClass} /></div>
           <button onClick={handleCreate} className={primaryBtnClass()}>Create</button>
         </div>
       )}
@@ -216,9 +217,7 @@ export default function AdminCategoriesClient() {
                   <div><label className="text-3xs text-white/40 block mb-1">Name</label><input value={editName} onChange={e => setEditName(e.target.value)} disabled={!selected.parent_id} className={`${inputClass} ${!selected.parent_id ? 'opacity-50' : ''}`} /></div>
                   <div><label className="text-3xs text-white/40 block mb-1">Slug</label><input value={editSlug} onChange={e => setEditSlug(e.target.value)} disabled={!selected.parent_id} className={`${inputClass} ${!selected.parent_id ? 'opacity-50' : ''}`} /></div>
                   <div><label className="text-3xs text-white/40 block mb-1">Status</label>
-                    <select value={editStatus} onChange={e => setEditStatus(e.target.value)} disabled={!selected.parent_id} className={`${inputClass} ${!selected.parent_id ? 'opacity-50' : ''}`}>
-                      <option value="published" className="bg-zinc-900">Published</option><option value="draft" className="bg-zinc-900">Draft</option><option value="hidden" className="bg-zinc-900">Hidden</option>
-                    </select>
+                    <CustomDropdown value={editStatus} onChange={(v) => setEditStatus(v)} options={[{ value: 'published', label: 'Published' }, { value: 'draft', label: 'Draft' }, { value: 'hidden', label: 'Hidden' }]} className={`${inputClass} ${!selected.parent_id ? 'opacity-50 pointer-events-none' : ''}`} />
                   </div>
                   <div><label className="text-3xs text-white/40 block mb-1">Sort Order</label><input type="number" value={editSort} onChange={e => setEditSort(parseInt(e.target.value) || 0)} disabled={!selected.parent_id} className={`${inputClass} ${!selected.parent_id ? 'opacity-50' : ''}`} /></div>
                   <div className="flex items-end pb-1"><label className="text-3xs text-white/40 flex items-center gap-2 min-h-11"><input type="checkbox" checked={editFeatured} onChange={e => setEditFeatured(e.target.checked)} disabled={!selected.parent_id} className="w-4 h-4" /> Featured</label></div>
@@ -357,9 +356,9 @@ export default function AdminCategoriesClient() {
           <div className={cardClass}>
             <h3 className="text-sm font-bold mb-2 text-white">Merge Category</h3>
             <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
-              <select value={mergeSource} onChange={e => setMergeSource(e.target.value)} className={inputClass}><option value="">Source...</option>{allCats.map(c => <option key={c.id} value={c.id} className="bg-zinc-900">{c.name}</option>)}</select>
+              <CustomDropdown value={mergeSource} onChange={(v) => setMergeSource(v)} options={[{ value: '', label: 'Source...' }, ...allCats.map(c => ({ value: c.id, label: c.name }))]} className={inputClass} />
               <span className="text-white/40 flex items-center justify-center py-1"><Icon name="ArrowRight" size={16} /></span>
-              <select value={mergeTarget} onChange={e => setMergeTarget(e.target.value)} className={inputClass}><option value="">Target...</option>{allCats.map(c => <option key={c.id} value={c.id} className="bg-zinc-900">{c.name}</option>)}</select>
+              <CustomDropdown value={mergeTarget} onChange={(v) => setMergeTarget(v)} options={[{ value: '', label: 'Target...' }, ...allCats.map(c => ({ value: c.id, label: c.name }))]} className={inputClass} />
               <button onClick={handleMerge} className={primaryBtnClass()}>Merge</button>
             </div>
           </div>
@@ -368,7 +367,7 @@ export default function AdminCategoriesClient() {
             <h3 className="text-sm font-bold mb-2 text-white">Reparent Categories</h3>
             <div className="mb-2 text-xs text-white/60">Select categories below, then choose a new parent:</div>
             <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center mb-3">
-              <select value={reparentTarget} onChange={e => setReparentTarget(e.target.value)} className={inputClass}><option value="">New parent...</option>{parentOptions.map(p => <option key={p.id} value={p.id} className="bg-zinc-900">{p.name}</option>)}</select>
+              <CustomDropdown value={reparentTarget} onChange={(v) => setReparentTarget(v)} options={[{ value: '', label: 'New parent...' }, ...parentOptions.map(p => ({ value: p.id, label: p.name }))]} className={inputClass} />
               <button onClick={handleReparent} className={primaryBtnClass()}>Reparent {bulkIds.size > 0 ? `(${bulkIds.size})` : ''}</button>
             </div>
             {filtered.map(c => <label key={c.id} className="flex items-center gap-2 text-xs py-1.5 text-white cursor-pointer min-h-11"><input type="checkbox" checked={bulkIds.has(c.id)} onChange={() => { const n = new Set(bulkIds); if (n.has(c.id)) n.delete(c.id); else n.add(c.id); setBulkIds(n); }} className="w-4 h-4" /> {c.name} <span className="text-white/40">({c.slug})</span></label>)}

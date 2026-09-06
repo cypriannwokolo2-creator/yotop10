@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from '@/lib/api';
 import { Icon } from '@/components/icons/Icon';
+import { CustomDropdown } from '@/components/CustomDropdown';
 
 const PREDEFINED_MODELS = [
   'deepseek-chat',
@@ -210,17 +211,18 @@ export default function AiModerationClient() {
           <div>
             <label className="mb-1.5 block text-xs font-medium text-zinc-400">Model</label>
             <div className="flex gap-2">
-              <select
+              <CustomDropdown
                 value={modelSelect}
-                onChange={e => handleModelChange(e.target.value)}
-                className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-3.5 text-sm text-white focus:border-orange-500/50 focus:outline-none"
-              >
-                <option value="deepseek-chat" className="bg-zinc-900">DeepSeek Chat</option>
-                <option value="deepseek-reasoner" className="bg-zinc-900">DeepSeek Reasoner</option>
-                <option value="deepseek-v4-flash" className="bg-zinc-900">DeepSeek V4 Flash</option>
-                <option value="deepseek-v4-pro" className="bg-zinc-900">DeepSeek V4 Pro</option>
-                <option value="__custom__" className="bg-zinc-900">Custom...</option>
-              </select>
+                onChange={(v) => handleModelChange(v)}
+                options={[
+                  { value: 'deepseek-chat', label: 'DeepSeek Chat' },
+                  { value: 'deepseek-reasoner', label: 'DeepSeek Reasoner' },
+                  { value: 'deepseek-v4-flash', label: 'DeepSeek V4 Flash' },
+                  { value: 'deepseek-v4-pro', label: 'DeepSeek V4 Pro' },
+                  { value: '__custom__', label: 'Custom...' },
+                ]}
+                className="flex-1"
+              />
               {modelSelect === '__custom__' && (
                 <input
                   type="text"
@@ -326,17 +328,18 @@ export default function AiModerationClient() {
           <div className="mb-4">
             <label className="mb-1.5 block text-xs font-medium text-zinc-400">Model</label>
             <div className="flex gap-2">
-              <select
+              <CustomDropdown
                 value={modelSelect}
-                onChange={e => handleModelChange(e.target.value)}
-                className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white focus:border-orange-500/50 focus:outline-none"
-              >
-                <option value="deepseek-chat" className="bg-zinc-900">DeepSeek Chat</option>
-                <option value="deepseek-reasoner" className="bg-zinc-900">DeepSeek Reasoner</option>
-                <option value="deepseek-v4-flash" className="bg-zinc-900">DeepSeek V4 Flash</option>
-                <option value="deepseek-v4-pro" className="bg-zinc-900">DeepSeek V4 Pro</option>
-                <option value="__custom__" className="bg-zinc-900">Custom...</option>
-              </select>
+                onChange={(v) => handleModelChange(v)}
+                options={[
+                  { value: 'deepseek-chat', label: 'DeepSeek Chat' },
+                  { value: 'deepseek-reasoner', label: 'DeepSeek Reasoner' },
+                  { value: 'deepseek-v4-flash', label: 'DeepSeek V4 Flash' },
+                  { value: 'deepseek-v4-pro', label: 'DeepSeek V4 Pro' },
+                  { value: '__custom__', label: 'Custom...' },
+                ]}
+                className="flex-1"
+              />
               {modelSelect === '__custom__' && (
                 <input
                   type="text"
@@ -416,13 +419,7 @@ export default function AiModerationClient() {
 
           <div className="mb-4">
             <label className="mb-1.5 block text-xs font-medium text-zinc-400">Test Post (optional)</label>
-            <select value={testPostSlug} onChange={e => setTestPostSlug(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white focus:border-orange-500/50 focus:outline-none">
-              <option value="" className="bg-zinc-900">Use hardcoded sample post</option>
-              {availablePosts.map(p => (
-                <option key={p.slug} value={p.slug} className="bg-zinc-900">{p.title}</option>
-              ))}
-            </select>
+            <CustomDropdown value={testPostSlug} onChange={(v) => setTestPostSlug(v)} options={[{ value: '', label: 'Use hardcoded sample post' }, ...availablePosts.map(p => ({ value: p.slug, label: p.title }))]} className="w-full" />
           </div>
 
           <button onClick={handleTest} disabled={testing}

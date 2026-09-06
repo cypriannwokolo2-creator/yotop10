@@ -5,6 +5,7 @@ import { apiFetch } from '@/lib/api';
 import { toast } from '@/lib/toast';
 import { Icon } from '@/components/icons/Icon';
 import { formatDate, formatTime } from '@/lib/dates';
+import { CustomDropdown } from '@/components/CustomDropdown';
 
 interface Threshold {
   _id: string;
@@ -209,9 +210,12 @@ export default function AdminAlertsClient() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-3">
                 <div>
                   <label className="block text-xs text-white/40 mb-1">Metric</label>
-                  <select value={form.metric} onChange={(e) => setForm({ ...form, metric: e.target.value })} className={selectClass()}>
-                    {ALL_METRICS.map((m) => <option key={m} value={m} className="bg-zinc-900">{METRIC_LABELS[m]}</option>)}
-                  </select>
+                  <CustomDropdown
+                    value={form.metric}
+                    onChange={(val) => setForm({ ...form, metric: val })}
+                    options={ALL_METRICS.map((m) => ({ value: m, label: METRIC_LABELS[m] }))}
+                    className={selectClass()}
+                  />
                 </div>
                 <div>
                   <label className="block text-xs text-white/40 mb-1">Threshold</label>
@@ -219,17 +223,27 @@ export default function AdminAlertsClient() {
                 </div>
                 <div>
                   <label className="block text-xs text-white/40 mb-1">Operator</label>
-                  <select value={form.operator} onChange={(e) => setForm({ ...form, operator: e.target.value as 'gt' | 'lt' })} className={selectClass()}>
-                    <option value="gt" className="bg-zinc-900">greater than</option>
-                    <option value="lt" className="bg-zinc-900">less than</option>
-                  </select>
+                  <CustomDropdown
+                    value={form.operator}
+                    onChange={(val) => setForm({ ...form, operator: val as 'gt' | 'lt' })}
+                    options={[
+                      { value: 'gt', label: 'greater than' },
+                      { value: 'lt', label: 'less than' },
+                    ]}
+                    className={selectClass()}
+                  />
                 </div>
                 <div>
                   <label className="block text-xs text-white/40 mb-1">Severity</label>
-                  <select value={form.severity} onChange={(e) => setForm({ ...form, severity: e.target.value as 'warning' | 'critical' })} className={selectClass()}>
-                    <option value="warning" className="bg-zinc-900">Warning</option>
-                    <option value="critical" className="bg-zinc-900">Critical</option>
-                  </select>
+                  <CustomDropdown
+                    value={form.severity}
+                    onChange={(val) => setForm({ ...form, severity: val as 'warning' | 'critical' })}
+                    options={[
+                      { value: 'warning', label: 'Warning' },
+                      { value: 'critical', label: 'Critical' },
+                    ]}
+                    className={selectClass()}
+                  />
                 </div>
                 <div>
                   <label className="block text-xs text-white/40 mb-1">Cooldown (min)</label>

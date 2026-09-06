@@ -10,6 +10,7 @@ import { EditTrustModal } from '@/components/admin/EditTrustModal';
 import { OverrideRateModal } from '@/components/admin/OverrideRateModal';
 import { RestrictUserModal } from '@/components/admin/RestrictUserModal';
 import { GlobalConfigModal } from '@/components/admin/GlobalConfigModal';
+import { CustomDropdown } from '@/components/CustomDropdown';
 import type { UserSummary, UserListResponse, SystemConfig, ConfigImpact } from '@/lib/api/types';
 
 export default function AdminUsersClient() {
@@ -199,38 +200,29 @@ export default function AdminUsersClient() {
           className={`${filterSelectClass} w-full sm:w-[180px]`}
         />
 
-        <select
+        <CustomDropdown
           value={trustFilter}
-          onChange={e => { setTrustFilter(e.target.value); setPage(1); }}
+          onChange={v => { setTrustFilter(v); setPage(1); }}
+          options={[{ value: '', label: 'All Trust' }, { value: 'troll', label: 'Troll' }, { value: 'neutral', label: 'Neutral' }, { value: 'scholar', label: 'Scholar' }]}
+          placeholder="All Trust"
           className={filterSelectClass}
-        >
-          <option value="" className="bg-zinc-900">All Trust</option>
-          <option value="troll" className="bg-zinc-900">Troll</option>
-          <option value="neutral" className="bg-zinc-900">Neutral</option>
-          <option value="scholar" className="bg-zinc-900">Scholar</option>
-        </select>
+        />
 
-        <select
+        <CustomDropdown
           value={statusFilter}
-          onChange={e => { setStatusFilter(e.target.value); setPage(1); }}
+          onChange={v => { setStatusFilter(v); setPage(1); }}
+          options={[{ value: '', label: 'All Status' }, { value: 'active', label: 'Active' }, { value: 'restricted', label: 'Restricted' }]}
+          placeholder="All Status"
           className={filterSelectClass}
-        >
-          <option value="" className="bg-zinc-900">All Status</option>
-          <option value="active" className="bg-zinc-900">Active</option>
-          <option value="restricted" className="bg-zinc-900">Restricted</option>
-        </select>
+        />
 
-        <select
+        <CustomDropdown
           value={sort}
-          onChange={e => { setSort(e.target.value); setPage(1); }}
+          onChange={v => { setSort(v); setPage(1); }}
+          options={[{ value: 'newest', label: 'Newest' }, { value: 'oldest', label: 'Oldest' }, { value: 'highest_trust', label: 'Highest Trust' }, { value: 'lowest_trust', label: 'Lowest Trust' }, { value: 'most_posts', label: 'Most Posts' }]}
+          placeholder="Sort"
           className={filterSelectClass}
-        >
-          <option value="newest" className="bg-zinc-900">Newest</option>
-          <option value="oldest" className="bg-zinc-900">Oldest</option>
-          <option value="highest_trust" className="bg-zinc-900">Highest Trust</option>
-          <option value="lowest_trust" className="bg-zinc-900">Lowest Trust</option>
-          <option value="most_posts" className="bg-zinc-900">Most Posts</option>
-        </select>
+        />
 
         <button
           onClick={() => setSortDir(d => d === 'asc' ? 'desc' : 'asc')}

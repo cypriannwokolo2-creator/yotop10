@@ -5,6 +5,7 @@ import { apiFetch } from '@/lib/api';
 import { toast } from '@/lib/toast';
 import { Icon } from '@/components/icons/Icon';
 import { formatDate } from '@/lib/dates';
+import { CustomDropdown } from '@/components/CustomDropdown';
 
 interface PresetDef {
   _id: string;
@@ -536,18 +537,12 @@ function CreateModModal({
         <label className="block text-white/60 text-3xs font-semibold mb-1.5">
           Preset
         </label>
-        <select
+        <CustomDropdown
           className={inputClass}
           value={selectedPreset}
-          onChange={(e) => handlePresetChange(e.target.value)}
-        >
-          <option value="" className="bg-zinc-900">Custom permissions</option>
-          {presets.map((p) => (
-            <option key={p.name} value={p.name} className="bg-zinc-900">
-              {p.name} ({p.permissions.length} perms)
-            </option>
-          ))}
-        </select>
+          onChange={(v) => handlePresetChange(v)}
+          options={[{ value: '', label: 'Custom permissions' }, ...presets.map((p) => ({ value: p.name, label: `${p.name} (${p.permissions.length} perms)` }))]}
+        />
       </div>
 
       <div>

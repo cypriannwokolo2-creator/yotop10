@@ -5,6 +5,7 @@ import { apiFetch } from '@/lib/api';
 import { toast } from '@/lib/toast';
 import { Icon } from '@/components/icons/Icon';
 import { formatDate } from '@/lib/dates';
+import { CustomDropdown } from '@/components/CustomDropdown';
 
 interface SentMessage {
   _id: string; type: 'individual' | 'broadcast'; recipient_id: string | null;
@@ -190,11 +191,16 @@ export default function AdminNotificationsClient() {
           <div className="flex gap-4 flex-wrap">
             <div>
               <label className="block text-xs text-white/40 mb-1">Priority</label>
-              <select value={priority} onChange={e => setPriority(e.target.value as typeof priority)} className={selectClass()}>
-                <option value="info" className="bg-zinc-900">Info</option>
-                <option value="important" className="bg-zinc-900">Important</option>
-                <option value="urgent" className="bg-zinc-900">Urgent</option>
-              </select>
+              <CustomDropdown
+                value={priority}
+                onChange={(val) => setPriority(val as typeof priority)}
+                options={[
+                  { value: 'info', label: 'Info' },
+                  { value: 'important', label: 'Important' },
+                  { value: 'urgent', label: 'Urgent' },
+                ]}
+                className={selectClass()}
+              />
             </div>
             <div>
               <label className="block text-xs text-white/40 mb-1">Expires in (days)</label>
@@ -271,11 +277,16 @@ export default function AdminNotificationsClient() {
               <input value={templateTitle} onChange={e => setTemplateTitle(e.target.value)} placeholder="Default title" className={inputClass()} />
               <textarea value={templateBody} onChange={e => setTemplateBody(e.target.value)} placeholder="Default body" rows={3} className={`${inputClass()} font-inherit`} />
               <div className="flex gap-3 items-center flex-wrap">
-                <select value={templatePriority} onChange={e => setTemplatePriority(e.target.value as typeof templatePriority)} className={selectClass()}>
-                  <option value="info" className="bg-zinc-900">Info</option>
-                  <option value="important" className="bg-zinc-900">Important</option>
-                  <option value="urgent" className="bg-zinc-900">Urgent</option>
-                </select>
+                <CustomDropdown
+                  value={templatePriority}
+                  onChange={(val) => setTemplatePriority(val as typeof templatePriority)}
+                  options={[
+                    { value: 'info', label: 'Info' },
+                    { value: 'important', label: 'Important' },
+                    { value: 'urgent', label: 'Urgent' },
+                  ]}
+                  className={selectClass()}
+                />
                 <button onClick={handleSaveTemplate} className="px-4 py-1.5 rounded-lg text-white text-xs font-semibold cursor-pointer bg-green-700 hover:bg-green-600 transition-colors min-h-9">
                   Save
                 </button>

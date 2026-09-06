@@ -5,6 +5,7 @@ import { apiFetch } from '@/lib/api';
 import { toast } from '@/lib/toast';
 import { Icon, type LucideIconName } from '@/components/icons/Icon';
 import { formatDate } from '@/lib/dates';
+import { CustomDropdown } from '@/components/CustomDropdown';
 
 interface Comment { _id: string; id: string; content: string; author_username: string; post_id: string; post_slug: string | null; post_title: string | null; spark_score: number; fire_count: number; reply_count: number; depth: number; is_item_anchored: boolean; depth_badge: string | null; created_at: string; deleted: boolean; hidden: boolean; highlighted: boolean; flag_type: string | null; flag_evidence: Record<string, unknown> | null; }
 
@@ -153,15 +154,27 @@ export default function AdminCommentsClient() {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-2 flex-wrap">
-        <select value={filters.type} onChange={e => { setFilters(f => ({ ...f, type: e.target.value })); setPage(1); }} className={filterSelectClass}>
-          <option value="" className="bg-zinc-900">All Types</option><option value="post_comment" className="bg-zinc-900">Post Comment</option><option value="item_anchored" className="bg-zinc-900">Item Anchored</option>
-        </select>
-        <select value={filters.sort} onChange={e => { setFilters(f => ({ ...f, sort: e.target.value })); setPage(1); }} className={filterSelectClass}>
-          <option value="newest" className="bg-zinc-900">Newest</option><option value="oldest" className="bg-zinc-900">Oldest</option><option value="most_fire" className="bg-zinc-900">Most Fire</option><option value="most_replies" className="bg-zinc-900">Most Replies</option><option value="highest_spark" className="bg-zinc-900">Highest Spark</option>
-        </select>
-        <select value={filters.has_replies} onChange={e => { setFilters(f => ({ ...f, has_replies: e.target.value })); setPage(1); }} className={filterSelectClass}>
-          <option value="" className="bg-zinc-900">All</option><option value="yes" className="bg-zinc-900">Has Replies</option><option value="no" className="bg-zinc-900">No Replies</option>
-        </select>
+        <CustomDropdown
+          value={filters.type}
+          onChange={v => { setFilters(f => ({ ...f, type: v })); setPage(1); }}
+          options={[{ value: '', label: 'All Types' }, { value: 'post_comment', label: 'Post Comment' }, { value: 'item_anchored', label: 'Item Anchored' }]}
+          placeholder="All Types"
+          className={filterSelectClass}
+        />
+        <CustomDropdown
+          value={filters.sort}
+          onChange={v => { setFilters(f => ({ ...f, sort: v })); setPage(1); }}
+          options={[{ value: 'newest', label: 'Newest' }, { value: 'oldest', label: 'Oldest' }, { value: 'most_fire', label: 'Most Fire' }, { value: 'most_replies', label: 'Most Replies' }, { value: 'highest_spark', label: 'Highest Spark' }]}
+          placeholder="Sort"
+          className={filterSelectClass}
+        />
+        <CustomDropdown
+          value={filters.has_replies}
+          onChange={v => { setFilters(f => ({ ...f, has_replies: v })); setPage(1); }}
+          options={[{ value: '', label: 'All' }, { value: 'yes', label: 'Has Replies' }, { value: 'no', label: 'No Replies' }]}
+          placeholder="Replies"
+          className={filterSelectClass}
+        />
         <input placeholder="Search content" value={filters.search} onChange={e => { setFilters(f => ({ ...f, search: e.target.value })); setPage(1); }} className={`${filterSelectClass} sm:w-[180px]`} />
       </div>
 

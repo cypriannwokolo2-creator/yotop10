@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { apiFetch } from '@/lib/api';
 import { Icon } from '@/components/icons/Icon';
 import { formatDate, formatTime } from '@/lib/dates';
+import { CustomDropdown } from '@/components/CustomDropdown';
 
 interface AuditEntry {
   _id: string;
@@ -51,18 +52,13 @@ export default function AdminAuditClient() {
       </div>
 
       <div className="flex gap-3 items-center flex-wrap">
-        <select
+        <CustomDropdown
           value={filterAction}
-          onChange={(e) => { setFilterAction(e.target.value); setPage(1); }}
+          onChange={v => { setFilterAction(v); setPage(1); }}
+          options={[{ value: '', label: 'All Actions' }, { value: 'login_success', label: 'Login Success' }, { value: 'login_failed', label: 'Login Failed' }, { value: 'logout', label: 'Logout' }, { value: 'approve_post', label: 'Approve Post' }, { value: 'reject_post', label: 'Reject Post' }]}
+          placeholder="All Actions"
           className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-white text-xs outline-none focus:border-orange-500/50 min-h-9"
-        >
-          <option value="" className="bg-zinc-900">All Actions</option>
-          <option value="login_success" className="bg-zinc-900">Login Success</option>
-          <option value="login_failed" className="bg-zinc-900">Login Failed</option>
-          <option value="logout" className="bg-zinc-900">Logout</option>
-          <option value="approve_post" className="bg-zinc-900">Approve Post</option>
-          <option value="reject_post" className="bg-zinc-900">Reject Post</option>
-        </select>
+        />
         <button
           onClick={() => window.open('/api/admin/audit-logs/export', '_blank')}
           className="px-4 py-1.5 rounded-lg text-white text-xs font-semibold cursor-pointer bg-green-700 hover:bg-green-600 transition-colors min-h-9 flex items-center gap-1.5"

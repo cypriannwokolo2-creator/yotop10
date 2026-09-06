@@ -6,6 +6,7 @@ import { apiFetch } from '@/lib/api';
 import { Icon } from '@/components/icons/Icon';
 import { toast } from '@/lib/toast';
 import { formatDate } from '@/lib/dates';
+import { CustomDropdown } from '@/components/CustomDropdown';
 
 interface Post { _id: string; title: string; slug: string; author_username: string; post_type: string; status: string; category_slug: string; category_name?: string; comment_count: number; fire_count?: number; view_count: number; created_at: string; published_at?: string; deleted: boolean; featured: boolean; comments_locked: boolean }
 
@@ -100,15 +101,27 @@ export default function AdminPostsClient() {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-2 flex-wrap">
-        <select value={filters.status} onChange={e => { setFilters(f => ({ ...f, status: e.target.value })); setPage(1); }} className={filterSelectClass}>
-          <option value="" className="bg-zinc-900">All Status</option><option value="pending_review" className="bg-zinc-900">Pending</option><option value="approved" className="bg-zinc-900">Approved</option><option value="rejected" className="bg-zinc-900">Rejected</option><option value="deleted" className="bg-zinc-900">Deleted</option>
-        </select>
-        <select value={filters.post_type} onChange={e => { setFilters(f => ({ ...f, post_type: e.target.value })); setPage(1); }} className={filterSelectClass}>
-          <option value="" className="bg-zinc-900">All Types</option><option value="top_list" className="bg-zinc-900">Top List</option><option value="best_of" className="bg-zinc-900">Best Of</option><option value="worst_of" className="bg-zinc-900">Worst Of</option><option value="hidden_gems" className="bg-zinc-900">Hidden Gems</option><option value="counter_list" className="bg-zinc-900">Counter List</option>
-        </select>
-        <select value={filters.sort} onChange={e => { setFilters(f => ({ ...f, sort: e.target.value })); setPage(1); }} className={filterSelectClass}>
-          <option value="newest" className="bg-zinc-900">Newest</option><option value="oldest" className="bg-zinc-900">Oldest</option><option value="most_comments" className="bg-zinc-900">Most Comments</option><option value="most_views" className="bg-zinc-900">Most Views</option>
-        </select>
+        <CustomDropdown
+          value={filters.status}
+          onChange={v => { setFilters(f => ({ ...f, status: v })); setPage(1); }}
+          options={[{ value: '', label: 'All Status' }, { value: 'pending_review', label: 'Pending' }, { value: 'approved', label: 'Approved' }, { value: 'rejected', label: 'Rejected' }, { value: 'deleted', label: 'Deleted' }]}
+          placeholder="All Status"
+          className={filterSelectClass}
+        />
+        <CustomDropdown
+          value={filters.post_type}
+          onChange={v => { setFilters(f => ({ ...f, post_type: v })); setPage(1); }}
+          options={[{ value: '', label: 'All Types' }, { value: 'top_list', label: 'Top List' }, { value: 'best_of', label: 'Best Of' }, { value: 'worst_of', label: 'Worst Of' }, { value: 'hidden_gems', label: 'Hidden Gems' }, { value: 'counter_list', label: 'Counter List' }]}
+          placeholder="All Types"
+          className={filterSelectClass}
+        />
+        <CustomDropdown
+          value={filters.sort}
+          onChange={v => { setFilters(f => ({ ...f, sort: v })); setPage(1); }}
+          options={[{ value: 'newest', label: 'Newest' }, { value: 'oldest', label: 'Oldest' }, { value: 'most_comments', label: 'Most Comments' }, { value: 'most_views', label: 'Most Views' }]}
+          placeholder="Sort"
+          className={filterSelectClass}
+        />
         <input placeholder="Search title/intro" value={filters.search} onChange={e => { setFilters(f => ({ ...f, search: e.target.value })); setPage(1); }} className={`${filterSelectClass} sm:w-[180px]`} />
       </div>
 
