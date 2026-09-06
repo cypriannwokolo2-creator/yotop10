@@ -94,7 +94,7 @@ export default function AdminClientShell({
             <button
               onClick={async () => {
                 await logout();
-                router.push('/admin/login');
+                window.location.href = '/admin/login';
               }}
               className="block w-full text-left px-3 py-2 rounded-lg text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors"
             >
@@ -121,7 +121,7 @@ export default function AdminClientShell({
           <button
             onClick={async () => {
               await logout();
-              router.push('/admin/login');
+              window.location.href = '/admin/login';
             }}
             className="block w-full text-left px-3 py-2 rounded-lg text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors cursor-pointer"
           >

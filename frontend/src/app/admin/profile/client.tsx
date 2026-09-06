@@ -26,7 +26,7 @@ export default function AdminProfileClient() {
 
   const handleLogout = async () => {
     await logout();
-    router.push('/admin/login');
+    window.location.href = '/admin/login';
   };
 
   if (loading || !initialized) {
