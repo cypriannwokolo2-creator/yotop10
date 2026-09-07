@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { GlassSlab } from './GlassSlab';
 import { BookmarkButton } from './BookmarkButton';
 import { ShareButton } from './ShareButton';
-import { cleanTitle } from '@/lib/dates';
 import type { Post } from '@/lib/api/types';
 
 export const DataCard = memo(function DataCard({

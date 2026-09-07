@@ -18,14 +18,6 @@ const TABS: { value: TabValue; label: string }[] = [
   { value: 'fact', label: 'Facts' },
 ];
 
-const POST_TYPE_MAP: Record<TabValue, string | null> = {
-  all: null,
-  list: 'list',
-  vs: 'vs',
-  article: 'article',
-  fact: 'fact_drop',
-};
-
 interface ExploreClientProps {
   initialPosts: ExplorePost[];
   initialHasMore: boolean;

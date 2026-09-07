@@ -87,7 +87,7 @@ export default function AdminUsersClient() {
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, trustFilter, statusFilter, sort, sortDir]);
+  }, [sortMap, debouncedSearch, trustFilter, statusFilter, sort, sortDir]);
 
   useEffect(() => { fetchUsers(page); }, [page, fetchUsers]);
 

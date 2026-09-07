@@ -119,14 +119,14 @@ export default function UserProfileClient({ initialProfile }: { initialProfile: 
       if (!uploadRes?.url) throw new Error('Upload failed: no url');
       try {
         await API.updateProfileImage(uploadRes.url);
-      } catch (patchErr: any) {
-        setImageError(patchErr?.message?.includes('404') ? 'Profile not found, retrying...' : 'Save failed');
+      } catch (patchErr: unknown) {
+        setImageError(patchErr instanceof Error && patchErr.message.includes('404') ? 'Profile not found, retrying...' : 'Save failed');
         throw patchErr;
       }
       await fetchAuthUser();
       setProfile((p) => (p ? { ...p, profile_image_url: uploadRes.url } : p));
-    } catch (err: any) {
-      const msg = err?.message || '';
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : '';
       if (msg.includes('413') || msg.includes('too large')) setImageError('File too large. Max 10MB');
       else if (msg.includes('400') || msg.includes('File type')) setImageError('Use JPEG, PNG, or WebP');
       else if (msg.includes('425') || msg.includes('retry')) setImageError('Identity initializing, retrying...');

@@ -7,6 +7,16 @@ export function FingerprintMergeDetector() {
   const [mergeToken, setMergeToken] = useState<string | null>(null);
   const [status, setStatus] = useState<'idle' | 'confirming' | 'confirmed' | 'expired' | 'error'>('idle');
 
+  const getMergeTokenFromStorage = useCallback(async (): Promise<string | null> => {
+    // The fingerprint middleware sets x-merge-token header on responses.
+    // We store it in sessionStorage when detected.
+    try {
+      return sessionStorage.getItem('yotop10_merge_token');
+    } catch {
+      return null;
+    }
+  }, []);
+
   useEffect(() => {
     // Check for merge token header from the fingerprint middleware
     // The middleware sets x-merge-token on the response when a cross-browser match is found
@@ -34,17 +44,7 @@ export function FingerprintMergeDetector() {
 
     // Also check response headers on the current page
     checkMergeToken();
-  }, []);
-
-  const getMergeTokenFromStorage = useCallback(async (): Promise<string | null> => {
-    // The fingerprint middleware sets x-merge-token header on responses.
-    // We store it in sessionStorage when detected.
-    try {
-      return sessionStorage.getItem('yotop10_merge_token');
-    } catch {
-      return null;
-    }
-  }, []);
+  }, [getMergeTokenFromStorage]);
 
   const handleConfirm = async () => {
     if (!mergeToken) return;

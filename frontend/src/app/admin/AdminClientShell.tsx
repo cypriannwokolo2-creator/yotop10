@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAdminStore } from '@/stores/admin';
-import { Icon } from '@/components/icons/Icon';
+import { Icon, type LucideIconName } from '@/components/icons/Icon';
 
 interface AdminData {
   id: string;
@@ -29,7 +29,7 @@ export default function AdminClientShell({
       active ? 'bg-white/10 text-white font-medium' : 'text-white/50 hover:text-white hover:bg-white/5'
     }`;
 
-  const nav = (href: string, label: string, icon?: string) => (
+  const nav = (href: string, label: string, icon?: LucideIconName) => (
     <button
       onClick={() => { router.push(href); setMobileOpen(false); }}
       className={linkClass(
@@ -39,7 +39,7 @@ export default function AdminClientShell({
       )}
     >
       <span className="flex items-center gap-2">
-        {icon && <Icon name={icon as any} size={15} />}
+        {icon && <Icon name={icon} size={15} />}
         {label}
       </span>
     </button>

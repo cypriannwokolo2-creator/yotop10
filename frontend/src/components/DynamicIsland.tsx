@@ -50,7 +50,7 @@ export function DynamicIsland() {
       <nav
         className="fixed bottom-0 left-0 right-0 z-50 hide-desktop items-center justify-around px-4 h-[90px] bg-[var(--color-bg)] border-t border-white/10"
       >
-        {tabs.map((tab: any) => (
+        {tabs.map((tab: { icon: import('./icons/Icon').LucideIconName; label: string; href?: string; action?: () => void; isActive?: boolean; disabled?: boolean }) => (
           <button
             key={tab.label}
             onClick={() => {

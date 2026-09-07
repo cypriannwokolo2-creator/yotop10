@@ -19,9 +19,8 @@ interface ArgumentHeroSliderProps {
   arguments: ArgumentPost[];
 }
 
-function SlideCard({ d, gradient, voted, onVote }: {
+function SlideCard({ d, voted, onVote }: {
   d: ArgumentPost;
-  gradient: string;
   voted: 'A' | 'B' | null;
   onVote: (side: 'A' | 'B') => void;
 }) {
@@ -120,17 +119,14 @@ export function ArgumentHeroSlider({ arguments: args }: ArgumentHeroSliderProps)
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
   const [votedMap, setVotedMap] = useState<Record<string, 'A' | 'B' | null>>({});
-  const [direction, setDirection] = useState(0);
   const touchStart = useRef<number | null>(null);
   const top = args.slice(0, 5);
 
   const goTo = useCallback((idx: number) => {
-    setDirection(idx > current ? 1 : -1);
     setCurrent(idx);
   }, [current]);
 
   const next = useCallback(() => {
-    setDirection(1);
     setCurrent(c => (c + 1) % top.length);
   }, [top.length]);
 
@@ -149,10 +145,8 @@ export function ArgumentHeroSlider({ arguments: args }: ArgumentHeroSliderProps)
     const diff = touchStart.current - e.changedTouches[0].clientX;
     if (Math.abs(diff) > 50) {
       if (diff > 0) {
-        setDirection(1);
         setCurrent(c => (c + 1) % top.length);
       } else {
-        setDirection(-1);
         setCurrent(c => (c - 1 + top.length) % top.length);
       }
     }
@@ -162,8 +156,6 @@ export function ArgumentHeroSlider({ arguments: args }: ArgumentHeroSliderProps)
   if (top.length === 0) return null;
 
   const d = top[current];
-  const voted = (d.id ? votedMap[d.id] : null) ?? null;
-  const gradient = GRADIENTS[current % GRADIENTS.length];
 
   const handleVote = async (side: 'A' | 'B') => {
     const pid = d.id;
@@ -230,11 +222,10 @@ export function ArgumentHeroSlider({ arguments: args }: ArgumentHeroSliderProps)
             className="flex transition-transform duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1)]"
             style={{ transform: `translateX(-${current * 100}%)` }}
           >
-            {top.map((item, i) => (
+            {top.map((item, _i) => (
               <div key={item.id} className="w-full shrink-0">
                 <SlideCard
                   d={item}
-                  gradient={GRADIENTS[i % GRADIENTS.length]}
                   voted={(item.id ? votedMap[item.id] : null) ?? null}
                   onVote={handleVote}
                 />
