@@ -26,7 +26,7 @@ router.post('/', upload.single('file'), async (req: any, res: any) => {
     if (req.file?.path) {
       try {
         await fs.unlink(req.file.path);
-      } catch {}
+      } catch { /* file already removed */ }
     }
     if (e?.message?.includes('File type')) {
       return res.status(400).json({ error: e.message });
