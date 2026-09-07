@@ -41,7 +41,7 @@ router.get('/me', async (req, res) => {
             created_at: u.created_at,
           };
         }
-      } catch {}
+      } catch { /* fingerprint lookup failed */ }
     }
     if (!req.user) {
       return res.status(425).json({ error: 'User identity still initializing', retry_after: 0.5 });

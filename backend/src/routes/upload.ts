@@ -58,13 +58,13 @@ router.post('/profile', upload.single('file'), async (req: any, res: any) => {
     if (req.file?.path) {
       try {
         await fs.unlink(req.file.path);
-      } catch {}
+      } catch { /* ignore cleanup error */ }
       // Also try to clean _profile.webp if partially created
       try {
         const ext = path.extname(req.file.path);
         const profilePath = req.file.path.replace(ext, '_profile.webp');
         await fs.unlink(profilePath);
-      } catch {}
+      } catch { /* ignore cleanup error */ }
     }
     if (e?.message?.includes('File type')) {
       return res.status(400).json({ error: e.message });

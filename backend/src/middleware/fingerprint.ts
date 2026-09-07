@@ -52,7 +52,7 @@ async function isFingerprintEnabled(): Promise<boolean> {
     const cached = await redis.get(CONFIG_CACHE_KEY);
     if (cached !== null) return cached === '1';
     const config = await SystemConfig.findOne({ key: 'global' }).select('fingerprint_enabled').lean();
-    const enabled = (config as any)?.fingerprint_enabled === true;
+    const enabled = (config as { fingerprint_enabled?: boolean } | null)?.fingerprint_enabled === true;
     await redis.setEx(CONFIG_CACHE_KEY, CONFIG_CACHE_TTL, enabled ? '1' : '0');
     return enabled;
   } catch {

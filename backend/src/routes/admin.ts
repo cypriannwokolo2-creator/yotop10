@@ -263,7 +263,7 @@ router.post('/logout', async (req, res) => {
       ip: getClientIp(req),
       metadata: { username: req.admin!.username },
     });
-  } catch {}
+  } catch { /* DB update failed — still clear cookie */ }
   res.clearCookie('admin_token', { path: '/', sameSite: 'strict', httpOnly: true });
   res.json({ success: true });
 });
@@ -3511,7 +3511,7 @@ router.put('/settings/fingerprint', async (req: any, res: any) => {
     );
 
     // Invalidate config cache
-    try { await redis.del('config:fingerprint_enabled'); } catch {}
+    try { await redis.del('config:fingerprint_enabled'); } catch { /* cache clear failed */ }
 
     logAudit({
       admin_id: req.admin.id,
