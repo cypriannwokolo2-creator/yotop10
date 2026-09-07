@@ -148,7 +148,7 @@ async function seed() {
     const parentPosts = await Post.find({ post_type: 'top_list', status: 'approved' }).limit(2).lean();
     let counterCount = 0;
     for (let i = 0; i < parentPosts.length; i++) {
-      const parent = parentPosts[i] as { _id: { toString(): string }; title: string; category_slug: string };
+      const parent = parentPosts[i] as { _id: { toString(): string }; title: string; category_slug: string; slug: string };
       const title = `Top 10 Greatest Football Players Ever — My Counter List ${i + 1}`;
       const existing = await Post.findOne({ title });
       if (existing) {

@@ -16,7 +16,7 @@ const { mockToFile, mockWebp, mockResize, mockSharp, mockUnlink } = vi.hoisted((
 
 vi.mock('sharp', () => ({ default: mockSharp }));
 
-vi.mock('fs/promises', () => ({ default: { unlink: mockUnlink } }));
+vi.mock('fs/promises', () => ({ default: { unlink: mockUnlink, mkdir: vi.fn().mockResolvedValue(undefined) } }));
 
 import { optimizeImage, processUpload, processProfileImage, deleteUploads } from '../lib/upload';
 

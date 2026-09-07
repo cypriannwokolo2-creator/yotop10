@@ -53,6 +53,7 @@ describe('validateEnv', () => {
   });
 
   it('throws when JWT_SECRET is missing', async () => {
+    delete process.env.JWT_SECRET;
     const { validateEnv } = await import('../lib/env');
     expect(() => validateEnv()).toThrow('Environment validation failed');
   });
