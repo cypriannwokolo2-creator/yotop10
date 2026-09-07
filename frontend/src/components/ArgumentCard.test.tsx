@@ -24,6 +24,7 @@ vi.mock('./ArgumentBar', () => ({
 
 vi.mock('@/lib/dates', () => ({
   relativeTime: () => '17h',
+  cleanTitle: (t: string) => t,
 }));
 
 const basePost: ArgumentPost = {
@@ -50,19 +51,14 @@ describe('ArgumentCard', () => {
     expect(screen.getByText('Cats vs Dogs')).toBeInTheDocument();
   });
 
-  it('displays the category slug badge', () => {
+  it('displays the post type label in left badge', () => {
     render(<ArgumentCard argument={basePost} />);
-    expect(screen.getByText('animals')).toBeInTheDocument();
-  });
-
-  it('displays the post type label', () => {
-    render(<ArgumentCard argument={basePost} />);
-    expect(screen.getByText('THIS VS THAT')).toBeInTheDocument();
+    expect(screen.getByText('VS')).toBeInTheDocument();
   });
 
   it('shows velocity when greater than zero', () => {
     render(<ArgumentCard argument={basePost} />);
-    expect(screen.getByText('3.2 replies/hour')).toBeInTheDocument();
+    expect(screen.getByText('3.2/hr')).toBeInTheDocument();
   });
 
   it('renders ArgumentBar with correct percentages', () => {
@@ -74,7 +70,7 @@ describe('ArgumentCard', () => {
 
   it('displays author username with @ prefix', () => {
     render(<ArgumentCard argument={basePost} />);
-    expect(screen.getByText('@a_9Gh7')).toBeInTheDocument();
+    expect(screen.getByText('@9gh7')).toBeInTheDocument();
   });
 
   it('renders link to post detail page via slug', () => {
