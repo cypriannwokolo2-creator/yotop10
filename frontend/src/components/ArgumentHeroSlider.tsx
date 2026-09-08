@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Icon } from './icons/Icon';
 import { cleanTitle } from '@/lib/dates';
+import { apiFetch } from '@/lib/api/client';
 import type { ArgumentPost } from '@/lib/api/types';
 
 const GRADIENTS = [
@@ -167,7 +168,6 @@ export function ArgumentHeroSlider({ arguments: args }: ArgumentHeroSliderProps)
     const pid = d.id;
     if (!pid) return;
     try {
-      const { apiFetch } = await import('@/lib/api/client');
       const res = await apiFetch<{ votes_a: number; votes_b: number; voted: string | null }>(`/posts/${pid}/vote`, {
         method: 'POST',
         body: JSON.stringify({ side }),

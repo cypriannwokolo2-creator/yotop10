@@ -6,6 +6,7 @@ import { Icon } from './icons/Icon';
 import { ArgumentBar } from './ArgumentBar';
 import { relativeTime, cleanTitle } from '@/lib/dates';
 import { toPublicSlug } from '@/lib/username';
+import { apiFetch } from '@/lib/api/client';
 import type { ArgumentPost } from '@/lib/api/types';
 
 const POST_TYPE_CONFIG: Record<string, { label: string; bgClass: string; textClass: string }> = {
@@ -29,12 +30,13 @@ export function ArgumentCard({ argument }: ArgumentCardProps) {
   };
 
   const topComment = argument.top_comments?.[0];
+  const isVotable = argument.post_type === 'this_vs_that';
 
   const handleVote = async (side: 'A' | 'B') => {
+    if (!isVotable) return;
     const pid = argument.id;
     if (!pid) return;
     try {
-      const { apiFetch } = await import('@/lib/api/client');
       const res = await apiFetch<{ votes_a: number; votes_b: number; voted: string | null }>(`/posts/${pid}/vote`, {
         method: 'POST',
         body: JSON.stringify({ side }),
@@ -53,7 +55,6 @@ export function ArgumentCard({ argument }: ArgumentCardProps) {
   return (
     <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/[0.1] transition-all duration-200">
       <div className="flex items-stretch">
-        {/* Type badge column */}
         <div className="flex items-center justify-center w-14 shrink-0 border-r border-white/[0.06]">
           <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${config.bgClass} ${config.textClass}`}>
             {config.label}
@@ -61,7 +62,6 @@ export function ArgumentCard({ argument }: ArgumentCardProps) {
         </div>
 
         <div className="flex-1 min-w-0 px-5 py-4">
-          {/* Title + velocity */}
           <div className="flex items-start justify-between gap-4 mb-2">
             <Link href={`/${argument.slug}`} className="text-base font-semibold text-white hover:text-orange-400 transition-colors leading-snug line-clamp-2">
               {cleanTitle(argument.title)}
@@ -73,47 +73,52 @@ export function ArgumentCard({ argument }: ArgumentCardProps) {
             )}
           </div>
 
-          {/* Top comment preview */}
           {topComment && (
             <p className="text-xs text-zinc-500 line-clamp-1 mb-3">
               <span className="font-mono text-zinc-600">#{topComment.rank}</span> {topComment.content.slice(0, 80)}
             </p>
           )}
 
-          {/* Support bar */}
           <ArgumentBar supportPct={supportPct} contradictPct={contradictPct} className="mb-3" />
 
-          {/* Vote buttons + meta */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              {/* Vote Support */}
-              <button
-                onClick={() => handleVote('A')}
-                className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-semibold transition-all ${
-                  voted === 'A'
-                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
-                    : 'border border-white/10 text-zinc-500 hover:border-emerald-500/40 hover:text-emerald-400'
-                }`}
-              >
-                <Icon name="ThumbsUp" size={11} />
-                Support
-              </button>
-
-              {/* Vote Contradict */}
-              <button
-                onClick={() => handleVote('B')}
-                className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-semibold transition-all ${
-                  voted === 'B'
-                    ? 'bg-red-500/20 text-red-400 border border-red-500/40'
-                    : 'border border-white/10 text-zinc-500 hover:border-red-500/40 hover:text-red-400'
-                }`}
-              >
-                <Icon name="ThumbsDown" size={11} />
-                Contradict
-              </button>
+              {isVotable ? (
+                <>
+                  <button
+                    onClick={() => handleVote('A')}
+                    className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-semibold transition-all ${
+                      voted === 'A'
+                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                        : 'border border-white/10 text-zinc-500 hover:border-emerald-500/40 hover:text-emerald-400'
+                    }`}
+                  >
+                    <Icon name="ThumbsUp" size={11} />
+                    Support
+                  </button>
+                  <button
+                    onClick={() => handleVote('B')}
+                    className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-semibold transition-all ${
+                      voted === 'B'
+                        ? 'bg-red-500/20 text-red-400 border border-red-500/40'
+                        : 'border border-white/10 text-zinc-500 hover:border-red-500/40 hover:text-red-400'
+                    }`}
+                  >
+                    <Icon name="ThumbsDown" size={11} />
+                    Contradict
+                  </button>
+                </>
+              ) : (
+                <Link
+                  href={`/${argument.slug}`}
+                  className="flex items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-semibold border border-white/10 text-zinc-500 hover:border-white/20 hover:text-white transition-all"
+                >
+                  <Icon name="ArrowRight" size={11} />
+                  View
+                </Link>
+              )}
             </div>
 
-            {/* Author + stats */}
             <div className="flex items-center gap-3 text-[11px] text-zinc-600 font-mono tabular-nums">
               <span className="flex items-center gap-1">
                 <Icon name="Eye" size={11} />
