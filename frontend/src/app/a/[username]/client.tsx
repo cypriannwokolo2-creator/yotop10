@@ -196,7 +196,7 @@ export default function UserProfileClient({ initialProfile }: { initialProfile: 
 
           {/* Own profile actions */}
           {isOwn && (
-            <div className="flex flex-wrap items-center gap-3 mt-4">
+            <div className="flex items-center justify-center gap-3 mt-4">
               <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-medium text-zinc-400 hover:text-white hover:bg-white/10 transition focus-visible:ring-2 focus-visible:ring-orange-500">
                 <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleProfileUpload} disabled={uploadingImage} className="hidden" />
                 {uploadingImage ? <><Icon name="RefreshCw" size={14} className="animate-spin" /> Uploading...</> : <><Icon name="Camera" size={14} /> Change photo</>}
