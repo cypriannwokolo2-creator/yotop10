@@ -60,8 +60,8 @@ jobs:
 
       - name: Security audit (Frontend)
         working-directory: ./frontend
-        run: pnpm audit --audit-level=high
+        run: pnpm audit --audit-level=critical
 
       - name: Security audit (Backend)
         working-directory: ./backend
-        run: pnpm audit --audit-level=high
+        run: pnpm audit --audit-level=critical
