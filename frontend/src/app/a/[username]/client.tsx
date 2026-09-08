@@ -196,15 +196,15 @@ export default function UserProfileClient({ initialProfile }: { initialProfile: 
 
           {/* Own profile actions */}
           {isOwn && (
-            <div className="flex items-center justify-center gap-3 mt-4">
-              <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-medium text-zinc-400 hover:text-white hover:bg-white/10 transition focus-visible:ring-2 focus-visible:ring-orange-500">
+            <div className="flex flex-nowrap items-center justify-center gap-2 mt-4">
+              <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-medium text-zinc-400 hover:text-white hover:bg-white/10 transition focus-visible:ring-2 focus-visible:ring-orange-500 shrink-0">
                 <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleProfileUpload} disabled={uploadingImage} className="hidden" />
-                {uploadingImage ? <><Icon name="RefreshCw" size={14} className="animate-spin" /> Uploading...</> : <><Icon name="Camera" size={14} /> Change photo</>}
+                {uploadingImage ? <><Icon name="RefreshCw" size={12} className="animate-spin" /> Uploading...</> : <><Icon name="Camera" size={12} /> Photo</>}
               </label>
-              <button onClick={() => router.push('/settings/account')} className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-medium text-zinc-400 hover:text-white hover:bg-white/10 transition focus-visible:ring-2 focus-visible:ring-orange-500">
-                <Icon name="Settings" size={14} /> Settings
+              <button onClick={() => router.push('/settings/account')} className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-medium text-zinc-400 hover:text-white hover:bg-white/10 transition focus-visible:ring-2 focus-visible:ring-orange-500 shrink-0">
+                <Icon name="Settings" size={12} /> Settings
               </button>
-              {imageError && <span className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-full px-3 py-1">{imageError}</span>}
+              {imageError && <span className="text-[11px] text-red-400 bg-red-500/10 border border-red-500/20 rounded-full px-2 py-0.5 shrink-0">{imageError}</span>}
             </div>
           )}
         </div>
