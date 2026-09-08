@@ -137,6 +137,12 @@ export function ArgumentHeroSlider({ arguments: args }: ArgumentHeroSliderProps)
   }, [paused, next, top.length]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
+    // Don't intercept touches on buttons/links
+    const target = e.target as HTMLElement;
+    if (target.closest('button') || target.closest('a')) {
+      touchStart.current = null;
+      return;
+    }
     touchStart.current = e.touches[0].clientX;
   };
 
