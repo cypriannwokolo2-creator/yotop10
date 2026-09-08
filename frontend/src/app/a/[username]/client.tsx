@@ -156,11 +156,11 @@ export default function UserProfileClient({ initialProfile }: { initialProfile: 
       {/* ─── Profile Header ─── */}
       <div className="flex items-start gap-6 md:gap-8 -mt-12 mb-10 px-2">
         {/* Avatar — overlapping banner */}
-        <div className={`shrink-0 rounded-full ring-4 ring-[var(--color-bg)] shadow-xl ${tier.ring} p-0.5 bg-[var(--color-bg)]`}>
+        <div className={`shrink-0 relative h-20 w-20 sm:h-24 sm:w-24 rounded-full ring-4 ring-[var(--color-bg)] shadow-xl ${tier.ring}`}>
           {profile.profile_image_url ? (
-            <Image src={profile.profile_image_url} alt="" width={96} height={96} className="h-20 w-20 sm:h-24 sm:w-24 rounded-xl object-cover" unoptimized />
+            <Image src={profile.profile_image_url} alt="" fill className="rounded-full object-cover" sizes="96px" unoptimized />
           ) : (
-            <div className="flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center rounded-xl bg-gradient-to-br from-zinc-800 to-zinc-900 text-2xl font-bold text-zinc-400">
+            <div className="flex h-full w-full items-center justify-center rounded-full bg-gradient-to-br from-zinc-800 to-zinc-900 text-2xl font-bold text-zinc-400">
               {initials}
             </div>
           )}
