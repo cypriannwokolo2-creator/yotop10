@@ -27,10 +27,10 @@ export function SlideMenuPanel() {
 
   const displayName = user?.custom_display_name || user?.username || 'User';
   const rawUsername = user?.username || 'unknown';
-  const cleanUsername = toPublicSlug(rawUsername);
+  const profileSlug = toPublicSlug(rawUsername);
 
   const navItems = [
-    ...(user ? [{ icon: 'User' as const, label: 'Profile', href: `/a/${cleanUsername}` }] : []),
+    ...(user ? [{ icon: 'User' as const, label: 'Profile', href: `/a/${profileSlug}` }] : []),
     { icon: 'Folder' as const, label: 'Categories', href: '/categories' },
     { icon: 'MessageCircle' as const, label: 'Argument', href: '/arguments', badge: 'Hot' },
     { icon: 'Search' as const, label: 'Explore', href: '/explore' },
@@ -67,7 +67,7 @@ export function SlideMenuPanel() {
                 <span className="text-base font-bold text-white truncate">{displayName}</span>
                 {(user?.posts_approved ?? 0) >= 3 && <Icon name="BadgeCheck" size={15} className="text-orange-400 shrink-0" />}
               </div>
-              <p className="text-sm2 text-zinc-500 font-mono">@{cleanUsername}</p>
+              <p className="text-sm2 text-zinc-500 font-mono">@{displayName}</p>
             </div>
           </div>
         </div>
