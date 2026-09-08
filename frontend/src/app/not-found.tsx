@@ -1,7 +1,5 @@
 import Link from 'next/link';
 
-export const dynamic = 'force-dynamic';
-
 export default function GlobalNotFound() {
   return (
     <div className="mx-auto min-h-[calc(100vh-56px)] flex flex-col items-center justify-center px-6 text-center bg-[var(--color-bg)]">

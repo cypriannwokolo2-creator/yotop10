@@ -1,6 +1,6 @@
 FROM node:20-alpine AS base
 # Install pnpm and pm2
-RUN npm install -g pnpm@9 pm2
+RUN npm install -g pnpm@10 pm2
 
 # Dependencies stage
 FROM base AS deps
@@ -25,7 +25,7 @@ RUN cd backend && pnpm build
 FROM node:20-alpine AS runner
 WORKDIR /app
 # Install pnpm, pm2, and tsx for running seed scripts
-RUN npm install -g pnpm@9 pm2 tsx
+RUN npm install -g pnpm@10 pm2 tsx
 
 # Copy built artifacts and config
 COPY --from=builder /app/frontend/.next/standalone ./frontend

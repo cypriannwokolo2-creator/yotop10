@@ -20,6 +20,8 @@ const monoton = Monoton({ weight: '400', subsets: ['latin'], display: 'swap', va
 const ubuntu = Ubuntu({ subsets: ['latin'], display: 'swap', variable: '--font-ubuntu', weight: ['300', '400', '500', '700'] });
 const fraunces = Fraunces({ subsets: ['latin'], display: 'swap', variable: '--font-serif', weight: ['400', '600', '700', '900'] });
 
+export const dynamic = 'force-dynamic';
+
 export const viewport: Viewport = {
   themeColor: "#05050f",
   colorScheme: "dark",
