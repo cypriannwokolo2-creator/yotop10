@@ -68,12 +68,13 @@ describe('ArgumentCard', () => {
     expect(bar).toHaveAttribute('data-contradict', '40');
   });
 
-  it('displays author username with @ prefix', () => {
+  it('renders vote buttons', () => {
     render(<ArgumentCard argument={basePost} />);
-    expect(screen.getByText('@9gh7')).toBeInTheDocument();
+    expect(screen.getByText('Support')).toBeInTheDocument();
+    expect(screen.getByText('Contradict')).toBeInTheDocument();
   });
 
-  it('renders link to post detail page via slug', () => {
+  it('renders title as link to post detail page', () => {
     render(<ArgumentCard argument={basePost} />);
     const link = screen.getByRole('link');
     expect(link).toHaveAttribute('href', '/cats-vs-dogs-abc123');
