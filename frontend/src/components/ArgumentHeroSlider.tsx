@@ -54,11 +54,11 @@ function SlideCard({ d, voted, onVote }: {
       <div className="space-y-3 mb-3">
         {/* Option A (Support) */}
         <div className="rounded-xl border border-red-500/15 bg-red-500/[0.04] px-3 py-2.5 transition-all hover:border-red-500/30 hover:shadow-[0_0_12px_rgba(239,68,68,0.08)]">
-          <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center justify-between mb-1.5">
             <span className="text-sm font-medium text-zinc-200">Support</span>
             <span className="text-sm font-bold font-mono text-red-400 tabular-nums">{hasVotes ? `${supportPct}%` : '--'}</span>
           </div>
-          <div className="h-1.5 rounded-full bg-zinc-800 overflow-hidden mb-1.5">
+          <div className="h-2 rounded-full bg-zinc-800 overflow-hidden mb-2">
             <div
               className="h-full rounded-full bg-gradient-to-r from-red-500 to-orange-500 transition-all duration-700 ease-out"
               style={{
@@ -67,28 +67,27 @@ function SlideCard({ d, voted, onVote }: {
               }}
             />
           </div>
-          <div className="flex items-center justify-between">
-            <span className="text-2xs text-zinc-600 font-mono">{supportPct}% votes</span>
-            <button
-              onClick={() => onVote('A')}
-              className={`rounded-md px-2.5 py-1 text-2xs font-semibold transition-all ${
-                voted === 'A'
-                  ? 'bg-red-500/20 text-red-400 border border-red-500/40 shadow-[0_0_10px_rgba(239,68,68,0.2)]'
-                  : 'border border-white/10 text-zinc-400 hover:border-red-500/40 hover:text-red-400 hover:shadow-[0_0_8px_rgba(239,68,68,0.15)]'
-              }`}
-            >
-              {voted === 'A' ? 'Voted' : 'Vote'}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onVote('A'); }}
+            className={`w-full flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold cursor-pointer transition-all ${
+              voted === 'A'
+                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 shadow-[0_0_12px_rgba(16,185,129,0.2)]'
+                : 'bg-white/5 border border-white/10 text-zinc-300 hover:bg-emerald-500/10 hover:border-emerald-500/40 hover:text-emerald-400'
+            }`}
+          >
+            <Icon name="ThumbsUp" size={15} />
+            {voted === 'A' ? 'Voted' : 'Support'}
+          </button>
         </div>
 
         {/* Option B (Contradict) */}
         <div className="rounded-xl border border-blue-500/15 bg-blue-500/[0.04] px-3 py-2.5 transition-all hover:border-blue-500/30 hover:shadow-[0_0_12px_rgba(59,130,246,0.08)]">
-          <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center justify-between mb-1.5">
             <span className="text-sm font-medium text-zinc-200">Contradict</span>
             <span className="text-sm font-bold font-mono text-blue-400 tabular-nums">{hasVotes ? `${contradictPct}%` : '--'}</span>
           </div>
-          <div className="h-1.5 rounded-full bg-zinc-800 overflow-hidden mb-1.5">
+          <div className="h-2 rounded-full bg-zinc-800 overflow-hidden mb-2">
             <div
               className="h-full rounded-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-700 ease-out"
               style={{
@@ -97,19 +96,18 @@ function SlideCard({ d, voted, onVote }: {
               }}
             />
           </div>
-          <div className="flex items-center justify-between">
-            <span className="text-2xs text-zinc-600 font-mono">{contradictPct}% votes</span>
-            <button
-              onClick={() => onVote('B')}
-              className={`rounded-md px-2.5 py-1 text-2xs font-semibold transition-all ${
-                voted === 'B'
-                  ? 'bg-blue-500/20 text-blue-400 border border-blue-500/40 shadow-[0_0_10px_rgba(59,130,246,0.2)]'
-                  : 'border border-white/10 text-zinc-400 hover:border-blue-500/40 hover:text-blue-400 hover:shadow-[0_0_8px_rgba(59,130,246,0.15)]'
-              }`}
-            >
-              {voted === 'B' ? 'Voted' : 'Vote'}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onVote('B'); }}
+            className={`w-full flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold cursor-pointer transition-all ${
+              voted === 'B'
+                ? 'bg-blue-500/20 text-blue-400 border border-blue-500/50 shadow-[0_0_12px_rgba(59,130,246,0.2)]'
+                : 'bg-white/5 border border-white/10 text-zinc-300 hover:bg-blue-500/10 hover:border-blue-500/40 hover:text-blue-400'
+            }`}
+          >
+            <Icon name="ThumbsDown" size={15} />
+            {voted === 'B' ? 'Voted' : 'Contradict'}
+          </button>
         </div>
       </div>
     </div>

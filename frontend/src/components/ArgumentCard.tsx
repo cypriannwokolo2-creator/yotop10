@@ -82,38 +82,40 @@ export function ArgumentCard({ argument }: ArgumentCardProps) {
           <ArgumentBar supportPct={supportPct} contradictPct={contradictPct} className="mb-3" />
 
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               {isVotable ? (
                 <>
                   <button
-                    onClick={() => handleVote('A')}
-                    className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-semibold transition-all ${
+                    type="button"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleVote('A'); }}
+                    className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold cursor-pointer transition-all ${
                       voted === 'A'
-                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
-                        : 'border border-white/10 text-zinc-500 hover:border-emerald-500/40 hover:text-emerald-400'
+                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 shadow-[0_0_12px_rgba(16,185,129,0.15)]'
+                        : 'bg-white/5 border border-white/10 text-zinc-400 hover:bg-emerald-500/10 hover:border-emerald-500/40 hover:text-emerald-400'
                     }`}
                   >
-                    <Icon name="ThumbsUp" size={11} />
-                    Support
+                    <Icon name="ThumbsUp" size={13} />
+                    {voted === 'A' ? 'Voted' : 'Support'}
                   </button>
                   <button
-                    onClick={() => handleVote('B')}
-                    className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-semibold transition-all ${
+                    type="button"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleVote('B'); }}
+                    className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold cursor-pointer transition-all ${
                       voted === 'B'
-                        ? 'bg-red-500/20 text-red-400 border border-red-500/40'
-                        : 'border border-white/10 text-zinc-500 hover:border-red-500/40 hover:text-red-400'
+                        ? 'bg-red-500/20 text-red-400 border border-red-500/50 shadow-[0_0_12px_rgba(239,68,68,0.15)]'
+                        : 'bg-white/5 border border-white/10 text-zinc-400 hover:bg-red-500/10 hover:border-red-500/40 hover:text-red-400'
                     }`}
                   >
-                    <Icon name="ThumbsDown" size={11} />
-                    Contradict
+                    <Icon name="ThumbsDown" size={13} />
+                    {voted === 'B' ? 'Voted' : 'Contradict'}
                   </button>
                 </>
               ) : (
                 <Link
                   href={`/${argument.slug}`}
-                  className="flex items-center gap-1 rounded-md px-2.5 py-1 text-[11px] font-semibold border border-white/10 text-zinc-500 hover:border-white/20 hover:text-white transition-all"
+                  className="flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold border border-white/10 bg-white/5 text-zinc-400 hover:border-white/20 hover:text-white transition-all cursor-pointer"
                 >
-                  <Icon name="ArrowRight" size={11} />
+                  <Icon name="ArrowRight" size={13} />
                   View
                 </Link>
               )}
