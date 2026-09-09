@@ -22,6 +22,7 @@ export function ArgumentCard({ argument }: ArgumentCardProps) {
   const [voted, setVoted] = useState<'A' | 'B' | null>(null);
   const [supportPct, setSupportPct] = useState(argument.support_pct);
   const [contradictPct, setContradictPct] = useState(argument.contradict_pct);
+  const [voting, setVoting] = useState<'A' | 'B' | null>(null);
 
   const config = POST_TYPE_CONFIG[argument.post_type] ?? {
     label: argument.post_type.toUpperCase().slice(0, 3),
@@ -33,9 +34,10 @@ export function ArgumentCard({ argument }: ArgumentCardProps) {
   const isVotable = argument.post_type === 'this_vs_that';
 
   const handleVote = async (side: 'A' | 'B') => {
-    if (!isVotable) return;
+    if (!isVotable || voting) return;
     const pid = argument.id;
     if (!pid) return;
+    setVoting(side);
     try {
       const res = await apiFetch<{ votes_a: number; votes_b: number; voted: string | null }>(`/posts/${pid}/vote`, {
         method: 'POST',
@@ -49,6 +51,8 @@ export function ArgumentCard({ argument }: ArgumentCardProps) {
       }
     } catch {
       // silently fail
+    } finally {
+      setVoting(null);
     }
   };
 
@@ -88,26 +92,28 @@ export function ArgumentCard({ argument }: ArgumentCardProps) {
                   <button
                     type="button"
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleVote('A'); }}
-                    className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold cursor-pointer transition-all ${
+                    disabled={voting !== null}
+                    className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                       voted === 'A'
                         ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 shadow-[0_0_12px_rgba(16,185,129,0.15)]'
                         : 'bg-white/5 border border-white/10 text-zinc-400 hover:bg-emerald-500/10 hover:border-emerald-500/40 hover:text-emerald-400'
                     }`}
                   >
-                    <Icon name="ThumbsUp" size={13} />
-                    {voted === 'A' ? 'Voted' : 'Support'}
+                    {voting === 'A' ? <Icon name="Loader" size={13} className="animate-spin" /> : <Icon name="ThumbsUp" size={13} />}
+                    {voted === 'A' ? 'Voted' : voting === 'A' ? 'Voting...' : 'Support'}
                   </button>
                   <button
                     type="button"
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleVote('B'); }}
-                    className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold cursor-pointer transition-all ${
+                    disabled={voting !== null}
+                    className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                       voted === 'B'
                         ? 'bg-red-500/20 text-red-400 border border-red-500/50 shadow-[0_0_12px_rgba(239,68,68,0.15)]'
                         : 'bg-white/5 border border-white/10 text-zinc-400 hover:bg-red-500/10 hover:border-red-500/40 hover:text-red-400'
                     }`}
                   >
-                    <Icon name="ThumbsDown" size={13} />
-                    {voted === 'B' ? 'Voted' : 'Contradict'}
+                    {voting === 'B' ? <Icon name="Loader" size={13} className="animate-spin" /> : <Icon name="ThumbsDown" size={13} />}
+                    {voted === 'B' ? 'Voted' : voting === 'B' ? 'Voting...' : 'Contradict'}
                   </button>
                 </>
               ) : (
