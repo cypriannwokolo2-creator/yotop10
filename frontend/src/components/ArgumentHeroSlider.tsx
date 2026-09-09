@@ -20,10 +20,9 @@ interface ArgumentHeroSliderProps {
   arguments: ArgumentPost[];
 }
 
-function SlideCard({ d, voted, onVote, voting }: {
+function SlideCard({ d, voted, onVote }: {
   d: ArgumentPost;
   voted: 'A' | 'B' | null;
-  voting: 'A' | 'B' | null;
   onVote: (side: 'A' | 'B') => void;
 }) {
   const supportPct = d.support_pct ?? 0;
@@ -71,15 +70,14 @@ function SlideCard({ d, voted, onVote, voting }: {
           <button
             type="button"
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onVote('A'); }}
-            disabled={voting !== null}
-            className={`w-full flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+            className={`w-full flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold cursor-pointer transition-all ${
               voted === 'A'
                 ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 shadow-[0_0_12px_rgba(16,185,129,0.2)]'
                 : 'bg-white/5 border border-white/10 text-zinc-300 hover:bg-emerald-500/10 hover:border-emerald-500/40 hover:text-emerald-400'
             }`}
           >
-            {voting === 'A' ? <Icon name="Loader" size={15} className="animate-spin" /> : <Icon name="ThumbsUp" size={15} />}
-            {voted === 'A' ? 'Voted' : voting === 'A' ? 'Voting...' : 'Support'}
+            <Icon name="ThumbsUp" size={15} />
+            {voted === 'A' ? 'Voted' : 'Support'}
           </button>
         </div>
 
@@ -101,15 +99,14 @@ function SlideCard({ d, voted, onVote, voting }: {
           <button
             type="button"
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onVote('B'); }}
-            disabled={voting !== null}
-            className={`w-full flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+            className={`w-full flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold cursor-pointer transition-all ${
               voted === 'B'
                 ? 'bg-blue-500/20 text-blue-400 border border-blue-500/50 shadow-[0_0_12px_rgba(59,130,246,0.2)]'
                 : 'bg-white/5 border border-white/10 text-zinc-300 hover:bg-blue-500/10 hover:border-blue-500/40 hover:text-blue-400'
             }`}
           >
-            {voting === 'B' ? <Icon name="Loader" size={15} className="animate-spin" /> : <Icon name="ThumbsDown" size={15} />}
-            {voted === 'B' ? 'Voted' : voting === 'B' ? 'Voting...' : 'Contradict'}
+            <Icon name="ThumbsDown" size={15} />
+            {voted === 'B' ? 'Voted' : 'Contradict'}
           </button>
         </div>
       </div>
@@ -121,7 +118,6 @@ export function ArgumentHeroSlider({ arguments: args }: ArgumentHeroSliderProps)
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
   const [votedMap, setVotedMap] = useState<Record<string, 'A' | 'B' | null>>({});
-  const [votingMap, setVotingMap] = useState<Record<string, 'A' | 'B' | null>>({});
   const touchStart = useRef<number | null>(null);
   const top = args.slice(0, 5);
 
@@ -168,12 +164,11 @@ export function ArgumentHeroSlider({ arguments: args }: ArgumentHeroSliderProps)
 
   const handleVote = (side: 'A' | 'B') => {
     const pid = d.id;
-    if (!pid || votingMap[pid]) return;
+    if (!pid) return;
 
     // Optimistic update — instant UI
     const prevVoted = votedMap[pid] ?? null;
     setVotedMap(prev => ({ ...prev, [pid]: side }));
-    setVotingMap(prev => ({ ...prev, [pid]: side }));
 
     // Server call in background
     apiFetch<{ votes_a: number; votes_b: number; voted: string | null }>(`/posts/${pid}/vote`, {
@@ -182,10 +177,7 @@ export function ArgumentHeroSlider({ arguments: args }: ArgumentHeroSliderProps)
     }).then((res) => {
       setVotedMap(prev => ({ ...prev, [pid]: res.voted as 'A' | 'B' | null }));
     }).catch(() => {
-      // Revert on error
       setVotedMap(prev => ({ ...prev, [pid]: prevVoted }));
-    }).finally(() => {
-      setVotingMap(prev => ({ ...prev, [pid]: null }));
     });
   };
 
@@ -244,7 +236,6 @@ export function ArgumentHeroSlider({ arguments: args }: ArgumentHeroSliderProps)
                 <SlideCard
                   d={item}
                   voted={(item.id ? votedMap[item.id] : null) ?? null}
-                  voting={(item.id ? votingMap[item.id] : null) ?? null}
                   onVote={handleVote}
                 />
               </div>

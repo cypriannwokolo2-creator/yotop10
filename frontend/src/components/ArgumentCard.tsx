@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { Icon } from './icons/Icon';
 import { ArgumentBar } from './ArgumentBar';
@@ -22,7 +22,6 @@ export function ArgumentCard({ argument }: ArgumentCardProps) {
   const [supportPct, setSupportPct] = useState(argument.support_pct);
   const [contradictPct, setContradictPct] = useState(argument.contradict_pct);
   const [voted, setVoted] = useState<'A' | 'B' | null>(null);
-  const [isPending, startTransition] = useTransition();
 
   const config = POST_TYPE_CONFIG[argument.post_type] ?? {
     label: argument.post_type.toUpperCase().slice(0, 3),
@@ -43,27 +42,23 @@ export function ArgumentCard({ argument }: ArgumentCardProps) {
     const prevSupport = supportPct;
     const prevContradict = contradictPct;
 
-    startTransition(() => {
-      if (prevVoted === side) {
-        // Toggle off
-        setVoted(null);
-        const total = (supportPct + contradictPct) || 1;
-        if (side === 'A') {
-          setSupportPct(Math.max(0, Math.round(((supportPct * total / 100) - 1) / ((total - 1) || 1) * 100)));
-        } else {
-          setContradictPct(Math.max(0, Math.round(((contradictPct * total / 100) - 1) / ((total - 1) || 1) * 100)));
-        }
+    if (prevVoted === side) {
+      setVoted(null);
+      const total = (supportPct + contradictPct) || 1;
+      if (side === 'A') {
+        setSupportPct(Math.max(0, Math.round(((supportPct * total / 100) - 1) / ((total - 1) || 1) * 100)));
       } else {
-        // Vote for side
-        setVoted(side);
-        const total = (supportPct + contradictPct) + 1;
-        if (side === 'A') {
-          setSupportPct(Math.round(((supportPct * (total - 1) / 100) + 1) / total * 100));
-        } else {
-          setContradictPct(Math.round(((contradictPct * (total - 1) / 100) + 1) / total * 100));
-        }
+        setContradictPct(Math.max(0, Math.round(((contradictPct * total / 100) - 1) / ((total - 1) || 1) * 100)));
       }
-    });
+    } else {
+      setVoted(side);
+      const total = (supportPct + contradictPct) + 1;
+      if (side === 'A') {
+        setSupportPct(Math.round(((supportPct * (total - 1) / 100) + 1) / total * 100));
+      } else {
+        setContradictPct(Math.round(((contradictPct * (total - 1) / 100) + 1) / total * 100));
+      }
+    }
 
     // Server call in background
     apiFetch<{ votes_a: number; votes_b: number; voted: string | null }>(`/posts/${pid}/vote`, {
@@ -77,7 +72,6 @@ export function ArgumentCard({ argument }: ArgumentCardProps) {
         setContradictPct(Math.round((res.votes_b / total) * 100));
       }
     }).catch(() => {
-      // Revert on error
       setVoted(prevVoted);
       setSupportPct(prevSupport);
       setContradictPct(prevContradict);
