@@ -1,7 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-
 interface ArgumentBarProps {
   supportPct: number;
   contradictPct: number;
@@ -9,33 +7,19 @@ interface ArgumentBarProps {
 }
 
 export function ArgumentBar({ supportPct, contradictPct, className }: ArgumentBarProps) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const isZero = supportPct === 0 && contradictPct === 0;
-
-  if (isZero) {
-    return (
-      <div className={className}>
-        <div className="h-1.5 rounded-full bg-white/5" />
-        <div className="text-[10px] text-zinc-600 mt-1">No votes yet</div>
-      </div>
-    );
-  }
+  const total = supportPct + contradictPct;
+  const isZero = total === 0;
 
   return (
     <div className={className}>
       <div className="h-1.5 rounded-full overflow-hidden bg-white/5 flex gap-px">
         <div
-          className="h-full bg-emerald-500/70 transition-all duration-700 ease-out rounded-l-full"
-          style={{ width: mounted ? `${supportPct}%` : '0%' }}
+          className="h-full bg-emerald-500/70 transition-all duration-300 ease-out rounded-l-full"
+          style={{ width: isZero ? '50%' : `${supportPct}%` }}
         />
         <div
-          className="h-full bg-red-500/70 transition-all duration-700 ease-out rounded-r-full"
-          style={{ width: mounted ? `${contradictPct}%` : '0%' }}
+          className="h-full bg-red-500/70 transition-all duration-300 ease-out rounded-r-full"
+          style={{ width: isZero ? '50%' : `${contradictPct}%` }}
         />
       </div>
       <div className="flex justify-between mt-1">

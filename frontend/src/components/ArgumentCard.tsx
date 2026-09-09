@@ -37,44 +37,37 @@ export function ArgumentCard({ argument }: ArgumentCardProps) {
     const pid = argument.id;
     if (!pid) return;
 
-    // Optimistic update — instant UI change
-    const prevVoted = voted;
-    const prevSupport = supportPct;
-    const prevContradict = contradictPct;
+    // Optimistic: instantly flip the vote
+    const newVoted = voted === side ? null : side;
+    setVoted(newVoted);
 
-    if (prevVoted === side) {
-      setVoted(null);
-      const total = (supportPct + contradictPct) || 1;
-      if (side === 'A') {
-        setSupportPct(Math.max(0, Math.round(((supportPct * total / 100) - 1) / ((total - 1) || 1) * 100)));
-      } else {
-        setContradictPct(Math.max(0, Math.round(((contradictPct * total / 100) - 1) / ((total - 1) || 1) * 100)));
-      }
-    } else {
-      setVoted(side);
-      const total = (supportPct + contradictPct) + 1;
-      if (side === 'A') {
-        setSupportPct(Math.round(((supportPct * (total - 1) / 100) + 1) / total * 100));
-      } else {
-        setContradictPct(Math.round(((contradictPct * (total - 1) / 100) + 1) / total * 100));
-      }
+    // Optimistic: shift percentages slightly toward voted side
+    if (newVoted === 'A') {
+      setSupportPct(Math.min(100, supportPct + 1));
+      setContradictPct(Math.max(0, contradictPct - 1));
+    } else if (newVoted === 'B') {
+      setContradictPct(Math.min(100, contradictPct + 1));
+      setSupportPct(Math.max(0, supportPct - 1));
     }
 
-    // Server call in background
+    // Server call in background — reconcile with real data
     apiFetch<{ votes_a: number; votes_b: number; voted: string | null }>(`/posts/${pid}/vote`, {
       method: 'POST',
       body: JSON.stringify({ side }),
     }).then((res) => {
+      // Use server's truth for voted state
       setVoted(res.voted as 'A' | 'B' | null);
+      // Use server's truth for percentages
       const total = res.votes_a + res.votes_b;
       if (total > 0) {
         setSupportPct(Math.round((res.votes_a / total) * 100));
         setContradictPct(Math.round((res.votes_b / total) * 100));
       }
     }).catch(() => {
-      setVoted(prevVoted);
-      setSupportPct(prevSupport);
-      setContradictPct(prevContradict);
+      // Revert optimistic on error
+      setVoted(voted);
+      setSupportPct(argument.support_pct);
+      setContradictPct(argument.contradict_pct);
     });
   };
 
