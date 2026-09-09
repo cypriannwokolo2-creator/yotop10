@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { Icon } from './icons/Icon';
 import { ArgumentBar } from './ArgumentBar';
@@ -19,10 +19,10 @@ interface ArgumentCardProps {
 }
 
 export function ArgumentCard({ argument }: ArgumentCardProps) {
-  const [voted, setVoted] = useState<'A' | 'B' | null>(null);
   const [supportPct, setSupportPct] = useState(argument.support_pct);
   const [contradictPct, setContradictPct] = useState(argument.contradict_pct);
-  const [voting, setVoting] = useState<'A' | 'B' | null>(null);
+  const [voted, setVoted] = useState<'A' | 'B' | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   const config = POST_TYPE_CONFIG[argument.post_type] ?? {
     label: argument.post_type.toUpperCase().slice(0, 3),
@@ -33,27 +33,55 @@ export function ArgumentCard({ argument }: ArgumentCardProps) {
   const topComment = argument.top_comments?.[0];
   const isVotable = argument.post_type === 'this_vs_that';
 
-  const handleVote = async (side: 'A' | 'B') => {
-    if (!isVotable || voting) return;
+  const handleVote = (side: 'A' | 'B') => {
+    if (!isVotable) return;
     const pid = argument.id;
     if (!pid) return;
-    setVoting(side);
-    try {
-      const res = await apiFetch<{ votes_a: number; votes_b: number; voted: string | null }>(`/posts/${pid}/vote`, {
-        method: 'POST',
-        body: JSON.stringify({ side }),
-      });
+
+    // Optimistic update — instant UI change
+    const prevVoted = voted;
+    const prevSupport = supportPct;
+    const prevContradict = contradictPct;
+
+    startTransition(() => {
+      if (prevVoted === side) {
+        // Toggle off
+        setVoted(null);
+        const total = (supportPct + contradictPct) || 1;
+        if (side === 'A') {
+          setSupportPct(Math.max(0, Math.round(((supportPct * total / 100) - 1) / ((total - 1) || 1) * 100)));
+        } else {
+          setContradictPct(Math.max(0, Math.round(((contradictPct * total / 100) - 1) / ((total - 1) || 1) * 100)));
+        }
+      } else {
+        // Vote for side
+        setVoted(side);
+        const total = (supportPct + contradictPct) + 1;
+        if (side === 'A') {
+          setSupportPct(Math.round(((supportPct * (total - 1) / 100) + 1) / total * 100));
+        } else {
+          setContradictPct(Math.round(((contradictPct * (total - 1) / 100) + 1) / total * 100));
+        }
+      }
+    });
+
+    // Server call in background
+    apiFetch<{ votes_a: number; votes_b: number; voted: string | null }>(`/posts/${pid}/vote`, {
+      method: 'POST',
+      body: JSON.stringify({ side }),
+    }).then((res) => {
       setVoted(res.voted as 'A' | 'B' | null);
       const total = res.votes_a + res.votes_b;
       if (total > 0) {
         setSupportPct(Math.round((res.votes_a / total) * 100));
         setContradictPct(Math.round((res.votes_b / total) * 100));
       }
-    } catch {
-      // silently fail
-    } finally {
-      setVoting(null);
-    }
+    }).catch(() => {
+      // Revert on error
+      setVoted(prevVoted);
+      setSupportPct(prevSupport);
+      setContradictPct(prevContradict);
+    });
   };
 
   return (
@@ -92,28 +120,26 @@ export function ArgumentCard({ argument }: ArgumentCardProps) {
                   <button
                     type="button"
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleVote('A'); }}
-                    disabled={voting !== null}
-                    className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                    className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold cursor-pointer transition-all ${
                       voted === 'A'
                         ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 shadow-[0_0_12px_rgba(16,185,129,0.15)]'
                         : 'bg-white/5 border border-white/10 text-zinc-400 hover:bg-emerald-500/10 hover:border-emerald-500/40 hover:text-emerald-400'
                     }`}
                   >
-                    {voting === 'A' ? <Icon name="Loader" size={13} className="animate-spin" /> : <Icon name="ThumbsUp" size={13} />}
-                    {voted === 'A' ? 'Voted' : voting === 'A' ? 'Voting...' : 'Support'}
+                    <Icon name="ThumbsUp" size={13} />
+                    {voted === 'A' ? 'Voted' : 'Support'}
                   </button>
                   <button
                     type="button"
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleVote('B'); }}
-                    disabled={voting !== null}
-                    className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                    className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold cursor-pointer transition-all ${
                       voted === 'B'
                         ? 'bg-red-500/20 text-red-400 border border-red-500/50 shadow-[0_0_12px_rgba(239,68,68,0.15)]'
                         : 'bg-white/5 border border-white/10 text-zinc-400 hover:bg-red-500/10 hover:border-red-500/40 hover:text-red-400'
                     }`}
                   >
-                    {voting === 'B' ? <Icon name="Loader" size={13} className="animate-spin" /> : <Icon name="ThumbsDown" size={13} />}
-                    {voted === 'B' ? 'Voted' : voting === 'B' ? 'Voting...' : 'Contradict'}
+                    <Icon name="ThumbsDown" size={13} />
+                    {voted === 'B' ? 'Voted' : 'Contradict'}
                   </button>
                 </>
               ) : (

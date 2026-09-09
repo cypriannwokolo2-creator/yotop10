@@ -166,21 +166,27 @@ export function ArgumentHeroSlider({ arguments: args }: ArgumentHeroSliderProps)
 
   const d = top[current];
 
-  const handleVote = async (side: 'A' | 'B') => {
+  const handleVote = (side: 'A' | 'B') => {
     const pid = d.id;
     if (!pid || votingMap[pid]) return;
+
+    // Optimistic update — instant UI
+    const prevVoted = votedMap[pid] ?? null;
+    setVotedMap(prev => ({ ...prev, [pid]: side }));
     setVotingMap(prev => ({ ...prev, [pid]: side }));
-    try {
-      const res = await apiFetch<{ votes_a: number; votes_b: number; voted: string | null }>(`/posts/${pid}/vote`, {
-        method: 'POST',
-        body: JSON.stringify({ side }),
-      });
+
+    // Server call in background
+    apiFetch<{ votes_a: number; votes_b: number; voted: string | null }>(`/posts/${pid}/vote`, {
+      method: 'POST',
+      body: JSON.stringify({ side }),
+    }).then((res) => {
       setVotedMap(prev => ({ ...prev, [pid]: res.voted as 'A' | 'B' | null }));
-    } catch {
-      // silently fail
-    } finally {
+    }).catch(() => {
+      // Revert on error
+      setVotedMap(prev => ({ ...prev, [pid]: prevVoted }));
+    }).finally(() => {
       setVotingMap(prev => ({ ...prev, [pid]: null }));
-    }
+    });
   };
 
   return (
