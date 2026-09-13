@@ -125,7 +125,7 @@ export const HallOfFameCard = memo(function HallOfFameCard({
 
             {hasPost && (
               <span className="text-3xs text-zinc-500">
-                @{toPublicSlug(post.author_username)}
+                @{toPublicSlug(post.author_display_name || post.author_username)}
               </span>
             )}
           </div>
@@ -216,7 +216,7 @@ export const HallOfFameCard = memo(function HallOfFameCard({
       {hasPost && (
         <div className="flex items-center gap-3 mt-2">
           <span className="text-3xs text-zinc-500">
-            @{toPublicSlug(post.author_username)}
+            @{toPublicSlug(post.author_display_name || post.author_username)}
           </span>
           <span className="flex items-center gap-1 font-mono tabular-nums text-2xs text-zinc-600">
             <Icon name="MessageCircle" size={10} />

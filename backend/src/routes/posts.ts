@@ -626,11 +626,11 @@ router.post('/', ...validatePostSubmission as any[], async (req, res) => {
       return res.status(429).json({ error: `Account restricted. Resumes in ${remaining} minutes.`, resetTime: user.restricted_until });
     }
 
-    // Create post
+    // Create post — use current display name (custom if set) so By reflects rename
     const post = await Post.create({
       author_id: user.user_id,
-      author_username: user.username,
-      author_display_name: author_display_name || user.username,
+      author_username: user.custom_display_name || user.username,
+      author_display_name: author_display_name || user.custom_display_name || user.username,
       title,
       post_type,
       intro,
@@ -899,8 +899,8 @@ router.post('/:idOrSlug/comments', [
       parent_comment_id: parent_comment_id || undefined,
       depth,
       author_id: user.user_id,
-      author_username: user.username,
-      author_display_name: user.username,
+      author_username: user.custom_display_name || user.username,
+      author_display_name: user.custom_display_name || user.username,
       content,
       fire_count: 0,
       reply_count: 0,

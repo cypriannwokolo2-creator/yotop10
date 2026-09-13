@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Icon, type LucideIconName } from './icons/Icon';
 import { formatDate, cleanTitle } from '@/lib/dates';
+import { toPublicSlug } from '@/lib/username';
 import type { Post } from '@/lib/api/types';
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -22,7 +23,7 @@ function getCategoryIcon(slug: string): string {
 
 export const PostCarouselCard = memo(function PostCarouselCard({ post }: { post: Post }) {
   const topItems = post.topItems || [];
-  const displayName = post.author_display_name || post.author_username;
+  const displayName = toPublicSlug(post.author_display_name || post.author_username);
   const totalItems = post.totalItems || topItems.length;
   const remaining = Math.max(0, totalItems - 3);
 

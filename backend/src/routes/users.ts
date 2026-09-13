@@ -208,6 +208,15 @@ router.patch('/me', ...validateDisplayName as any[], async (req, res) => {
 
     await recordUsernameChange(req.user.user_id, displayName, oldUsername);
 
+    // Backfill old posts/articles/comments so By reflects new name
+    try {
+      await Post.updateMany({ author_id: req.user.user_id }, { $set: { author_username: displayName, author_display_name: displayName } });
+      await Article.updateMany({ author_id: req.user.user_id }, { $set: { author_username: displayName, author_display_name: displayName } });
+      await Comment.updateMany({ author_id: req.user.user_id }, { $set: { author_username: displayName, author_display_name: displayName } });
+    } catch (e) {
+      console.error('Backfill author display name failed:', e);
+    }
+
     // Return updated user
     res.json({
       success: true,

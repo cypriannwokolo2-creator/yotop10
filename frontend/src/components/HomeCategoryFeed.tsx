@@ -39,7 +39,7 @@ function VsMiniCard({ post }: { post: Post }) {
         ))}
       </div>
       <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/5">
-        <span className="text-3xs text-zinc-600">@{toPublicSlug(post.author_username)}</span>
+        <span className="text-3xs text-zinc-600">@{toPublicSlug(post.author_display_name || post.author_username)}</span>
         <span className="text-3xs text-zinc-600">{post.view_count} views</span>
       </div>
     </Link>
@@ -59,7 +59,7 @@ function FactDropMiniCard({ post }: { post: Post }) {
         {post.intro || post.title}
       </p>
       <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/5">
-        <span className="text-3xs text-zinc-600">@{toPublicSlug(post.author_username)}</span>
+        <span className="text-3xs text-zinc-600">@{toPublicSlug(post.author_display_name || post.author_username)}</span>
         <span className="text-3xs text-zinc-600">{post.view_count} views</span>
       </div>
     </Link>
