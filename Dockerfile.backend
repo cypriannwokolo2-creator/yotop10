@@ -7,8 +7,9 @@ RUN npm install -g pnpm@10 && pnpm install --frozen-lockfile
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
-COPY backend/ .
-RUN npm install -g pnpm@10 && pnpm build
+COPY --from=deps /app/backend/node_modules ./backend/node_modules
+COPY backend/ ./backend/
+RUN npm install -g pnpm@10 && pnpm --filter backend build
 
 FROM node:20-alpine AS runner
 WORKDIR /app
