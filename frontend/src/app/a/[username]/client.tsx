@@ -152,51 +152,68 @@ export default function UserProfileClient({ initialProfile }: { initialProfile: 
 
   return (
     <div className="mx-auto min-h-screen max-w-4xl bg-[var(--color-bg)] text-white px-6 sm:px-8 py-12 sm:py-16">
-      {/* ─── MOBILE HEADER — centered, stacked, thumb-friendly (md:hidden) — original hero look retained ─── */}
-      <div className="md:hidden">
-        <div className="h-28 bg-gradient-to-br from-zinc-900 via-zinc-800 to-black border border-white/5 rounded-3xl" />
-        <div className="px-6 -mt-12">
-          <div className={`relative mx-auto h-20 w-20 sm:h-24 sm:w-24 rounded-full ring-4 ring-[var(--color-bg)] shadow-xl ${tier.ring} overflow-hidden`}>
-            {profile.profile_image_url ? (
-              <Image src={profile.profile_image_url} alt="" fill className="rounded-full object-cover" sizes="80px" unoptimized />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-900 text-2xl font-bold text-zinc-400">
-                {initials}
-              </div>
-            )}
-          </div>
-          <div className="mt-4 text-center">
-            <h1 className="text-2xl font-black tracking-tight">{toPublicSlug(profile.username)}</h1>
-            <span className={`mt-2 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold capitalize border ${tier.bg} ${tier.text}`}>
-              <span className={`h-2 w-2 rounded-full ${tier.dot}`} />{tier.label}
+      {/* ─── Banner ─── */}
+      <div className="h-28 sm:h-36 rounded-3xl bg-gradient-to-br from-zinc-900 via-zinc-800 to-black border border-white/5" />
+
+      {/* ─── Profile Header — original look retained (single, responsive, not md:hidden) ─── */}
+      <div className="flex items-start gap-6 md:gap-8 -mt-12 mb-10 px-2">
+        {/* Avatar — overlapping banner */}
+        <div className={`shrink-0 relative h-20 w-20 sm:h-24 sm:w-24 rounded-full ring-4 ring-[var(--color-bg)] shadow-xl ${tier.ring}`}>
+          {profile.profile_image_url ? (
+            <Image src={profile.profile_image_url} alt="" fill className="rounded-full object-cover" sizes="96px" unoptimized />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center rounded-full bg-gradient-to-br from-zinc-800 to-zinc-900 text-2xl font-bold text-zinc-400">
+              {initials}
+            </div>
+          )}
+        </div>
+
+        {/* Info */}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight leading-tight truncate">{toPublicSlug(profile.username)}</h1>
+            <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold capitalize border ${tier.bg} ${tier.text}`}>
+              <span className={`h-2 w-2 rounded-full ${tier.dot}`} />
+              {tier.label}
             </span>
-            <div className="mt-3 flex items-center justify-center gap-4 text-xs text-zinc-500">
-              <span>{profile.stats.total_posts} posts</span>
-              <span>·</span>
-              <span>{profile.stats.total_comments} comments</span>
-              <span>·</span>
-              <span>{profile.stats.total_views ?? 0} views</span>
-            </div>
-            {isOwn && (
-              <div className="mt-4 flex items-center justify-center gap-2">
-                <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-medium text-zinc-400">
-                  <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleProfileUpload} disabled={uploadingImage} className="hidden" />
-                  {uploadingImage ? 'Uploading...' : 'Photo'}
-                </label>
-                <button onClick={() => router.push('/settings/account')} className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-medium text-zinc-400">Edit</button>
-              </div>
-            )}
-            {imageError && <p className="mt-2 text-xs text-red-400">{imageError}</p>}
-            <div className="mt-4 flex items-center justify-center gap-6 text-xs text-zinc-500">
-              <span className="inline-flex items-center gap-1.5"><Icon name="Calendar" size={14} />{formatDate(profile.stats.member_since)}</span>
-              <span>{profile.stats.approval_rate}% approval</span>
-            </div>
           </div>
+
+          <div className="flex flex-wrap gap-x-6 gap-y-1.5 text-xs text-[var(--color-muted)]">
+            <span className="inline-flex items-center gap-1.5">
+              <Icon name="FileText" size={14} /> {profile.stats.total_posts} posts
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <Icon name="MessageCircle" size={14} /> {profile.stats.total_comments}
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <Icon name="Eye" size={14} /> {profile.stats.total_views ?? 0}
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              {profile.stats.verified && <Icon name="BadgeCheck" size={14} />} {profile.stats.approval_rate}%
+            </span>
+            <span suppressHydrationWarning className="inline-flex items-center gap-1.5">
+              <Icon name="Calendar" size={14} /> {formatDate(profile.stats.member_since)}
+            </span>
+          </div>
+
+          {/* Own profile actions */}
+          {isOwn && (
+            <div className="flex flex-nowrap items-center justify-center gap-2 mt-4">
+              <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-medium text-zinc-400 hover:text-white hover:bg-white/10 transition focus-visible:ring-2 focus-visible:ring-orange-500 shrink-0">
+                <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleProfileUpload} disabled={uploadingImage} className="hidden" />
+                {uploadingImage ? <><Icon name="RefreshCw" size={12} className="animate-spin" /> Uploading...</> : <><Icon name="Camera" size={12} /> Photo</>}
+              </label>
+              <button onClick={() => router.push('/settings/account')} className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] font-medium text-zinc-400 hover:text-white hover:bg-white/10 transition focus-visible:ring-2 focus-visible:ring-orange-500 shrink-0">
+                <Icon name="Settings" size={12} /> Settings
+              </button>
+              {imageError && <span className="text-[11px] text-red-400 bg-red-500/10 border border-red-500/20 rounded-full px-2 py-0.5 shrink-0">{imageError}</span>}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* ─── MOBILE Bio + Links — own sections (md:hidden, not part of hero) ─── */}
-      <div className="md:hidden px-6 space-y-4 mt-6">
+      {/* ─── MOBILE Bio — own section below hero, before bento (md:hidden) ─── */}
+      <div className="md:hidden space-y-4 mb-6 px-2">
         {profile.bio ? (
           <div className="rounded-2xl border border-white/5 bg-white/[0.03] p-5">
             <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-2 flex items-center gap-2"><Icon name="FileText" size={12} /> About</h2>
@@ -208,71 +225,6 @@ export default function UserProfileClient({ initialProfile }: { initialProfile: 
             <button onClick={() => router.push('/settings/account')} className="mt-3 text-xs text-orange-400">Add bio</button>
           </div>
         ) : null}
-        {(profile.links?.medium || profile.links?.x || profile.links?.github) ? (
-          <div className="rounded-2xl border border-white/5 bg-white/[0.03] p-5">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-3 flex items-center gap-2"><Icon name="Link" size={12} /> Links</h2>
-            <div className="flex flex-col gap-2">
-              {profile.links.medium && <a href={`https://medium.com/@${profile.links.medium}`} target="_blank" rel="me noopener" className="flex items-center gap-2 rounded-xl border border-white/5 bg-white/5 px-3 py-2.5 text-sm text-zinc-300 hover:text-white hover:bg-white/10 transition"><Icon name="Link" size={14} className="text-zinc-500" /> medium.com/@{profile.links.medium}</a>}
-              {profile.links.x && <a href={`https://x.com/${profile.links.x}`} target="_blank" rel="me noopener" className="flex items-center gap-2 rounded-xl border border-white/5 bg-white/5 px-3 py-2.5 text-sm text-zinc-300 hover:text-white hover:bg-white/10 transition"><Icon name="Link" size={14} className="text-zinc-500" /> x.com/{profile.links.x}</a>}
-              {profile.links.github && <a href={`https://github.com/${profile.links.github}`} target="_blank" rel="me noopener" className="flex items-center gap-2 rounded-xl border border-white/5 bg-white/5 px-3 py-2.5 text-sm text-zinc-300 hover:text-white hover:bg-white/10 transition"><Icon name="Link" size={14} className="text-zinc-500" /> github.com/{profile.links.github}</a>}
-            </div>
-          </div>
-        ) : isOwn ? (
-          <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-5 text-center">
-            <p className="text-sm text-zinc-600">No links yet</p>
-            <button onClick={() => router.push('/settings/account')} className="mt-2 text-xs text-orange-400">Add links</button>
-          </div>
-        ) : null}
-      </div>
-
-      {/* ─── DESKTOP HEADER — spacious bento, left-aligned, dense (hidden md:hidden) ─── */}
-      <div className="hidden md:block">
-        <div className="rounded-3xl border border-white/5 bg-white/[0.02] p-8 backdrop-blur-sm">
-          <div className="flex items-start gap-8">
-            <div className={`shrink-0 relative h-24 w-24 rounded-2xl overflow-hidden ring-2 ${tier.ring} shadow-xl`}>
-              {profile.profile_image_url ? (
-                <Image src={profile.profile_image_url} alt="" fill className="object-cover" sizes="96px" unoptimized />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-900 text-3xl font-bold text-zinc-400">
-                  {initials}
-                </div>
-              )}
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-3">
-                <h1 className="text-3xl font-black tracking-tight">{toPublicSlug(profile.username)}</h1>
-                <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold border ${tier.bg} ${tier.text}`}>
-                  <span className={`h-2 w-2 rounded-full ${tier.dot}`} />{tier.label}
-                </span>
-                {profile.stats.verified && <Icon name="BadgeCheck" size={16} className="text-orange-400" />}
-                <span className="ml-auto hidden lg:inline-flex items-center gap-2 text-xs text-zinc-500"><Icon name="Calendar" size={14} />{formatDate(profile.stats.member_since)}</span>
-              </div>
-              <div className="mt-3 grid grid-cols-3 gap-4 max-w-md">
-                <div className="rounded-xl bg-white/5 px-4 py-3 text-center"><p className="text-xl font-bold text-white">{profile.stats.total_posts}</p><p className="text-xs text-zinc-500">Lists</p></div>
-                <div className="rounded-xl bg-white/5 px-4 py-3 text-center"><p className="text-xl font-bold text-white">{profile.stats.total_comments}</p><p className="text-xs text-zinc-500">Comments</p></div>
-                <div className="rounded-xl bg-white/5 px-4 py-3 text-center"><p className="text-xl font-bold text-white">{profile.stats.total_views ?? 0}</p><p className="text-xs text-zinc-500">Views</p></div>
-              </div>
-              {profile.bio && <p className="mt-4 text-sm text-zinc-300 leading-relaxed max-w-2xl whitespace-pre-wrap">{profile.bio}</p>}
-              {profile.links && (profile.links.medium || profile.links.x || profile.links.github) && (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {profile.links.medium && <a href={`https://medium.com/@${profile.links.medium}`} target="_blank" rel="me noopener" className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-zinc-400 hover:text-white transition">Medium @{profile.links.medium}</a>}
-                  {profile.links.x && <a href={`https://x.com/${profile.links.x}`} target="_blank" rel="me noopener" className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-zinc-400 hover:text-white transition">X @{profile.links.x}</a>}
-                  {profile.links.github && <a href={`https://github.com/${profile.links.github}`} target="_blank" rel="me noopener" className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-zinc-400 hover:text-white transition">GitHub @{profile.links.github}</a>}
-                </div>
-              )}
-              {isOwn && (
-                <div className="mt-4 flex items-center gap-2">
-                  <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-medium text-zinc-400 hover:text-white transition">
-                    <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleProfileUpload} disabled={uploadingImage} className="hidden" />
-                    {uploadingImage ? <><Icon name="RefreshCw" size={12} className="animate-spin" /> Uploading</> : <><Icon name="Camera" size={12} /> Change photo</>}
-                  </label>
-                  <button onClick={() => router.push('/settings/account')} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-medium text-zinc-400">Edit profile</button>
-                  {imageError && <span className="text-xs text-red-400 ml-2">{imageError}</span>}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* ─── Bento Layout: Left Rail (sticky) + Right Feed ─── */}
@@ -363,6 +315,25 @@ export default function UserProfileClient({ initialProfile }: { initialProfile: 
               <SecureMyAuthority />
             </div>
           )}
+
+          {/* ─── MOBILE Links — after Reputation (About is already above Bento) ─── */}
+          <div className="md:hidden">
+            {(profile.links?.medium || profile.links?.x || profile.links?.github) ? (
+              <div className="rounded-2xl border border-white/5 bg-white/[0.03] p-5">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-3 flex items-center gap-2"><Icon name="Link" size={12} /> Links</h2>
+                <div className="flex flex-col gap-2">
+                  {profile.links.medium && <a href={`https://medium.com/@${profile.links.medium}`} target="_blank" rel="me noopener" className="flex items-center gap-2 rounded-xl border border-white/5 bg-white/5 px-3 py-2.5 text-sm text-zinc-300 hover:text-white hover:bg-white/10 transition"><Icon name="Link" size={14} className="text-zinc-500" /> medium.com/@{profile.links.medium}</a>}
+                  {profile.links.x && <a href={`https://x.com/${profile.links.x}`} target="_blank" rel="me noopener" className="flex items-center gap-2 rounded-xl border border-white/5 bg-white/5 px-3 py-2.5 text-sm text-zinc-300 hover:text-white hover:bg-white/10 transition"><Icon name="Link" size={14} className="text-zinc-500" /> x.com/{profile.links.x}</a>}
+                  {profile.links.github && <a href={`https://github.com/${profile.links.github}`} target="_blank" rel="me noopener" className="flex items-center gap-2 rounded-xl border border-white/5 bg-white/5 px-3 py-2.5 text-sm text-zinc-300 hover:text-white hover:bg-white/10 transition"><Icon name="Link" size={14} className="text-zinc-500" /> github.com/{profile.links.github}</a>}
+                </div>
+              </div>
+            ) : isOwn ? (
+              <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-5 text-center">
+                <p className="text-sm text-zinc-600">No links yet</p>
+                <button onClick={() => router.push('/settings/account')} className="mt-2 text-xs text-orange-400">Add links</button>
+              </div>
+            ) : null}
+          </div>
         </div>
 
         {/* Right feed — tabs + posts/comments/stats */}
