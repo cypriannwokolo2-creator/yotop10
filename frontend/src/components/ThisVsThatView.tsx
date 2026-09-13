@@ -124,7 +124,7 @@ export function ThisVsThatView({ slug, post, items }: ThisVsThatViewProps) {
           <span className="text-sm text-zinc-400">
             By{' '}
             <Link href={`/a/${toPublicSlug(post.author_username)}`} className="font-semibold text-orange-400 hover:text-orange-300 transition">
-              {post.author_id || post.author_display_name}
+              {post.author_display_name}
             </Link>
             <span className="ml-3 text-xs text-zinc-600">{post.view_count} views</span>
           </span>
