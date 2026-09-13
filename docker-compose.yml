@@ -20,7 +20,7 @@ services:
     volumes:
       - ./nginx.conf:/templates/nginx.conf:ro
       - ./scripts/init-nginx.sh:/scripts/init-nginx.sh:ro
-      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /etc/letsencrypt:/etc/letsencrypt
       - /var/www/acme:/var/www/acme
       - /var/log/nginx:/var/log/nginx
     networks:
