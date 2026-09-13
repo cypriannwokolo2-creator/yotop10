@@ -8,7 +8,7 @@ import { CommandSearch } from './CommandSearch';
 import { toPublicSlug } from '@/lib/username';
 
 export function DynamicIsland() {
-  const pathname = usePathname();
+  const pathname = usePathname()!;
   const router = useRouter();
   const [searchOpen, setSearchOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);

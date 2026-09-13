@@ -7,7 +7,7 @@ import { Icon } from './icons/Icon';
 const HIDE_PATHS = ['/new', '/submit', '/submit-article', '/admin'];
 
 export function SubmitFAB() {
-  const pathname = usePathname();
+  const pathname = usePathname()!;
   if (HIDE_PATHS.some(p => pathname.startsWith(p))) return null;
 
   return (

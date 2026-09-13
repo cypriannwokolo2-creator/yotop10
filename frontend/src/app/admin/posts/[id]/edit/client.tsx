@@ -8,7 +8,7 @@ import { toast } from '@/lib/toast';
 interface EditPost { _id: string; title: string; intro: string; post_type: string; category_slug: string; status: string; version: number; items: Array<{ _id: string; rank: number; title: string; justification: string }> }
 
 export default function EditPostClient() {
-  const router = useRouter(); const params = useParams(); const postId = params.id as string;
+  const router = useRouter(); const params = useParams()!; const postId = params.id as string;
   const [post, setPost] = useState<EditPost | null>(null);
   const [title, setTitle] = useState(''); const [intro, setIntro] = useState('');
   const [categorySlug, setCategorySlug] = useState('');

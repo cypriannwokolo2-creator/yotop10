@@ -22,12 +22,7 @@ jobs:
           cache: 'pnpm'
           cache-dependency-path: '**/pnpm-lock.yaml'
 
-      - name: Install dependencies (Frontend)
-        working-directory: ./frontend
-        run: pnpm install --frozen-lockfile
-
-      - name: Install dependencies (Backend)
-        working-directory: ./backend
+      - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Typecheck Backend
@@ -58,10 +53,5 @@ jobs:
         working-directory: ./backend
         run: pnpm build
 
-      - name: Security audit (Frontend)
-        working-directory: ./frontend
-        run: pnpm audit --audit-level=critical
-
-      - name: Security audit (Backend)
-        working-directory: ./backend
-        run: pnpm audit --audit-level=critical
+      - name: Security audit
+        run: pnpm audit --audit-level=high

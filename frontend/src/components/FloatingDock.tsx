@@ -16,7 +16,7 @@ const TABS: Array<{
 ];
 
 export function FloatingDock() {
-  const pathname = usePathname();
+  const pathname = usePathname()!;
 
   if (pathname.startsWith('/admin')) return null;
 

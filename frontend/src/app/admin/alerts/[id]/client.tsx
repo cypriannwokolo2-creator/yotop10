@@ -49,7 +49,7 @@ const RESOLUTION_GUIDE: Record<string, string> = {
 };
 
 export default function AlertDetailClient() {
-  const params = useParams();
+  const params = useParams()!;
   const router = useRouter();
   const [detail, setDetail] = useState<AlertDetail | null>(null);
   const [loading, setLoading] = useState(true);

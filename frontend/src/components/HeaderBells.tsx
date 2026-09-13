@@ -5,7 +5,7 @@ import NotificationBell from './NotificationBell';
 import AdminAlertBell from './AdminAlertBell';
 
 export default function HeaderBells() {
-  const pathname = usePathname();
+  const pathname = usePathname()!;
   const isAdmin = pathname.startsWith('/admin');
 
   return (

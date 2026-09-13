@@ -26,7 +26,7 @@ interface AdminUserData {
 }
 
 export default function AdminUserDetailClient() {
-  const params = useParams();
+  const params = useParams()!;
   const router = useRouter();
   const username = typeof params.username === 'string' ? params.username : '';
 

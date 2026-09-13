@@ -19,7 +19,7 @@ const NAV_ITEMS = [
 ];
 
 export function DesktopSidebar() {
-  const pathname = usePathname();
+  const pathname = usePathname()!;
   const user = useAuthStore(s => s.user);
   const initialized = useAuthStore(s => s.initialized);
   const displayName = user?.custom_display_name || user?.username || 'User';

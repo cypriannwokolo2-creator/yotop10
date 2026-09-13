@@ -23,7 +23,7 @@ interface PendingPost {
 
 export default function PendingPostDetailClient() {
   const router = useRouter();
-  const params = useParams();
+  const params = useParams()!;
   const postId = params.id as string;
 
   const [post, setPost] = useState<PendingPost | null>(null);

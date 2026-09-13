@@ -7,7 +7,7 @@ import { toast } from '@/lib/toast';
 import { Icon } from '@/components/icons/Icon';
 
 function AdminSetupContent() {
-  const searchParams = useSearchParams();
+  const searchParams = useSearchParams()!;
   const router = useRouter();
   const urlToken = searchParams?.get('token') || '';
 

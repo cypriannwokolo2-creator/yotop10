@@ -28,7 +28,7 @@ const factCheckLabels: Record<string, string> = {
 const WORDS_PER_MIN = 265;
 
 export default function ArticleDetailClient() {
-  const params = useParams();
+  const params = useParams()!;
   const slug = typeof params.slug === 'string' ? params.slug : '';
 
   const [article, setArticle] = useState<Article | null>(null);

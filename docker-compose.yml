@@ -2,7 +2,6 @@ services:
 
   nginx:
     image: nginx:1.27.4-alpine
-    container_name: yotop10_nginx
     restart: unless-stopped
     mem_limit: 128m
     cpus: 0.5
@@ -41,7 +40,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontend
-    container_name: yotop10_frontend
     restart: unless-stopped
     mem_limit: 512m
     cpus: 1.0
@@ -70,7 +68,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.backend
-    container_name: yotop10_backend
     restart: unless-stopped
     mem_limit: 512m
     cpus: 1.0
@@ -115,7 +112,6 @@ services:
 
   mongodb:
     image: mongo:7.0.20
-    container_name: yotop10_mongodb
     restart: unless-stopped
     mem_limit: 1g
     cpus: 1.0
@@ -141,7 +137,6 @@ services:
 
   redis:
     image: redis:7.4.2-alpine
-    container_name: yotop10_redis
     restart: unless-stopped
     mem_limit: 256m
     cpus: 0.5
@@ -173,7 +168,6 @@ services:
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.15.3
-    container_name: yotop10_elasticsearch
     restart: unless-stopped
     mem_limit: 1g
     cpus: 1.0

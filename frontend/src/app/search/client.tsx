@@ -32,7 +32,7 @@ interface AutocompleteItem { title?: string; slug?: string; name?: string; highl
 const DEBOUNCE_MS = 100;
 
 export default function SearchClient() {
-  const sp = useSearchParams();
+  const sp = useSearchParams()!;
   const initialQ = sp.get('q') || '';
 
   const [q, setQ] = useState(initialQ);

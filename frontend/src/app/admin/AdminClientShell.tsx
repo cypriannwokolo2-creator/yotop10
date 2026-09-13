@@ -19,7 +19,7 @@ export default function AdminClientShell({
   admin: AdminData;
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
+  const pathname = usePathname()!;
   const router = useRouter();
   const logout = useAdminStore((s) => s.logout);
   const [mobileOpen, setMobileOpen] = useState(false);

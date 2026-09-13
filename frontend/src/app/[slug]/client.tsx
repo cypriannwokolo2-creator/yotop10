@@ -79,7 +79,7 @@ export default function PostDetailClient({
   initialItems: ListItem[];
   initialComments: Comment[];
 }) {
-  const searchParams = useSearchParams();
+  const searchParams = useSearchParams()!;
   const itemParam = searchParams?.get('item');
   const vsParam = searchParams?.get('vs');
   const [vsSlug, setVsSlug] = useState<string | null>(vsParam || null);

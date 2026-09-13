@@ -24,7 +24,7 @@ interface NotifDetail {
 }
 
 export default function NotificationDetailClient() {
-  const params = useParams();
+  const params = useParams()!;
   const router = useRouter();
   const [n, setN] = useState<NotifDetail | null>(null);
   const [loading, setLoading] = useState(true);

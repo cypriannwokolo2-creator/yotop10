@@ -10,7 +10,7 @@ import { ThemeToggle } from './ThemeToggle';
 
 export function AdminSlideMenu() {
   const router = useRouter();
-  const pathname = usePathname();
+  const pathname = usePathname()!;
   const open = useSlideMenu((s) => s.open);
   const setOpen = useSlideMenu((s) => s.setOpen);
   const admin = useAdminStore((s) => s.admin);

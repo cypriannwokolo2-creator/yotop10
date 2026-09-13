@@ -6,7 +6,7 @@ import { useAdminStore } from '@/stores/admin';
 import AdminClientShell from './AdminClientShell';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
+  const pathname = usePathname()!;
   const router = useRouter();
   const { loading, initialized, authenticated, admin, checkSession } = useAdminStore();
   const isLoginOrSetup = pathname === '/admin/login' || pathname === '/admin/setup';

@@ -13,7 +13,7 @@ import { toPublicSlug } from '@/lib/username';
 export function SlideMenuPanel() {
   const open = useSlideMenu((s) => s.open);
   const setOpen = useSlideMenu((s) => s.setOpen);
-  const pathname = usePathname();
+  const pathname = usePathname()!;
   const user = useAuthStore((s) => s.user);
 
   useEffect(() => {
