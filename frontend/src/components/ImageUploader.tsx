@@ -15,10 +15,12 @@ export function ImageUploader({ currentUrl, onUpload, label = 'Cover Image', cla
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(currentUrl || null);
   const [error, setError] = useState<string | null>(null);
+  const [previewError, setPreviewError] = useState(false);
   const [urlInput, setUrlInput] = useState('');
 
   useEffect(() => {
     setPreview(currentUrl || null);
+    setPreviewError(false);
   }, [currentUrl]);
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -39,6 +41,7 @@ export function ImageUploader({ currentUrl, onUpload, label = 'Cover Image', cla
       const url = data.file?.hero_lg || data.file?.original || data.url;
       if (!url) throw new Error('No URL returned');
       setPreview(url);
+      setPreviewError(false);
       onUpload(url);
       setUrlInput('');
     } catch (err) {
@@ -53,6 +56,7 @@ export function ImageUploader({ currentUrl, onUpload, label = 'Cover Image', cla
     const trimmed = urlInput.trim();
     if (!trimmed) return;
     setError(null);
+    setPreviewError(false);
     if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
       setError('URL must start with http:// or https://');
       return;
@@ -121,11 +125,19 @@ export function ImageUploader({ currentUrl, onUpload, label = 'Cover Image', cla
             src={preview}
             alt="Preview"
             className="w-full h-40 object-cover"
-            onError={() => setError('Failed to load image — check URL or try upload')}
+            onLoad={() => setPreviewError(false)}
+            onError={() => setPreviewError(true)}
           />
+          {previewError && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-zinc-900/90 p-3 text-center">
+              <Icon name="ImageOff" size={20} className="text-zinc-600" />
+              <p className="text-xs text-zinc-400 max-w-[90%] truncate">{preview}</p>
+              <p className="text-2xs text-zinc-600">Preview failed — image may still save. Try direct link ending in .jpg/.png/.webp or <a href={preview} target="_blank" rel="noopener noreferrer" className="underline text-orange-400">open URL</a>.</p>
+            </div>
+          )}
           <button
             type="button"
-            onClick={() => { setPreview(null); onUpload(''); setError(null); }}
+            onClick={() => { setPreview(null); onUpload(''); setError(null); setPreviewError(false); }}
             className="absolute top-2 right-2 rounded-full bg-black/60 p-1.5 text-white/80 hover:text-white transition"
             aria-label="Remove"
           >
