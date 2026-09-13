@@ -10,16 +10,16 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/backend/node_modules ./backend/node_modules
 COPY backend/ ./backend/
 COPY scripts/ ./scripts/
-RUN npm install -g pnpm@10 && cd backend && pnpm build
+RUN npm install -g pnpm@10 && pnpm --filter backend deploy --prod /app/deploy
 
 FROM node:20-alpine AS runner
 WORKDIR /app
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nodejs
-COPY --from=builder /app/backend/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/backend/package.json ./
-COPY --from=builder /app/scripts/healthcheck.mjs ./scripts/healthcheck.mjs
+COPY --from=builder /app/deploy/dist ./dist
+COPY --from=builder /app/deploy/node_modules ./node_modules
+COPY --from=builder /app/deploy/package.json ./
+COPY --from=builder /app/deploy/scripts/healthcheck.mjs ./scripts/healthcheck.mjs
 RUN mkdir -p /app/uploads && chown nodejs:nodejs /app/uploads
 USER nodejs
 EXPOSE 8000
