@@ -12,7 +12,7 @@ import { toPublicSlug } from '@/lib/username';
 interface SearchResult {
   id: string; title: string; intro?: string; content?: string;
   slug: string; category_slug?: string; category_name?: string; post_type?: string;
-  author_username: string; author_display_name?: string;
+  author_id?: string; author_username: string; author_display_name?: string;
   status?: string; fire_count?: number; comment_count?: number;
   view_count?: number; created_at: string; _score: number;
   highlight?: Record<string, string[]>;
@@ -439,7 +439,7 @@ export default function SearchClient() {
                       <SafeHTML html={r.highlight?.intro?.[0] || (r.intro || '').substring(0, 200)} variant="highlight" />
                     </div>
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-600">
-                      <span>By {toPublicSlug(r.author_username)}</span>
+                      <span>By {r.author_id || toPublicSlug(r.author_username)}</span>
                       {r.category_slug && (
                         <span className="inline-flex items-center gap-1">
                           <Icon name="Folder" size={12} />
@@ -473,7 +473,7 @@ export default function SearchClient() {
                       <SafeHTML html={r.highlight?.content?.[0] || (r.content || '').substring(0, 200)} variant="highlight" />
                     </div>
                     <div className="text-xs text-zinc-600">
-                      By {toPublicSlug(r.author_username)} &middot; <span suppressHydrationWarning>{formatDate(r.created_at)}</span>
+                      By {r.author_id || toPublicSlug(r.author_username)} &middot; <span suppressHydrationWarning>{formatDate(r.created_at)}</span>
                     </div>
                   </Link>
                 )}

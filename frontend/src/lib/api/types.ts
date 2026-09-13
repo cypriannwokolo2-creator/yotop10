@@ -35,6 +35,7 @@ export interface Post {
   intro: string;
   comment_count: number;
   view_count: number;
+  author_id?: string;
   author_username: string;
   author_display_name: string;
   category_slug: string;
@@ -125,6 +126,7 @@ export interface Article {
   sources: Array<{ url: string; title: string; accessed_at: string }>;
   fact_check_status: 'unverified' | 'verified' | 'disputed';
   related_posts: string[];
+  author_id?: string;
   author_username: string;
   author_display_name: string;
   view_count: number;
@@ -156,6 +158,7 @@ export interface ExplorePost {
   post_type: string;
   category_slug: string;
   category_name?: string;
+  author_id?: string;
   author_username: string;
   author_display_name: string;
   comment_count: number;
@@ -195,6 +198,7 @@ export interface ArgumentPost {
   post_type: string;
   category_slug: string;
   category_name?: string;
+  author_id?: string;
   author_username: string;
   author_display_name: string;
   comment_count: number;
@@ -315,6 +319,7 @@ export interface HallOfFameCandidate {
   title: string;
   post_type: string;
   category_slug: string;
+  author_id?: string;
   author_username: string;
   author_display_name: string;
   comment_count: number;

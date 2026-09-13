@@ -159,7 +159,7 @@ export function GlassSlab({ post, variant = 'compact', observe = false, rank, ac
                 variant === 'featured' ? 'text-xs text-zinc-500' : 'text-3xs text-zinc-600'
               }
             >
-              @{toPublicSlug(post.author_username)}
+              @{post.author_id || toPublicSlug(post.author_username)}
             </span>
           </div>
           <div className="flex items-center gap-3 font-mono tabular-nums text-2xs text-zinc-600">

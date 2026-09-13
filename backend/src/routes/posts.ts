@@ -225,6 +225,7 @@ router.get('/', async (req, res) => {
       intro: post.intro,
       comment_count: post.comment_count,
       view_count: post.view_count,
+      author_id: (post as Record<string, unknown>).author_id as string,
       author_username: post.author_username,
       author_display_name: post.author_display_name,
       format: (post as Record<string, unknown>).format || 'list_only',

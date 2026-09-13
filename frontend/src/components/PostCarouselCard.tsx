@@ -22,7 +22,7 @@ function getCategoryIcon(slug: string): string {
 
 export const PostCarouselCard = memo(function PostCarouselCard({ post }: { post: Post }) {
   const topItems = post.topItems || [];
-  const displayName = post.author_display_name || post.author_username;
+  const displayName = post.author_id || post.author_display_name || post.author_username;
   const totalItems = post.totalItems || topItems.length;
   const remaining = Math.max(0, totalItems - 3);
 

@@ -70,7 +70,7 @@ router.get('/', async (req: any, res: any) => {
         } catch { /* default 1.0 */ }
 
         const score = await computeExploreScore((post._id as any).toString(), signals, recentlyViewed);
-        return { ...score, slug: post.slug, title: post.title, post_type: post.post_type, category_slug: signals.category_slug, author_username: post.author_username, author_display_name: post.author_display_name, comment_count: signals.comment_count, view_count: signals.view_count, format: (post as any).format || 'list_only', hero_image_url: (post as any).hero_image_url || null, created_at: post.created_at, topItems: [] as Array<{ rank: number; title: string }> };
+        return { ...score, slug: post.slug, title: post.title, post_type: post.post_type, category_slug: signals.category_slug, author_id: (post as any).author_id, author_username: post.author_username, author_display_name: post.author_display_name, comment_count: signals.comment_count, view_count: signals.view_count, format: (post as any).format || 'list_only', hero_image_url: (post as any).hero_image_url || null, created_at: post.created_at, topItems: [] as Array<{ rank: number; title: string }> };
       })
     );
 
@@ -93,6 +93,7 @@ router.get('/', async (req: any, res: any) => {
         title: (art as any).title || '',
         post_type: 'article',
         category_slug: signals.category_slug,
+        author_id: (art as any).author_id,
         author_username: (art as any).author_username || '',
         author_display_name: (art as any).author_display_name || (art as any).author_name || '',
         comment_count: signals.comment_count,
@@ -134,6 +135,7 @@ router.get('/', async (req: any, res: any) => {
           post_type: s.post_type,
           category_slug: s.category_slug,
           category_name: catName(s.category_slug),
+          author_id: (s as Record<string, unknown>).author_id as string,
           author_username: s.author_username,
           author_display_name: s.author_display_name,
           comment_count: s.comment_count,
@@ -236,6 +238,7 @@ router.get('/', async (req: any, res: any) => {
         post_type: s.post_type,
         category_slug: s.category_slug,
         category_name: catName(s.category_slug),
+        author_id: (s as Record<string, unknown>).author_id as string,
         author_username: s.author_username,
         author_display_name: s.author_display_name,
         comment_count: s.comment_count,

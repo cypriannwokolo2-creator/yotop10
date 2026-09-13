@@ -222,9 +222,12 @@ router.get('/:username', async (req, res) => {
         $or: [
           { short_username: short },
           { short_username: username.toLowerCase() },
+          // Also match longer custom names starting with short prefix (e.g. a_cuti -> a_cutie)
+          { short_username: { $regex: `^a_${cleanUsername}`, $options: 'i' } },
+          { custom_display_name: { $regex: `^a_${cleanUsername}`, $options: 'i' } },
           // Fallback for legacy users without short_username: regex on full
-          { username: { $regex: `^a_${cleanUsername}(_|$)`, $options: 'i' } },
-          { custom_display_name: { $regex: `^a_${cleanUsername}(_|$)`, $options: 'i' } }
+          { username: { $regex: `^a_${cleanUsername}`, $options: 'i' } },
+          { custom_display_name: { $regex: `^a_${cleanUsername}`, $options: 'i' } }
         ]
       });
     } else {
@@ -236,7 +239,10 @@ router.get('/:username', async (req, res) => {
           { custom_display_name: username },
           { custom_display_name: `a_${cleanUsername}` },
           { short_username: username.toLowerCase() },
-          { short_username: `a_${cleanUsername.toLowerCase()}` }
+          { short_username: `a_${cleanUsername.toLowerCase()}` },
+          // Also handle truncated 4-char lookup for custom 5-char names (cutie vs cuti)
+          { custom_display_name: { $regex: `^a_${cleanUsername}`, $options: 'i' } },
+          { short_username: { $regex: `^a_${cleanUsername}`, $options: 'i' } }
         ]
       });
     }
