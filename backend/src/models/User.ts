@@ -6,6 +6,10 @@ export interface IUser extends Document {
   username: string;
   custom_display_name?: string;
   short_username?: string;
+  // Robust separate model: default never changes, custom is flexible 3-32
+  default_username?: string;
+  default_short?: string;
+  custom_short?: string;
   device_fingerprint: string;
   trust_score: number;
   trust_version: number;
@@ -52,6 +56,18 @@ const userSchema = new Schema<IUser>(
       sparse: true,
     },
     short_username: {
+      type: String,
+      sparse: true,
+    },
+    default_username: {
+      type: String,
+      sparse: true,
+    },
+    default_short: {
+      type: String,
+      sparse: true,
+    },
+    custom_short: {
       type: String,
       sparse: true,
     },
@@ -125,5 +141,8 @@ const userSchema = new Schema<IUser>(
 userSchema.index({ updated_at: -1 });
 userSchema.index({ trust_score: 1 });
 userSchema.index({ short_username: 1 }, { sparse: true });
+userSchema.index({ default_short: 1 }, { sparse: true });
+userSchema.index({ custom_short: 1 }, { sparse: true });
+userSchema.index({ default_username: 1 }, { sparse: true });
 
 export const User = registerModel<IUser>('User', userSchema);

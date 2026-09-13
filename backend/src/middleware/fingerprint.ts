@@ -5,7 +5,7 @@ import { SystemConfig } from '../models/SystemConfig';
 import crypto from 'crypto';
 import { redis } from '../lib/redis';
 import { findMatchingUser } from '../lib/fingerprintMatching';
-import { toShortUsername } from '../lib/username';
+import { toShortUsername, toDefaultShort } from '../lib/username';
 
 declare module 'express' {
   interface Request {
@@ -127,16 +127,20 @@ export const fingerprintMiddleware = async (req: Request, res: Response, next: N
           }
 
           let username = `a_${userId.substring(0, 4)}_${userId.substring(4, 8)}`;
-          let shortUsername = toShortUsername(username);
+          let shortUsername = toDefaultShort(username);
+          let defaultUsername = username;
+          let defaultShort = shortUsername;
           for (let attempt = 0; attempt < 5; attempt++) {
-            const existingShort = await User.findOne({ short_username: shortUsername }).select('_id').lean();
+            const existingShort = await User.findOne({ $or: [{ short_username: shortUsername }, { default_short: shortUsername }] }).select('_id').lean();
             if (!existingShort) break;
             const newId = crypto.randomBytes(8).toString('hex');
             username = `a_${newId.substring(0, 4)}_${newId.substring(4, 8)}`;
-            shortUsername = toShortUsername(username);
+            shortUsername = toDefaultShort(username);
+            defaultUsername = username;
+            defaultShort = shortUsername;
             userId = newId;
           }
-          user = await User.create({ user_id: userId, username, short_username: shortUsername, device_fingerprint: fingerprint, trust_score: 1.0, is_admin: false });
+          user = await User.create({ user_id: userId, username, short_username: shortUsername, default_username: defaultUsername, default_short: defaultShort, device_fingerprint: fingerprint, trust_score: 1.0, is_admin: false });
         }
 
         req.user = {
@@ -203,18 +207,22 @@ export const fingerprintMiddleware = async (req: Request, res: Response, next: N
         }
 
         if (!user) {
-          // Create user with this cookie fingerprint
+          // Create user with this cookie fingerprint — robust default model
           const userId = crypto.randomBytes(8).toString('hex');
           let username = `a_${userId.substring(0, 4)}_${userId.substring(4, 8)}`;
-          let shortUsername = toShortUsername(username);
+          let shortUsername = toDefaultShort(username);
+          let defaultUsername = username;
+          let defaultShort = shortUsername;
           for (let attempt = 0; attempt < 5; attempt++) {
-            const existingShort = await User.findOne({ short_username: shortUsername }).select('_id').lean();
+            const existingShort = await User.findOne({ $or: [{ short_username: shortUsername }, { default_short: shortUsername }] }).select('_id').lean();
             if (!existingShort) break;
             const newId = crypto.randomBytes(8).toString('hex');
             username = `a_${newId.substring(0, 4)}_${newId.substring(4, 8)}`;
-            shortUsername = toShortUsername(username);
+            shortUsername = toDefaultShort(username);
+            defaultUsername = username;
+            defaultShort = shortUsername;
           }
-          user = await User.create({ user_id: userId, username, short_username: shortUsername, device_fingerprint: fingerprint, trust_score: 1.0, is_admin: false });
+          user = await User.create({ user_id: userId, username, short_username: shortUsername, default_username: defaultUsername, default_short: defaultShort, device_fingerprint: fingerprint, trust_score: 1.0, is_admin: false });
         }
 
         req.user = {

@@ -12,7 +12,7 @@ import { calculateEffectivePostLimit, calculateEffectiveCommentLimit, RateLimitS
 import { getCategoryNameMap } from '../lib/categoryCache';
 import { checkAndPromoteUser } from '../lib/trustScore';
 import { redis } from '../lib/redis';
-import { toShortUsername } from '../lib/username';
+import { toShortUsername, toCustomShort, toDefaultShort, isDefaultFormat } from '../lib/username';
 
 const router: Router = Router();
 
@@ -154,13 +154,41 @@ router.patch('/me', ...validateDisplayName as any[], async (req, res) => {
       return res.status(409).json({ error: 'Display name already taken' });
     }
 
-    const shortForNew = toShortUsername(displayName);
-    const shortOwner = await User.findOne({ short_username: shortForNew, user_id: { $ne: req.user.user_id } }).select('_id').lean();
-    if (shortOwner) {
-      return res.status(409).json({ error: 'Display name short prefix already taken — choose another (first 4 chars must be unique)' });
+    const isCustom = !isDefaultFormat(displayName);
+    const shortForNew = isCustom ? toCustomShort(displayName) : toDefaultShort(displayName);
+    const customShortForNew = isCustom ? shortForNew : null;
+    // For custom (flexible 3-32), check full custom_short uniqueness, not 4-char prefix
+    // For default (a_xxxx_xxxx), check default_short 4-char uniqueness
+    if (isCustom) {
+      const customOwner = await User.findOne({
+        $or: [{ custom_short: shortForNew }, { short_username: shortForNew }],
+        user_id: { $ne: req.user.user_id },
+      }).select('_id').lean();
+      if (customOwner) {
+        return res.status(409).json({ error: 'Display name already taken' });
+      }
+    } else {
+      const shortOwner = await User.findOne({
+        $or: [{ short_username: shortForNew }, { default_short: shortForNew }],
+        user_id: { $ne: req.user.user_id },
+      }).select('_id').lean();
+      if (shortOwner) {
+        return res.status(409).json({ error: 'Display name short prefix already taken — choose another (first 4 chars must be unique)' });
+      }
     }
 
     const oldUsername = req.user.custom_display_name || req.user.username || null;
+
+    const updateFields: Record<string, unknown> = {
+      custom_display_name: displayName,
+      short_username: shortForNew,
+    };
+    if (isCustom) {
+      (updateFields as Record<string, unknown>).custom_short = shortForNew;
+    } else {
+      (updateFields as Record<string, unknown>).default_short = shortForNew;
+      (updateFields as Record<string, unknown>).default_username = displayName;
+    }
 
     const updatedUser = await User.findOneAndUpdate(
       {
@@ -170,7 +198,7 @@ router.patch('/me', ...validateDisplayName as any[], async (req, res) => {
           { custom_display_name: { $exists: false }, username: oldUsername },
         ],
       },
-      { custom_display_name: displayName, short_username: shortForNew },
+      updateFields,
       { new: true }
     );
 
