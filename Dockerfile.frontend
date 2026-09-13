@@ -1,6 +1,6 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
-COPY pnpm-workspace.yaml ./
+COPY pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY frontend/package.json frontend/pnpm-lock.yaml ./frontend/
 RUN npm install -g pnpm@10 && pnpm install --frozen-lockfile
 
