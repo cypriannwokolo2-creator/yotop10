@@ -10,7 +10,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/backend/node_modules ./backend/node_modules
 COPY backend/ ./backend/
 COPY scripts/ ./scripts/
-RUN npm install -g pnpm@10 && pnpm --filter backend build
+RUN npm install -g pnpm@10 && cd backend && pnpm build
 
 FROM node:20-alpine AS runner
 WORKDIR /app
