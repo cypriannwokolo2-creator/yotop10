@@ -5,10 +5,10 @@ RUN npm install -g pnpm@10 pm2
 # Dependencies stage
 FROM base AS deps
 WORKDIR /app
-COPY frontend/package.json frontend/pnpm-lock.yaml ./frontend/
-COPY backend/package.json backend/pnpm-lock.yaml ./backend/
-RUN cd frontend && pnpm install --frozen-lockfile --config.dangerously-allow-all-builds=true
-RUN cd backend && pnpm install --frozen-lockfile --config.dangerously-allow-all-builds=true
+COPY pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY frontend/package.json ./frontend/
+COPY backend/package.json ./backend/
+RUN pnpm install --frozen-lockfile --config.dangerously-allow-all-builds=true
 
 # Build stage
 FROM base AS builder

@@ -1,7 +1,8 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 COPY pnpm-workspace.yaml pnpm-lock.yaml ./
-COPY frontend/package.json frontend/pnpm-lock.yaml ./frontend/
+COPY frontend/package.json ./frontend/
+COPY backend/package.json ./backend/
 RUN npm install -g pnpm@10 && pnpm install --frozen-lockfile
 
 FROM node:20-alpine AS builder
@@ -18,13 +19,15 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
-COPY --from=builder /app/frontend/public ./public
-COPY --from=builder /app/frontend/.next/standalone ./
-COPY --from=builder /app/frontend/.next/static ./.next/static
-COPY --from=builder /app/frontend/.next/BUILD_ID ./.next/BUILD_ID
+COPY --from=builder /app/frontend ./frontend
+COPY --from=builder /app/node_modules ./node_modules
 RUN chown -R nextjs:nodejs /app
 USER nextjs
+WORKDIR /app/frontend
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
-CMD ["node", "server.js"]
+ENV NEXT_PUBLIC_API_URL=https://yotop10.com
+ENV NEXT_PUBLIC_SITE_URL=https://yotop10.com
+ENV INTERNAL_API_URL=http://backend:8000/api
+CMD ["node_modules/.bin/next", "start"]

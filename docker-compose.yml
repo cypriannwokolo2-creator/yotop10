@@ -6,8 +6,8 @@ services:
     mem_limit: 128m
     cpus: 0.5
     ports:
-      - "8080:80"
-      - "8443:443"
+      - "80:80"
+      - "443:443"
     environment:
       - NGINX_SERVER_NAME=${NGINX_SERVER_NAME:-yotop10.local}
       - NGINX_CERT_DIR=${NGINX_CERT_DIR:-/etc/letsencrypt/live/${NGINX_SERVER_NAME:-yotop10.local}}
