@@ -522,13 +522,17 @@ export default function RankedSubmitClient({ initialType, parentSlug }: { initia
         </div>
 
         {(() => {
-          const visible = Object.values(errors).filter(Boolean) as string[];
-          if (visible.length === 0) return null;
+          const entries = Object.entries(errors).filter(([, v]) => Boolean(v) && String(v).trim().length > 0) as Array<[string, string]>;
+          if (entries.length === 0) return null;
           return (
             <div role="alert" className="rounded-xl border border-red-500/30 bg-red-500/10 p-3">
               <strong className="text-xs text-red-400">Please fix:</strong>
               <ul className="ml-4 mt-1 list-disc text-xs text-white space-y-0.5">
-                {visible.map((e, i) => <li key={i}>{e}</li>)}
+                {entries.map(([k, v]) => (
+                  <li key={k}>
+                    <span className="font-medium text-red-300">{k}:</span> {String(v).trim()}
+                  </li>
+                ))}
               </ul>
             </div>
           );
