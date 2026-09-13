@@ -152,11 +152,11 @@ export default function UserProfileClient({ initialProfile }: { initialProfile: 
 
   return (
     <div className="mx-auto min-h-screen max-w-4xl bg-[var(--color-bg)] text-white px-6 sm:px-8 py-12 sm:py-16">
-      {/* ─── MOBILE HEADER — centered, stacked, thumb-friendly (md:hidden) ─── */}
+      {/* ─── MOBILE HEADER — centered, stacked, thumb-friendly (md:hidden) — original hero look retained ─── */}
       <div className="md:hidden">
-        <div className="h-32 bg-gradient-to-br from-zinc-900 via-zinc-800 to-black border border-white/5 rounded-3xl" />
-        <div className="px-2 -mt-10">
-          <div className={`mx-auto h-20 w-20 rounded-full ring-4 ring-[var(--color-bg)] shadow-xl ${tier.ring} overflow-hidden`}>
+        <div className="h-28 bg-gradient-to-br from-zinc-900 via-zinc-800 to-black border border-white/5 rounded-3xl" />
+        <div className="px-6 -mt-12">
+          <div className={`relative mx-auto h-20 w-20 sm:h-24 sm:w-24 rounded-full ring-4 ring-[var(--color-bg)] shadow-xl ${tier.ring} overflow-hidden`}>
             {profile.profile_image_url ? (
               <Image src={profile.profile_image_url} alt="" fill className="rounded-full object-cover" sizes="80px" unoptimized />
             ) : (
