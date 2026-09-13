@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import Image from 'next/image';
+import { useState, useRef, useEffect } from 'react';
 import { Icon } from './icons/Icon';
 
 interface ImageUploaderProps {
@@ -17,6 +16,10 @@ export function ImageUploader({ currentUrl, onUpload, label = 'Cover Image', cla
   const [preview, setPreview] = useState<string | null>(currentUrl || null);
   const [error, setError] = useState<string | null>(null);
   const [urlInput, setUrlInput] = useState('');
+
+  useEffect(() => {
+    setPreview(currentUrl || null);
+  }, [currentUrl]);
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -113,10 +116,16 @@ export function ImageUploader({ currentUrl, onUpload, label = 'Cover Image', cla
 
       {preview && (
         <div className="mt-3 relative rounded-xl overflow-hidden border border-white/10 bg-white/5">
-          <Image src={preview} alt="" width={600} height={338} className="w-full h-40 object-cover" unoptimized />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={preview}
+            alt="Preview"
+            className="w-full h-40 object-cover"
+            onError={() => setError('Failed to load image — check URL or try upload')}
+          />
           <button
             type="button"
-            onClick={() => { setPreview(null); onUpload(''); }}
+            onClick={() => { setPreview(null); onUpload(''); setError(null); }}
             className="absolute top-2 right-2 rounded-full bg-black/60 p-1.5 text-white/80 hover:text-white transition"
             aria-label="Remove"
           >
