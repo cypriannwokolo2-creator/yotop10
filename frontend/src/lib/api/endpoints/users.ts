@@ -15,6 +15,18 @@ export const usersApi = {
       body: JSON.stringify({ profile_image_url: url }),
     }),
 
+  updateBio: (bio: string) =>
+    apiFetch('/users/me', {
+      method: 'PATCH',
+      body: JSON.stringify({ bio }),
+    }),
+
+  updateLinks: (links: { medium?: string; x?: string; github?: string }) =>
+    apiFetch('/users/me', {
+      method: 'PATCH',
+      body: JSON.stringify({ links }),
+    }),
+
   uploadProfileImage: (file: File) => {
     const formData = new FormData();
     formData.append('file', file);

@@ -1,12 +1,16 @@
 import { cookies } from 'next/headers';
 import { redirect, notFound } from 'next/navigation';
+import type { Metadata } from 'next';
 import UserProfileClient from './client';
 import { toPublicSlug } from '@/lib/username';
+import { profileUrl } from '@/lib/urls';
 
 interface UserProfile {
   username: string;
   canonical_url?: string;
   profile_image_url?: string | null;
+  bio?: string;
+  links?: { medium?: string; x?: string; github?: string };
   trust_level: 'newbie' | 'ghost' | 'troll' | 'neutral' | 'scholar';
   created_at: string;
   stats: {
@@ -43,6 +47,33 @@ interface UserProfile {
 type PageProps = {
   params: Promise<{ username: string }>;
 };
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { username } = await params;
+  const baseUrl = process.env.INTERNAL_API_URL || 'http://backend:8000/api';
+  try {
+    const res = await fetch(`${baseUrl}/users/${username}`, { next: { revalidate: 3600 } });
+    if (!res.ok) return { title: 'User Not Found' };
+    const u = await res.json() as UserProfile;
+    const bio = (u.bio || '').trim();
+    const description = bio ? bio.slice(0, 160) : `Posts and debates by ${u.username} — ${u.stats.total_posts} lists, ${u.stats.total_comments} comments.`;
+    return {
+      title: bio ? `${u.username} — ${bio.slice(0, 40)} — YoTop10` : `${u.username} — YoTop10`,
+      description,
+      alternates: { canonical: profileUrl(u.username) },
+      openGraph: {
+        title: `${u.username} on YoTop10`,
+        description: bio ? bio.slice(0, 200) : description,
+        url: profileUrl(u.username),
+        type: 'profile',
+        images: u.profile_image_url ? [u.profile_image_url] : ['/og-image.jpg'],
+      },
+      twitter: { card: 'summary_large_image', title: `${u.username} on YoTop10`, description, images: u.profile_image_url ? [u.profile_image_url] : ['/og-image.jpg'] },
+    };
+  } catch {
+    return { title: 'User Not Found' };
+  }
+}
 
 export default async function UserProfileServer({ params }: PageProps) {
   const { username } = await params;

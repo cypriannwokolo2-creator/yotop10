@@ -7,5 +7,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: absoluteUrl('/sitemap-posts.xml'), lastModified: new Date(), changeFrequency: 'hourly', priority: 0.8 },
     { url: absoluteUrl('/sitemap-articles.xml'), lastModified: new Date(), changeFrequency: 'daily', priority: 0.7 },
     { url: absoluteUrl('/sitemap-categories.xml'), lastModified: new Date(), changeFrequency: 'weekly', priority: 0.5 },
+    { url: absoluteUrl('/sitemap-profiles.xml'), lastModified: new Date(), changeFrequency: 'weekly', priority: 0.4 },
   ];
 }

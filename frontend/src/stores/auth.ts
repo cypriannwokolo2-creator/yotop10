@@ -6,6 +6,8 @@ interface AuthUser {
   username: string;
   custom_display_name?: string | null;
   profile_image_url?: string | null;
+  bio?: string;
+  links?: { medium?: string; x?: string; github?: string };
   trust_score: number;
   trust_level: 'newbie' | 'ghost' | 'troll' | 'neutral' | 'scholar';
   post_count: number;

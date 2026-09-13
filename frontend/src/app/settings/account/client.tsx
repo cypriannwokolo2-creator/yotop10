@@ -14,6 +14,16 @@ export default function AccountSettingsClient() {
   const [editingName, setEditingName] = useState(false);
   const [newDisplayName, setNewDisplayName] = useState(authUser?.custom_display_name || '');
   const [nameError, setNameError] = useState<string | null>(null);
+  const [editingBio, setEditingBio] = useState(false);
+  const [bio, setBio] = useState((authUser as unknown as { bio?: string })?.bio || '');
+  const [bioError, setBioError] = useState<string | null>(null);
+  const [editingLinks, setEditingLinks] = useState(false);
+  const [links, setLinks] = useState({
+    medium: (authUser as unknown as { links?: { medium?: string } })?.links?.medium || '',
+    x: (authUser as unknown as { links?: { x?: string } })?.links?.x || '',
+    github: (authUser as unknown as { links?: { github?: string } })?.links?.github || '',
+  });
+  const [linksError, setLinksError] = useState<string | null>(null);
   const [confirmLogout, setConfirmLogout] = useState(false);
 
   const handleUpdateName = async () => {
@@ -25,6 +35,36 @@ export default function AccountSettingsClient() {
       setNameError(null);
     } catch {
       setNameError('Failed to update display name.');
+    }
+  };
+
+  const handleUpdateBio = async () => {
+    if (bio.length > 500) {
+      setBioError('Bio must be 500 characters or less');
+      return;
+    }
+    try {
+      await (API as unknown as { updateBio: (bio: string) => Promise<unknown> }).updateBio(bio);
+      await fetchAuthUser();
+      setEditingBio(false);
+      setBioError(null);
+    } catch {
+      setBioError('Failed to update bio.');
+    }
+  };
+
+  const handleUpdateLinks = async () => {
+    try {
+      await (API as unknown as { updateLinks: (links: Record<string, string>) => Promise<unknown> }).updateLinks({
+        medium: links.medium.trim().toLowerCase().replace(/^@/, ''),
+        x: links.x.trim().toLowerCase().replace(/^@/, ''),
+        github: links.github.trim().toLowerCase().replace(/^@/, ''),
+      });
+      await fetchAuthUser();
+      setEditingLinks(false);
+      setLinksError(null);
+    } catch (e) {
+      setLinksError(e instanceof Error ? e.message : 'Failed to update links.');
     }
   };
 
@@ -78,6 +118,84 @@ export default function AccountSettingsClient() {
               <button onClick={() => setEditingName(true)} className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-xs font-medium text-zinc-400 transition hover:text-orange-400">
                 Edit
               </button>
+            </div>
+          )}
+        </div>
+
+        {/* Bio */}
+        <div className="rounded-xl border border-white/5 bg-white/[0.03] px-5 py-5">
+          <h2 className="text-xs font-bold text-white uppercase tracking-wider mb-3">Bio</h2>
+          {editingBio ? (
+            <div className="space-y-3">
+              {bioError && <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-400">{bioError}</div>}
+              <textarea
+                value={bio}
+                onChange={e => setBio(e.target.value)}
+                placeholder="What do you rank? e.g. Top 10 horror obsessive"
+                maxLength={500}
+                rows={3}
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:border-orange-500/50 focus:outline-none resize-y"
+              />
+              <div className="flex items-center justify-between">
+                <span className="text-2xs text-zinc-600">{bio.length}/500</span>
+                <div className="flex gap-2">
+                  <button onClick={handleUpdateBio} className="rounded-xl bg-gradient-to-r from-orange-500 to-pink-500 px-5 py-2.5 text-xs font-semibold text-white">Save</button>
+                  <button onClick={() => setEditingBio(false)} className="rounded-xl border border-white/10 bg-transparent px-5 py-2.5 text-xs font-medium text-zinc-400">Cancel</button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-white whitespace-pre-wrap break-words">{(authUser as unknown as { bio?: string })?.bio || 'No bio yet'}</p>
+                <p className="text-2xs text-zinc-600 mt-1">Shown on your profile — optional</p>
+              </div>
+              <button onClick={() => setEditingBio(true)} className="shrink-0 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-xs font-medium text-zinc-400">Edit</button>
+            </div>
+          )}
+        </div>
+
+        {/* Links */}
+        <div className="rounded-xl border border-white/5 bg-white/[0.03] px-5 py-5">
+          <h2 className="text-xs font-bold text-white uppercase tracking-wider mb-3">Links</h2>
+          {editingLinks ? (
+            <div className="space-y-3">
+              {linksError && <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-400">{linksError}</div>}
+              <div>
+                <label className="block text-2xs text-zinc-600 mb-1">Medium — medium.com/@</label>
+                <input value={links.medium} onChange={e => setLinks({ ...links, medium: e.target.value })} placeholder="nekwasar" maxLength={32} className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:border-orange-500/50 focus:outline-none" />
+              </div>
+              <div>
+                <label className="block text-2xs text-zinc-600 mb-1">X (Twitter) — x.com/</label>
+                <input value={links.x} onChange={e => setLinks({ ...links, x: e.target.value })} placeholder="nekwasar" maxLength={32} className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:border-orange-500/50 focus:outline-none" />
+              </div>
+              <div>
+                <label className="block text-2xs text-zinc-600 mb-1">GitHub — github.com/</label>
+                <input value={links.github} onChange={e => setLinks({ ...links, github: e.target.value })} placeholder="nekwasar" maxLength={39} className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:border-orange-500/50 focus:outline-none" />
+              </div>
+              <p className="text-2xs text-zinc-600">Just your handle, not full URL</p>
+              <div className="flex gap-2">
+                <button onClick={handleUpdateLinks} className="rounded-xl bg-gradient-to-r from-orange-500 to-pink-500 px-5 py-2.5 text-xs font-semibold text-white">Save</button>
+                <button onClick={() => setEditingLinks(false)} className="rounded-xl border border-white/10 bg-transparent px-5 py-2.5 text-xs font-medium text-zinc-400">Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                {(authUser as unknown as { links?: { medium?: string; x?: string; github?: string } })?.links?.medium ||
+                (authUser as unknown as { links?: { x?: string } })?.links?.x ||
+                (authUser as unknown as { links?: { github?: string } })?.links?.github ? (
+                  <div className="flex flex-wrap gap-2">
+                    {(authUser as unknown as { links?: { medium?: string } })?.links?.medium && <span className="text-xs text-zinc-400">medium.com/@{(authUser as unknown as { links: { medium: string } }).links.medium}</span>}
+                    {(authUser as unknown as { links?: { x?: string } })?.links?.x && <span className="text-xs text-zinc-400">x.com/{(authUser as unknown as { links: { x: string } }).links.x}</span>}
+                    {(authUser as unknown as { links?: { github?: string } })?.links?.github && <span className="text-xs text-zinc-400">github.com/{(authUser as unknown as { links: { github: string } }).links.github}</span>}
+                  </div>
+                ) : (
+                  <p className="text-sm text-zinc-600">No links yet</p>
+                )}
+                <p className="text-2xs text-zinc-600 mt-1">Shown as links on your profile</p>
+              </div>
+              <button onClick={() => setEditingLinks(true)} className="shrink-0 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-xs font-medium text-zinc-400">Edit</button>
             </div>
           )}
         </div>

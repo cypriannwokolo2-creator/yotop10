@@ -20,6 +20,12 @@ export interface IUser extends Document {
   public_key_hash?: string;
   seed_generated_at?: Date;
   profile_image_url?: string;
+  bio?: string;
+  links?: {
+    medium?: string;
+    x?: string;
+    github?: string;
+  };
   rate_limit_override?: {
     posts_per_hour?: number | null;
     comments_per_hour?: number | null;
@@ -93,6 +99,17 @@ const userSchema = new Schema<IUser>(
     },
     profile_image_url: {
       type: String,
+    },
+    bio: {
+      type: String,
+      maxlength: 500,
+      default: "",
+      trim: true,
+    },
+    links: {
+      medium: { type: String, maxlength: 32, trim: true, match: /^[a-z0-9_]+$/i },
+      x: { type: String, maxlength: 32, trim: true, match: /^[a-z0-9_]+$/i },
+      github: { type: String, maxlength: 39, trim: true, match: /^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i },
     },
     trust_score: {
       type: Number,

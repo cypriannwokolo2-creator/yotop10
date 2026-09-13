@@ -16,6 +16,8 @@ interface UserProfile {
   username: string;
   canonical_url?: string;
   profile_image_url?: string | null;
+  bio?: string;
+  links?: { medium?: string; x?: string; github?: string };
   trust_level: 'newbie' | 'ghost' | 'troll' | 'neutral' | 'scholar';
   created_at: string;
   stats: {
@@ -193,6 +195,30 @@ export default function UserProfileClient({ initialProfile }: { initialProfile: 
               <Icon name="Calendar" size={14} /> {formatDate(profile.stats.member_since)}
             </span>
           </div>
+
+          {profile.bio && (
+            <p className="mt-3 text-sm text-zinc-300 whitespace-pre-wrap leading-relaxed">{profile.bio}</p>
+          )}
+
+          {profile.links && (profile.links.medium || profile.links.x || profile.links.github) && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {profile.links.medium && (
+                <a href={`https://medium.com/@${profile.links.medium}`} target="_blank" rel="me noopener" className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-zinc-400 hover:text-white hover:bg-white/10 transition">
+                  <Icon name="Link" size={12} /> medium.com/@{profile.links.medium}
+                </a>
+              )}
+              {profile.links.x && (
+                <a href={`https://x.com/${profile.links.x}`} target="_blank" rel="me noopener" className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-zinc-400 hover:text-white hover:bg-white/10 transition">
+                  <Icon name="Link" size={12} /> x.com/{profile.links.x}
+                </a>
+              )}
+              {profile.links.github && (
+                <a href={`https://github.com/${profile.links.github}`} target="_blank" rel="me noopener" className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-zinc-400 hover:text-white hover:bg-white/10 transition">
+                  <Icon name="Link" size={12} /> github.com/{profile.links.github}
+                </a>
+              )}
+            </div>
+          )}
 
           {/* Own profile actions */}
           {isOwn && (

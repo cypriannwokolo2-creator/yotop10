@@ -51,8 +51,8 @@ router.get('/me', async (req, res) => {
   try {
     // Check and promote/demote user based on age/activity
     await checkAndPromoteUser(req.user.user_id).catch(() => {});
-    // Fetch user for profile_image_url
-    const userDoc = await User.findOne({ user_id: req.user.user_id }).select('profile_image_url').lean();
+    // Fetch user for profile_image_url + bio/links
+    const userDoc = await User.findOne({ user_id: req.user.user_id }).select('profile_image_url bio links').lean() as unknown as { profile_image_url?: string; bio?: string; links?: { medium?: string; x?: string; github?: string } } | null;
 
     // Count posts with status breakdown
     const userPosts = await Post.aggregate([
@@ -87,6 +87,8 @@ router.get('/me', async (req, res) => {
       username: req.user.custom_display_name || req.user.username,
       custom_display_name: req.user.custom_display_name || null,
       profile_image_url: userDoc?.profile_image_url || null,
+      bio: userDoc?.bio || "",
+      links: userDoc?.links || {},
       trust_score: req.user.trust_score,
       trust_level: trustLevel,
       post_count: postCount,
@@ -124,6 +126,56 @@ router.patch('/me', ...validateDisplayName as any[], async (req, res) => {
   }
 
   try {
+    // Bio / links update (no display_name validation needed) — optional, 0-500 bio, links handles
+    const hasBio = req.body.bio !== undefined;
+    const hasLinks = req.body.links !== undefined;
+    const hasDisplayName = !!req.body.display_name;
+    const hasProfileImage = !!req.body.profile_image_url;
+
+    if ((hasBio || hasLinks) && !hasDisplayName && !hasProfileImage) {
+      const updates: Record<string, unknown> = {};
+      if (hasBio) {
+        const bio = String(req.body.bio || "").trim();
+        if (bio.length > 500) return res.status(400).json({ error: 'Bio must be 500 characters or less' });
+        updates.bio = bio;
+      }
+      if (hasLinks) {
+        const links = req.body.links || {};
+        const clean: Record<string, string> = {};
+        if (links.medium !== undefined) {
+          const v = String(links.medium || "").trim().toLowerCase().replace(/^@/, "");
+          if (v && !/^[a-z0-9_]{1,32}$/i.test(v)) return res.status(400).json({ error: 'Medium handle may only contain letters, numbers, underscores (max 32)' });
+          clean.medium = v || "";
+        }
+        if (links.x !== undefined) {
+          const v = String(links.x || "").trim().toLowerCase().replace(/^@/, "");
+          if (v && !/^[a-z0-9_]{1,32}$/i.test(v)) return res.status(400).json({ error: 'X handle may only contain letters, numbers, underscores (max 32)' });
+          clean.x = v || "";
+        }
+        if (links.github !== undefined) {
+          const v = String(links.github || "").trim().toLowerCase().replace(/^@/, "");
+          if (v && !/^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i.test(v)) return res.status(400).json({ error: 'GitHub handle is invalid' });
+          clean.github = v || "";
+        }
+        // Only set provided keys, allow clearing with ""
+        const linksUpdate: Record<string, unknown> = {};
+        if (links.medium !== undefined) linksUpdate['links.medium'] = clean.medium || "";
+        if (links.x !== undefined) linksUpdate['links.x'] = clean.x || "";
+        if (links.github !== undefined) linksUpdate['links.github'] = clean.github || "";
+        // Use dot notation for nested update, but also handle empty strings to unset
+        for (const [k, v] of Object.entries(linksUpdate)) {
+          (updates as Record<string, unknown>)[k] = v;
+        }
+        // If all links are empty, we still update to clear
+      }
+      if (Object.keys(updates).length > 0) {
+        const updated = await User.findOneAndUpdate({ user_id: req.user.user_id }, updates, { new: true }).select('bio links').lean() as unknown as { bio?: string; links?: Record<string, string> } | null;
+        if (!updated) return res.status(404).json({ error: 'User not found' });
+        return res.json({ success: true, bio: updated.bio || "", links: updated.links || {} });
+      }
+      return res.json({ success: true });
+    }
+
     // Profile image update (no display_name validation needed)
     if (req.body.profile_image_url && !req.body.display_name) {
       const updated = await User.findOneAndUpdate(
@@ -217,6 +269,25 @@ router.patch('/me', ...validateDisplayName as any[], async (req, res) => {
       console.error('Backfill author display name failed:', e);
     }
 
+    // Also handle bio/links if provided alongside display_name
+    if (req.body.bio !== undefined || req.body.links !== undefined) {
+      const extraUpdates: Record<string, unknown> = {};
+      if (req.body.bio !== undefined) {
+        const bio = String(req.body.bio || "").trim();
+        if (bio.length > 500) return res.status(400).json({ error: 'Bio must be 500 characters or less' });
+        extraUpdates.bio = bio;
+      }
+      if (req.body.links !== undefined) {
+        const links = req.body.links || {};
+        if (links.medium !== undefined) extraUpdates['links.medium'] = String(links.medium || "").trim().toLowerCase().replace(/^@/, "") || "";
+        if (links.x !== undefined) extraUpdates['links.x'] = String(links.x || "").trim().toLowerCase().replace(/^@/, "") || "";
+        if (links.github !== undefined) extraUpdates['links.github'] = String(links.github || "").trim().toLowerCase().replace(/^@/, "") || "";
+      }
+      if (Object.keys(extraUpdates).length > 0) {
+        await User.updateOne({ user_id: req.user.user_id }, extraUpdates);
+      }
+    }
+
     // Return updated user
     res.json({
       success: true,
@@ -227,6 +298,23 @@ router.patch('/me', ...validateDisplayName as any[], async (req, res) => {
   } catch (error) {
     console.error('PATCH /users/me error:', error);
     res.status(500).json({ error: 'Failed to update display name' });
+  }
+});
+
+/**
+ * GET /api/users/sitemap
+ * Public — for sitemap-profiles.xml
+ */
+router.get('/sitemap', async (_req, res) => {
+  try {
+    const users = await User.find({}).select('username custom_display_name updated_at').lean();
+    const list = users.map(u => ({
+      username: (u.custom_display_name || u.username) as string,
+      updated_at: (u as unknown as { updated_at?: Date }).updated_at || (u as unknown as { created_at?: Date }).created_at,
+    }));
+    res.json({ users: list });
+  } catch {
+    res.json({ users: [] });
   }
 });
 
@@ -363,6 +451,8 @@ router.get('/:username', async (req, res) => {
       username: currentUsername,
       canonical_url: `/a/${cleanCurrentUsername}`,
       profile_image_url: user.profile_image_url || null,
+      bio: (user as unknown as { bio?: string }).bio || "",
+      links: (user as unknown as { links?: Record<string, string> }).links || {},
       trust_score: isOwnProfile ? user.trust_score : undefined,
       trust_level: trustLevel,
       created_at: user.created_at,
