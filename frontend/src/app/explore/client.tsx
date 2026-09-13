@@ -70,7 +70,7 @@ function ListCard({ post }: { post: ExplorePost }) {
           <div className="flex items-center justify-between pt-3 border-t border-white/5">
             <div className="flex items-center gap-2">
               <span className="flex items-center justify-center rounded-full bg-white/10 text-[10px] font-mono text-zinc-400 w-5 h-5 shrink-0">
-                {(post.author_display_name || post.author_username || '?')[0].toUpperCase()}
+                {(toPublicSlug(post.author_display_name || post.author_username) || '?')[0].toUpperCase()}
               </span>
               <span className="text-[11px] text-zinc-600">{toPublicSlug(post.author_display_name || post.author_username)}</span>
               <span className="text-[11px] text-zinc-700" suppressHydrationWarning>{relativeTime(post.created_at)}</span>
@@ -125,7 +125,7 @@ function DebateCard({ post }: { post: ExplorePost }) {
           <div className="flex items-center justify-between pt-3 border-t border-white/5">
             <div className="flex items-center gap-2">
               <span className="flex items-center justify-center rounded-full bg-white/10 text-[10px] font-mono text-zinc-400 w-5 h-5 shrink-0">
-                {(post.author_display_name || post.author_username || '?')[0].toUpperCase()}
+                {(toPublicSlug(post.author_display_name || post.author_username) || '?')[0].toUpperCase()}
               </span>
               <span className="text-[11px] text-zinc-600">{toPublicSlug(post.author_display_name || post.author_username)}</span>
               <span className="text-[11px] text-zinc-700" suppressHydrationWarning>{relativeTime(post.created_at)}</span>
@@ -169,7 +169,7 @@ function ArticleCard({ post }: { post: ExplorePost }) {
           <div className="flex items-center justify-between pt-3 border-t border-white/5">
             <div className="flex items-center gap-2">
               <span className="flex items-center justify-center rounded-full bg-white/10 text-[10px] font-mono text-zinc-400 w-5 h-5 shrink-0">
-                {(post.author_display_name || post.author_username || '?')[0].toUpperCase()}
+                {(toPublicSlug(post.author_display_name || post.author_username) || '?')[0].toUpperCase()}
               </span>
               <span className="text-[11px] text-zinc-600">{toPublicSlug(post.author_display_name || post.author_username)}</span>
               <span className="text-[11px] text-zinc-700" suppressHydrationWarning>{relativeTime(post.created_at)}</span>
@@ -209,7 +209,7 @@ function FactCard({ post }: { post: ExplorePost }) {
           <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/5">
             <div className="flex items-center gap-2">
               <span className="flex items-center justify-center rounded-full bg-white/10 text-[10px] font-mono text-zinc-400 w-5 h-5 shrink-0">
-                {(post.author_display_name || post.author_username || '?')[0].toUpperCase()}
+                {(toPublicSlug(post.author_display_name || post.author_username) || '?')[0].toUpperCase()}
               </span>
               <span className="text-[11px] text-zinc-600">{toPublicSlug(post.author_display_name || post.author_username)}</span>
               <span className="text-[11px] text-zinc-700" suppressHydrationWarning>{relativeTime(post.created_at)}</span>
@@ -257,7 +257,7 @@ function CounterCard({ post }: { post: ExplorePost }) {
           <div className="flex items-center justify-between pt-3 border-t border-white/5">
             <div className="flex items-center gap-2">
               <span className="flex items-center justify-center rounded-full bg-white/10 text-[10px] font-mono text-zinc-400 w-5 h-5 shrink-0">
-                {(post.author_display_name || post.author_username || '?')[0].toUpperCase()}
+                {(toPublicSlug(post.author_display_name || post.author_username) || '?')[0].toUpperCase()}
               </span>
               <span className="text-[11px] text-zinc-600">{toPublicSlug(post.author_display_name || post.author_username)}</span>
               <span className="text-[11px] text-zinc-700" suppressHydrationWarning>{relativeTime(post.created_at)}</span>

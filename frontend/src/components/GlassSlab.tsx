@@ -42,7 +42,7 @@ export function GlassSlab({ post, variant = 'compact', observe = false, rank, ac
   const hasMore = allItems.length > defaultShow;
   const topItems = expanded ? allItems : allItems.slice(0, defaultShow);
   const hiddenCount = hasMore && !expanded ? allItems.length - defaultShow : 0;
-  const authorInitial = (post.author_display_name || post.author_username || '?')[0].toUpperCase();
+  const authorInitial = (toPublicSlug(post.author_display_name || post.author_username) || '?')[0].toUpperCase();
 
   const handleToggle = (e: React.MouseEvent | React.KeyboardEvent) => {
     e.preventDefault();

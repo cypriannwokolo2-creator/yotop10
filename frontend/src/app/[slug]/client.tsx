@@ -277,7 +277,7 @@ export default function PostDetailClient({
               {(comment.author_username || '?')[0].toUpperCase()}
             </span>
             <strong className="text-sm2 font-mono text-white sm:text-sm">
-              {comment.author_display_name}
+              {comment.author_display_name.replace(/^a_/, '')}
             </strong>
             <span className="inline-flex items-center gap-1 text-3xs text-zinc-500">
               <Icon name="Sparkles" size={12} color="#f97316" /> {comment.spark_score.toFixed(2)}
@@ -381,7 +381,7 @@ export default function PostDetailClient({
                   {item.justification || item.title}
                 </p>
                 <div className="flex items-center justify-center gap-6 text-xs text-zinc-500">
-                  <span className="inline-flex items-center gap-1.5"><Icon name="User" size={12} /> {post.author_display_name}</span>
+                  <span className="inline-flex items-center gap-1.5"><Icon name="User" size={12} /> {post.author_display_name.replace(/^a_/, "")}</span>
                   <span suppressHydrationWarning>{relativeTime(post.created_at)}</span>
                 </div>
               </div>
@@ -448,7 +448,7 @@ export default function PostDetailClient({
                   href={`/a/${toPublicSlug(post.author_username)}`}
                   className="font-semibold text-orange-400 hover:text-orange-300 transition"
                 >
-                  {post.author_display_name}
+                  {post.author_display_name.replace(/^a_/, '')}
                 </Link>
               </span>
               <span className="text-xs text-zinc-600">{post.view_count} views</span>
