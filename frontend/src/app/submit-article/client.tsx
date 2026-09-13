@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { API } from '@/lib/api';
 import type { ArticleSubmission } from '@/lib/api/types';
 import { Icon } from '@/components/icons/Icon';
-import { CustomDropdown } from '@/components/CustomDropdown';
 import { ImageUploader } from '@/components/ImageUploader';
+import CategoryPickerModal from '@/components/CategoryPickerModal';
+import { getCategoryPath } from '@/lib/categories';
 
 interface SourceField {
   id: string;
@@ -20,16 +21,6 @@ interface FormErrors {
   category?: string;
 }
 
-const CATEGORIES = [
-  'technology',
-  'science',
-  'politics',
-  'culture',
-  'history',
-  'business',
-  'health',
-];
-
 export default function SubmitArticleClient() {
   const idCounter = useRef(0);
   const generateId = () => `source-${++idCounter.current}`;
@@ -37,6 +28,8 @@ export default function SubmitArticleClient() {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [categorySlug, setCategorySlug] = useState('');
+  const [categories, setCategories] = useState<Array<{ id: string; name: string; slug: string; icon?: string; post_count: number; children: Array<{ id: string; name: string; slug: string; icon?: string; post_count: number }> }>>([]);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [coverImage, setCoverImage] = useState('');
   const [sources, setSources] = useState<SourceField[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -57,6 +50,15 @@ export default function SubmitArticleClient() {
     setErrors(next);
     return Object.keys(next).length === 0;
   }, [title, categorySlug, body]);
+
+  useEffect(() => {
+    API.getCategories()
+      .then(data => {
+        const cats = (data as { categories?: Array<{ id: string; name: string; slug: string; icon?: string; post_count: number; children?: Array<{ id: string; name: string; slug: string; icon?: string; post_count: number }> }> }).categories || [];
+        setCategories(cats as never);
+      })
+      .catch(() => {});
+  }, []);
 
   const addSource = () => {
     setSources((prev) => [...prev, { id: generateId(), url: '', title: '' }]);
@@ -101,7 +103,16 @@ export default function SubmitArticleClient() {
       await API.submitArticle(payload);
       setSubmitted(true);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to submit article');
+      const msg = e instanceof Error ? e.message : '';
+      let body: unknown = null;
+      try {
+        const j = msg.lastIndexOf('{');
+        if (j !== -1) body = JSON.parse(msg.slice(j));
+      } catch {}
+      const b = body as { errors?: Array<{ msg?: string }>; error?: string } | null;
+      if (b?.errors?.[0]?.msg) setError(b.errors[0].msg);
+      else if (b?.error) setError(b.error);
+      else setError(msg || 'Failed to submit article');
     } finally {
       setSubmitting(false);
     }
@@ -180,20 +191,39 @@ export default function SubmitArticleClient() {
 
         {/* Category */}
         <div>
-          <label htmlFor="article-category" className="mb-2 block text-sm font-medium text-zinc-400">
+          <label className="mb-2 block text-sm font-medium text-zinc-400">
             Category
           </label>
-          <CustomDropdown
-            value={categorySlug}
-            onChange={setCategorySlug}
-            placeholder="Select a category"
-            options={CATEGORIES.map(c => ({ value: c, label: c.charAt(0).toUpperCase() + c.slice(1) }))}
-            className={errors.category ? 'border-red-500/50' : ''}
-          />
+          <button
+            type="button"
+            onClick={() => setPickerOpen(true)}
+            aria-haspopup="dialog"
+            aria-expanded={pickerOpen}
+            className={`w-full rounded-xl bg-white/5 px-4 py-3 text-left text-sm flex items-center justify-between border transition focus:outline-none ${
+              errors.category ? 'border-red-500/50' : 'border-white/10 hover:border-white/20'
+            }`}
+          >
+            <span className={`truncate ${categorySlug ? 'text-white' : 'text-zinc-600'}`}>
+              {(() => {
+                if (!categorySlug) return 'Select a category';
+                const path = getCategoryPath(categorySlug, categories as never);
+                return path ? path.join(' › ') : categorySlug;
+              })()}
+            </span>
+            <Icon name="ChevronDown" size={14} className="shrink-0 text-zinc-600" />
+          </button>
           {errors.category && (
             <p className="mt-1.5 text-xs text-red-400">{errors.category}</p>
           )}
+          <p className="mt-1 text-2xs text-zinc-600">Choose a subcategory — 341 categories, search or browse</p>
         </div>
+        <CategoryPickerModal
+          open={pickerOpen}
+          onOpenChange={setPickerOpen}
+          value={categorySlug || null}
+          categories={categories as never}
+          onSelect={(slug) => setCategorySlug(slug)}
+        />
 
         {/* Body */}
         <div>

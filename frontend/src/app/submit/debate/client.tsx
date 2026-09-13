@@ -1,19 +1,19 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Icon } from '@/components/icons/Icon';
 import { API } from '@/lib/api';
 import { toast } from '@/lib/toast';
+import CategoryPickerModal from '@/components/CategoryPickerModal';
+import { getCategoryPath } from '@/lib/categories';
 
 const DEBATE_DRAFT_KEY = 'yotop10_debate_draft';
 
 export default function DebateClient() {
   const [title, setTitle] = useState('');
   const [categorySlug, setCategorySlug] = useState('');
-  const [catSearch, setCatSearch] = useState('');
-  const [catOpen, setCatOpen] = useState(false);
-  const catRef = useRef<HTMLDivElement>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [sideA, setSideA] = useState('');
   const [sideAJustification, setSideAJustification] = useState('');
   const [sideASource, setSideASource] = useState('');
@@ -24,7 +24,7 @@ export default function DebateClient() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [categories, setCategories] = useState<Array<{ id: string; name: string; slug: string }>>([]);
+  const [categories, setCategories] = useState<Array<{ id: string; name: string; slug: string; icon?: string; post_count: number; children: Array<{ id: string; name: string; slug: string; icon?: string; post_count: number }> }>>([]);
 
   // Restore draft on mount
   useEffect(() => {
@@ -35,7 +35,6 @@ export default function DebateClient() {
         if (Date.now() - d.savedAt < 3600000) {
           if (d.title) setTitle(d.title);
           if (d.categorySlug) setCategorySlug(d.categorySlug);
-          if (d.catSearch) setCatSearch(d.catSearch);
           if (d.sideA) setSideA(d.sideA);
           if (d.sideAJustification) setSideAJustification(d.sideAJustification);
           if (d.sideASource) setSideASource(d.sideASource);
@@ -53,37 +52,20 @@ export default function DebateClient() {
   // Save draft on change
   useEffect(() => {
     const timeout = setTimeout(() => {
-      const data = { title, categorySlug, catSearch, sideA, sideAJustification, sideASource, sideB, sideBJustification, sideBSource, authorName, savedAt: Date.now() };
+      const data = { title, categorySlug, sideA, sideAJustification, sideASource, sideB, sideBJustification, sideBSource, authorName, savedAt: Date.now() };
       localStorage.setItem(DEBATE_DRAFT_KEY, JSON.stringify(data));
     }, 800);
     return () => clearTimeout(timeout);
-  }, [title, categorySlug, catSearch, sideA, sideAJustification, sideASource, sideB, sideBJustification, sideBSource, authorName]);
-  const filteredCategories = categories.filter(c =>
-    c.name.toLowerCase().includes(catSearch.toLowerCase()) || c.slug.toLowerCase().includes(catSearch.toLowerCase())
-  );
+  }, [title, categorySlug, sideA, sideAJustification, sideASource, sideB, sideBJustification, sideBSource, authorName]);
 
   useEffect(() => {
     API.getCategories()
       .then(data => {
-        const flat = (data as { categories?: Array<{ id: string; name: string; slug: string; children?: Array<{ id: string; name: string; slug: string }> }> }).categories || [];
-        const all: Array<{ id: string; name: string; slug: string }> = [];
-        for (const p of flat) {
-          all.push({ id: p.id, name: p.name, slug: p.slug });
-          if (p.children) for (const c of p.children) all.push({ id: c.id, name: `  ${c.name}`, slug: c.slug });
-        }
-        setCategories(all);
+        const cats = (data as { categories?: Array<{ id: string; name: string; slug: string; icon?: string; post_count: number; children?: Array<{ id: string; name: string; slug: string; icon?: string; post_count: number }> }> }).categories || [];
+        setCategories(cats as never);
       })
       .catch(() => {});
   }, []);
-
-  useEffect(() => {
-    if (!catOpen) return;
-    const handle = (e: MouseEvent) => {
-      if (catRef.current && !catRef.current.contains(e.target as Node)) setCatOpen(false);
-    };
-    document.addEventListener('mousedown', handle);
-    return () => document.removeEventListener('mousedown', handle);
-  }, [catOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -156,22 +138,33 @@ export default function DebateClient() {
         </div>
 
         {/* Category */}
-        <div ref={catRef} className="relative">
-          <label htmlFor="debate-cat" className="mb-1 block text-xs font-medium text-zinc-400">Category <span className="text-purple-400">*</span></label>
-          <input id="debate-cat" type="text" value={catSearch} onChange={e => { setCatSearch(e.target.value); setCatOpen(true); setCategorySlug(''); }}
-            onFocus={() => setCatOpen(true)} placeholder="Search categories..."
-            className="w-full rounded-xl bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:outline-none border border-white/10 focus:border-purple-500/50"
-          />
-          {catOpen && filteredCategories.length > 0 && (
-            <div className="absolute z-10 mt-1 max-h-48 w-full overflow-y-auto rounded-xl border border-white/10 bg-[var(--color-bg)] shadow-xl">
-              {filteredCategories.map(c => (
-                <button key={c.slug} type="button" onClick={() => { setCategorySlug(c.slug); setCatSearch(c.name); setCatOpen(false); }}
-                  className={`w-full px-3 py-2 text-left text-sm transition ${c.slug === categorySlug ? 'bg-purple-500/10 text-purple-400' : 'text-zinc-300 hover:bg-white/5'}`}
-                >{c.name}</button>
-              ))}
-            </div>
-          )}
+        <div>
+          <label className="mb-1 block text-xs font-medium text-zinc-400">Category <span className="text-purple-400">*</span></label>
+          <button
+            type="button"
+            onClick={() => setPickerOpen(true)}
+            aria-haspopup="dialog"
+            aria-expanded={pickerOpen}
+            className="w-full rounded-xl bg-white/5 px-3 py-2.5 text-left text-sm flex items-center justify-between border border-white/10 hover:border-white/20 focus:outline-none transition"
+          >
+            <span className={`truncate ${categorySlug ? 'text-white' : 'text-zinc-600'}`}>
+              {(() => {
+                if (!categorySlug) return 'Select a category';
+                const path = getCategoryPath(categorySlug, categories as never);
+                return path ? path.join(' › ') : categorySlug;
+              })()}
+            </span>
+            <Icon name="ChevronDown" size={14} className="shrink-0 text-zinc-600" />
+          </button>
+          <p className="mt-1 text-2xs text-zinc-600">Choose a subcategory — parents are for browsing</p>
         </div>
+        <CategoryPickerModal
+          open={pickerOpen}
+          onOpenChange={setPickerOpen}
+          value={categorySlug || null}
+          categories={categories as never}
+          onSelect={(slug) => setCategorySlug(slug)}
+        />
 
         {/* Side A */}
         <div className="rounded-xl border border-orange-500/20 bg-orange-500/[0.02] p-4">

@@ -7,6 +7,8 @@ import { Icon } from '@/components/icons/Icon';
 import { useAuthStore } from '@/stores/auth';
 import { toast } from '@/lib/toast';
 import { toPublicSlug } from '@/lib/username';
+import CategoryPickerModal from '@/components/CategoryPickerModal';
+import { getCategoryPath } from '@/lib/categories';
 const DRAFT_KEY = 'yotop10_submit_draft';
 const DEBOUNCE_MS = 500;
 const DRAFT_EXPIRY_MS = 3600000;
@@ -93,10 +95,8 @@ export default function SubmitClient({ initialType, parentSlug }: { initialType?
 
   const saveTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
-  const [categories, setCategories] = useState<Array<{ id: string; name: string; slug: string; icon?: string }>>([]);
-  const [catSearch, setCatSearch] = useState('');
-  const [catOpen, setCatOpen] = useState(false);
-  const catRef = useRef<HTMLDivElement>(null);
+  const [categories, setCategories] = useState<Array<{ id: string; name: string; slug: string; icon?: string; post_count: number; children: Array<{ id: string; name: string; slug: string; icon?: string; post_count: number }> }>>([]);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [titleCheck, setTitleCheck] = useState<{
@@ -119,32 +119,14 @@ export default function SubmitClient({ initialType, parentSlug }: { initialType?
 
   const [showSource, setShowSource] = useState<Record<string, boolean>>({});
 
-  const filteredCategories = categories.filter(c =>
-    c.name.toLowerCase().includes(catSearch.toLowerCase()) || c.slug.toLowerCase().includes(catSearch.toLowerCase())
-  );
-
   useEffect(() => {
     API.getCategories()
       .then(data => {
-        const flat = (data as { categories?: Array<{ id: string; name: string; slug: string; icon?: string; children?: Array<{ id: string; name: string; slug: string }> }> }).categories || [];
-        const all: Array<{ id: string; name: string; slug: string }> = [];
-        for (const p of flat) {
-          all.push({ id: p.id, name: p.name, slug: p.slug });
-          if (p.children) for (const c of p.children) all.push({ id: c.id, name: `  ${c.name}`, slug: c.slug });
-        }
-        setCategories(all);
+        const cats = (data as { categories?: Array<{ id: string; name: string; slug: string; icon?: string; post_count: number; children?: Array<{ id: string; name: string; slug: string; icon?: string; post_count: number }> }> }).categories || [];
+        setCategories(cats as never);
       })
       .catch(err => console.error('Failed to load categories:', err));
   }, []);
-
-  useEffect(() => {
-    if (!catOpen) return;
-    const handle = (e: MouseEvent) => {
-      if (catRef.current && !catRef.current.contains(e.target as Node)) setCatOpen(false);
-    };
-    document.addEventListener('mousedown', handle);
-    return () => document.removeEventListener('mousedown', handle);
-  }, [catOpen]);
 
   useEffect(() => {
     try {
@@ -152,7 +134,7 @@ export default function SubmitClient({ initialType, parentSlug }: { initialType?
       if (draft) {
         const data: DraftData = JSON.parse(draft);
         if (Date.now() - data.savedAt < DRAFT_EXPIRY_MS) {
-          if (data.category_slug) { setCategorySlug(data.category_slug); setCatSearch(categories.find(c => c.slug === data.category_slug)?.name || ''); }
+          if (data.category_slug) { setCategorySlug(data.category_slug); }
           if (data.title) setTitle(data.title);
           if (data.intro) setIntro(data.intro);
           if (data.items && data.items.length > 0) {
@@ -266,17 +248,26 @@ export default function SubmitClient({ initialType, parentSlug }: { initialType?
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleCategoryChange = (slug: string, name: string) => {
+  const clearError = (key: keyof FormErrors) => setErrors(prev => {
+    const next = { ...prev };
+    delete next[key];
+    return next;
+  });
+  const clearErrors = (...keys: (keyof FormErrors)[]) => setErrors(prev => {
+    const next = { ...prev };
+    keys.forEach(k => delete next[k]);
+    return next;
+  });
+
+  const handleCategoryChange = (slug: string, _name: string) => {
     setCategorySlug(slug);
-    setCatSearch(name);
-    setCatOpen(false);
-    setErrors(prev => ({ ...prev, category: undefined }));
+    clearError('category');
     if (title.length >= 8 && slug) checkTitleSimilarity(title, slug);
   };
 
   const handleTitleChange = (value: string) => {
     setTitle(value);
-    setErrors(prev => ({ ...prev, title: undefined, titleSimilarity: undefined }));
+    clearErrors('title', 'titleSimilarity');
     if (value.length >= 8 && categorySlug) checkTitleSimilarity(value, categorySlug);
     else setTitleCheck(null);
   };
@@ -294,7 +285,7 @@ export default function SubmitClient({ initialType, parentSlug }: { initialType?
 
   const updateItem = (id: string, field: string, value: string) => {
     setItems(prev => prev.map(item => item.id === id ? { ...item, [field]: value } : item));
-    if (field === 'title' || field === 'justification') setErrors(prev => ({ ...prev, items: undefined }));
+    if (field === 'title' || field === 'justification') clearError('items');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -338,9 +329,11 @@ export default function SubmitClient({ initialType, parentSlug }: { initialType?
       console.error('Submit failed:', err);
       const msg = err instanceof Error ? err.message : '';
       const s = parseInt(msg.match(/API Error: (\d+)/)?.[1] || '0', 10);
-      let body: Record<string, unknown> | null = null;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let body: any = null;
       try { const j = msg.lastIndexOf('{'); if (j !== -1) body = JSON.parse(msg.slice(j)); } catch { /* not json */ }
-      if (s === 400 && body?.format_code) setErrors({ title: (body.error as string) || 'Invalid title format.' });
+      if (body?.errors?.[0]?.msg) setErrors({ title: body.errors[0].msg });
+      else if (s === 400 && body?.format_code) setErrors({ title: (body.error as string) || 'Invalid title format.' });
       else if (s === 400 && body?.error) setErrors({ title: body.error as string });
       else if (s === 409) setErrors({ title: (body?.error as string) || 'This list already exists. Choose a different title.' });
       else if (s === 429) setErrors({ title: (body?.error as string) || 'Rate limit exceeded.' });
@@ -420,31 +413,37 @@ export default function SubmitClient({ initialType, parentSlug }: { initialType?
       </header>
 
       <form onSubmit={handleSubmit} noValidate className="space-y-5">
-        {/* Category — searchable */}
-        <div ref={catRef} className="relative">
-          <label htmlFor="cat-search" className="mb-1 block text-xs font-medium text-zinc-400">Category <span className="text-orange-400">*</span></label>
-          <input
-            id="cat-search"
-            type="text"
-            value={catSearch}
-            onChange={e => { setCatSearch(e.target.value); setCatOpen(true); setCategorySlug(''); }}
-            onFocus={() => setCatOpen(true)}
-            placeholder="Search categories..."
-            aria-required="true"
-            aria-invalid={!!errors.category}
-            className={`w-full rounded-xl bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:outline-none ${errors.category ? 'border-2 border-red-400' : 'border border-white/10 focus:border-orange-500/50'}`}
-          />
-          {catOpen && filteredCategories.length > 0 && (
-            <div className="absolute z-10 mt-1 max-h-48 w-full overflow-y-auto rounded-xl border border-white/10 bg-zinc-900 shadow-xl">
-              {filteredCategories.map(c => (
-                <button key={c.slug} type="button" onClick={() => handleCategoryChange(c.slug, c.name)}
-                  className={`w-full px-3 py-2 text-left text-sm transition ${c.slug === categorySlug ? 'bg-orange-500/10 text-orange-400' : 'text-zinc-300 hover:bg-white/5'}`}
-                >{c.name}</button>
-              ))}
-            </div>
-          )}
-          {errors.category && <div className="mt-1 text-xs text-red-400">{errors.category}</div>}
+        <div>
+          <label className="mb-1 block text-xs font-medium text-zinc-400">Category <span className="text-orange-400">*</span></label>
+          <button
+            type="button"
+            onClick={() => setPickerOpen(true)}
+            aria-haspopup="dialog"
+            aria-expanded={pickerOpen}
+            aria-describedby={errors.category ? 'category-error' : undefined}
+            className={`w-full rounded-xl bg-white/5 px-3 py-2.5 text-left text-sm flex items-center justify-between transition focus:outline-none ${
+              errors.category ? 'border-2 border-red-400' : 'border border-white/10 hover:border-white/20'
+            }`}
+          >
+            <span className={`truncate ${categorySlug ? 'text-white' : 'text-zinc-600'}`}>
+              {(() => {
+                if (!categorySlug) return 'Select a category';
+                const path = getCategoryPath(categorySlug, categories as never);
+                return path ? path.join(' › ') : categorySlug;
+              })()}
+            </span>
+            <Icon name="ChevronDown" size={14} className="shrink-0 text-zinc-600" />
+          </button>
+          {errors.category && <div id="category-error" className="mt-1 text-xs text-red-400">{errors.category}</div>}
+          <p className="mt-1 text-2xs text-zinc-600">Choose a subcategory — parents are for browsing, leaves are selectable</p>
         </div>
+        <CategoryPickerModal
+          open={pickerOpen}
+          onOpenChange={setPickerOpen}
+          value={categorySlug || null}
+          categories={categories as never}
+          onSelect={(slug) => handleCategoryChange(slug, slug)}
+        />
 
         {/* Title */}
         <div>
@@ -468,7 +467,7 @@ export default function SubmitClient({ initialType, parentSlug }: { initialType?
         {/* Intro */}
         <div>
           <label htmlFor="intro" className="mb-1 block text-xs font-medium text-zinc-400">Intro <span className="text-orange-400">*</span></label>
-          <textarea id="intro" value={intro} onChange={e => { setIntro(e.target.value); setErrors(prev => ({ ...prev, intro: undefined })); }}
+          <textarea id="intro" value={intro} onChange={e => { setIntro(e.target.value); clearError('intro'); }}
             maxLength={2000} rows={3} placeholder="Briefly explain what this list is about"
             aria-required="true" aria-invalid={!!errors.intro}
             className={`w-full resize-y rounded-xl bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:outline-none ${errors.intro ? 'border-2 border-red-400' : 'border border-white/10 focus:border-orange-500/50'}`}
@@ -543,7 +542,7 @@ export default function SubmitClient({ initialType, parentSlug }: { initialType?
         {/* Author */}
         <div>
           <label htmlFor="author" className="mb-1 block text-xs font-medium text-zinc-400">Display Name <span className="text-zinc-600">(optional)</span></label>
-          <input id="author" type="text" value={authorName} onChange={e => { setAuthorName(e.target.value); setErrors(prev => ({ ...prev, author_display_name: undefined })); }}
+          <input id="author" type="text" value={authorName} onChange={e => { setAuthorName(e.target.value); clearError('author_display_name'); }}
             maxLength={50} placeholder="Leave blank for auto-generated username"
             className={`w-full rounded-xl bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:outline-none ${errors.author_display_name ? 'border-2 border-red-400' : 'border border-white/10 focus:border-orange-500/50'}`}
           />
@@ -551,14 +550,18 @@ export default function SubmitClient({ initialType, parentSlug }: { initialType?
         </div>
 
         {/* Error summary */}
-        {Object.keys(errors).length > 0 && (
-          <div role="alert" className="rounded-xl border border-red-500/30 bg-red-500/10 p-3">
-            <strong className="text-xs text-red-400">Please fix:</strong>
-            <ul className="ml-4 mt-1 list-disc text-xs text-white space-y-0.5">
-              {Object.values(errors).map((e, i) => <li key={i}>{e}</li>)}
-            </ul>
-          </div>
-        )}
+        {(() => {
+          const visible = Object.values(errors).filter(Boolean) as string[];
+          if (visible.length === 0) return null;
+          return (
+            <div role="alert" className="rounded-xl border border-red-500/30 bg-red-500/10 p-3">
+              <strong className="text-xs text-red-400">Please fix:</strong>
+              <ul className="ml-4 mt-1 list-disc text-xs text-white space-y-0.5">
+                {visible.map((e, i) => <li key={i}>{e}</li>)}
+              </ul>
+            </div>
+          );
+        })()}
 
         {/* Submit */}
         <button type="submit" disabled={submitting || !categorySlug || !title || !intro || items.some(i => !i.title || !i.justification)}
