@@ -302,7 +302,7 @@ export default function RankedSubmitClient({ initialType, parentSlug }: { initia
         });
       } else {
         const submission: PostSubmission = {
-          title, post_type: postType, intro, category_slug: categorySlug, hero_image_url: heroImageUrl || undefined,
+          title, post_type: postType, intro, category_slug: categorySlug, hero_image_url: heroImageUrl || undefined, format: heroImageUrl ? 'hero_list' as const : undefined,
           items: items.map((item, idx) => ({ rank: idx + 1, title: item.title, justification: item.justification, image_url: item.image_url || undefined, source_url: item.source_url || undefined })),
           author_display_name: authorName || undefined,
         };

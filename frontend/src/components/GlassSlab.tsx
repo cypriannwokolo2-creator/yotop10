@@ -90,6 +90,7 @@ export function GlassSlab({ post, variant = 'compact', observe = false, rank, ac
               width={600}
               height={337}
               className="w-full object-cover"
+              unoptimized
             />
           </div>
         )}
