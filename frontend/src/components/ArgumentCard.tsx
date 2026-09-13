@@ -4,8 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Icon } from './icons/Icon';
 import { ArgumentBar } from './ArgumentBar';
-import { relativeTime, cleanTitle } from '@/lib/dates';
-import { toPublicSlug } from '@/lib/username';
+import { cleanTitle } from '@/lib/dates';
 import { apiFetch } from '@/lib/api/client';
 import type { ArgumentPost } from '@/lib/api/types';
 

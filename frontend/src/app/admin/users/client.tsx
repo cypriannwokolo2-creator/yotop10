@@ -13,6 +13,14 @@ import { GlobalConfigModal } from '@/components/admin/GlobalConfigModal';
 import { CustomDropdown } from '@/components/CustomDropdown';
 import type { UserSummary, UserListResponse, SystemConfig, ConfigImpact } from '@/lib/api/types';
 
+const SORT_MAP: Record<string, { field: string; dir: string }> = {
+  newest: { field: 'created_at', dir: 'desc' },
+  oldest: { field: 'created_at', dir: 'asc' },
+  highest_trust: { field: 'trust_score', dir: 'desc' },
+  lowest_trust: { field: 'trust_score', dir: 'asc' },
+  most_posts: { field: 'post_count', dir: 'desc' },
+};
+
 export default function AdminUsersClient() {
   const router = useRouter();
   const [users, setUsers] = useState<UserSummary[]>([]);
@@ -61,18 +69,10 @@ export default function AdminUsersClient() {
     }, 300);
   };
 
-  const sortMap: Record<string, { field: string; dir: string }> = {
-    newest: { field: 'created_at', dir: 'desc' },
-    oldest: { field: 'created_at', dir: 'asc' },
-    highest_trust: { field: 'trust_score', dir: 'desc' },
-    lowest_trust: { field: 'trust_score', dir: 'asc' },
-    most_posts: { field: 'post_count', dir: 'desc' },
-  };
-
   const fetchUsers = useCallback(async (p: number) => {
     setLoading(true);
     try {
-      const sc = sortMap[sort] || sortMap.newest;
+      const sc = SORT_MAP[sort] || SORT_MAP.newest;
       const params: Record<string, string> = { page: String(p), limit: '20', sort: sc.field, sort_dir: sc.dir, stats: 'true' };
       if (debouncedSearch) params.q = debouncedSearch;
       if (trustFilter) params.trust_tier = trustFilter;
@@ -87,7 +87,7 @@ export default function AdminUsersClient() {
     } finally {
       setLoading(false);
     }
-  }, [sortMap, debouncedSearch, trustFilter, statusFilter, sort, sortDir]);
+  }, [debouncedSearch, trustFilter, statusFilter, sort]);
 
   useEffect(() => { fetchUsers(page); }, [page, fetchUsers]);
 

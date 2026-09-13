@@ -123,7 +123,7 @@ export function ArgumentHeroSlider({ arguments: args }: ArgumentHeroSliderProps)
 
   const goTo = useCallback((idx: number) => {
     setCurrent(idx);
-  }, [current]);
+  }, []);
 
   const next = useCallback(() => {
     setCurrent(c => (c + 1) % top.length);

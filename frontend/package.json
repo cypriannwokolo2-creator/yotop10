@@ -17,7 +17,7 @@
     "@noble/hashes": "^2.2.0",
     "isomorphic-dompurify": "^3.16.0",
     "lucide-react": "^0.471.0",
-    "next": "15.5.18",
+    "next": "15.5.21",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "zustand": "^5.0.12"
