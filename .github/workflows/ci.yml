@@ -24,11 +24,11 @@ jobs:
 
       - name: Install dependencies (Frontend)
         working-directory: ./frontend
-        run: pnpm install --frozen-lockfile --config.dangerously-allow-all-builds=true
+        run: pnpm install --frozen-lockfile
 
       - name: Install dependencies (Backend)
         working-directory: ./backend
-        run: pnpm install --frozen-lockfile --config.dangerously-allow-all-builds=true
+        run: pnpm install --frozen-lockfile
 
       - name: Typecheck Backend
         working-directory: ./backend

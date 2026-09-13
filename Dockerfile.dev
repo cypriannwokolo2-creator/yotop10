@@ -4,11 +4,11 @@ RUN npm install -g pnpm@10 pm2
 
 WORKDIR /app
 
+COPY pnpm-workspace.yaml ./
 COPY frontend/package.json frontend/pnpm-lock.yaml ./frontend/
 COPY backend/package.json backend/pnpm-lock.yaml ./backend/
-
-RUN cd frontend && pnpm install --frozen-lockfile --config.dangerously-allow-all-builds=true
-RUN cd backend && pnpm install --frozen-lockfile --config.dangerously-allow-all-builds=true
+RUN cd frontend && pnpm install --frozen-lockfile
+RUN cd backend && pnpm install --frozen-lockfile
 
 # Config files needed at dev runtime (PostCSS for Tailwind CSS v4 utility generation)
 COPY frontend/postcss.config.mjs ./frontend/postcss.config.mjs
