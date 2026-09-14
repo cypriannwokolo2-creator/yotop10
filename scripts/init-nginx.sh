@@ -25,7 +25,8 @@ if [ ! -f "${CERT_DIR}/fullchain.pem" ] || [ ! -f "${CERT_DIR}/privkey.pem" ]; t
   openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
     -keyout "${TARGET_DIR}/privkey.pem" \
     -out "${TARGET_DIR}/fullchain.pem" \
-    -subj "/CN=${DOMAIN}" 2>/dev/null || {
+    -subj "/CN=${DOMAIN}" \
+    -addext "subjectAltName=DNS:${DOMAIN},DNS:www.${DOMAIN}" 2>/dev/null || {
       echo "[Nginx] openssl failed, creating dummy cert"
       mkdir -p "${TARGET_DIR}"
       echo "dummy" > "${TARGET_DIR}/fullchain.pem"
