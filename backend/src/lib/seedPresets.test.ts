@@ -87,10 +87,10 @@ describe('seedPresets', () => {
     expect(readOnly.permissions).toHaveLength(3);
 
     const contentMod = docs.find((d: { name: string }) => d.name === 'Content Moderator');
-    expect(contentMod.permissions).toHaveLength(11);
+    expect(contentMod.permissions).toHaveLength(13);
 
     const fullMod = docs.find((d: { name: string }) => d.name === 'Full Moderator');
-    expect(fullMod.permissions).toHaveLength(22);
+    expect(fullMod.permissions).toHaveLength(24);
 
     const communityMgr = docs.find((d: { name: string }) => d.name === 'Community Manager');
     expect(communityMgr.permissions).toHaveLength(10);

@@ -6,6 +6,7 @@ import { AdminUser } from '../models/AdminUser';
 import { User } from '../models/User';
 import { SetupToken } from '../models/SetupToken';
 import { Post, generateUniqueSlug } from '../models/Post';
+import { Article } from '../models/Article';
 import { ListItem } from '../models/ListItem';
 import { Notification, createNotification } from '../models/Notification';
 import { AuditLog } from '../models/AuditLog';
@@ -614,6 +615,249 @@ router.post('/posts/bulk/reject', async (req, res) => {
       await trustScoreWorker.queueUpdate(post.author_id, (post._id as { toString(): string }).toString(), 'reject');
       await createNotification({ user_id: post.author_id, type: 'post_rejected', post_id: (post._id as { toString(): string }).toString(), post_title: post.title, message: `Your list "${post.title}" was not approved. Reason: ${reason.trim()}` });
       indexPost(post as unknown as Record<string, unknown>);
+    });
+
+    res.json({ success: true, rejected: result.succeeded, skipped, errors: result.errors.slice(0, 5) });
+  } catch (error) { res.status(500).json({ code: 'SERVER_ERROR', error: 'Bulk reject failed' }); }
+});
+
+/**
+ * GET /api/admin/articles/pending
+ * Protected — list pending articles for review
+ *
+ * DOUBLE-BLIND MODERATION: Author trust score is intentionally hidden.
+ * Review decisions must be based on content quality, not author reputation.
+ */
+router.get('/articles/pending', async (req, res) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
+    const skip = (page - 1) * limit;
+
+    const query: Record<string, unknown> = { status: 'pending_review' };
+    if (req.query.category_slug) query.category_slug = req.query.category_slug;
+    if (req.query.author) {
+      const escaped = (req.query.author as string).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      query.author_username = { $regex: escaped, $options: 'i' };
+    }
+    if (req.query.date_from || req.query.date_to) {
+      query.created_at = {};
+      if (req.query.date_from) (query.created_at as Record<string, unknown>).$gte = new Date(req.query.date_from as string);
+      if (req.query.date_to) (query.created_at as Record<string, unknown>).$lte = new Date(req.query.date_to as string);
+    }
+
+    const sortDir = (req.query.sort as string) === 'newest' ? -1 : 1;
+
+    const [articles, total] = await Promise.all([
+      Article.find(query).sort({ created_at: sortDir as 1 | -1 }).skip(skip).limit(limit).select('-__v -body').lean(),
+      Article.countDocuments(query),
+    ]);
+
+    res.json({ articles, pagination: { page, limit, total, pages: Math.ceil(total / limit) } });
+  } catch (error) { res.status(500).json({ code: 'SERVER_ERROR', error: 'Failed to fetch pending articles' }); }
+});
+
+/**
+ * GET /api/admin/articles/pending/:id
+ * Protected — get full pending article preview (body + sources included)
+ *
+ * DOUBLE-BLIND MODERATION: Author trust score is intentionally hidden.
+ */
+router.get('/articles/pending/:id', async (req, res) => {
+  try {
+    const article = await Article.findById(req.params.id).select('-__v').lean();
+
+    if (!article) {
+      return res.status(404).json({ code: 'NOT_FOUND', error: 'Article not found' });
+    }
+
+    if (article.status !== 'pending_review') {
+      return res.status(400).json({ code: 'INVALID_STATUS', error: 'Article is not pending review' });
+    }
+
+    res.json({ article });
+  } catch (error) {
+    console.error('Error fetching pending article:', error);
+    res.status(500).json({ code: 'SERVER_ERROR', error: 'Failed to fetch article' });
+  }
+});
+
+/**
+ * PATCH /api/admin/articles/:id/approve
+ * Protected — approve article and publish to public feed
+ *
+ * DOUBLE-BLIND: Trust score recalculation happens AFTER admin decision.
+ */
+router.patch('/articles/:id/approve', async (req, res) => {
+  try {
+    const article = await Article.findById(req.params.id);
+
+    if (!article) {
+      return res.status(404).json({ code: 'NOT_FOUND', error: 'Article not found' });
+    }
+
+    if (article.status === 'approved') {
+      return res.status(400).json({ code: 'ALREADY_APPROVED', error: 'Article is already approved' });
+    }
+
+    article.status = 'approved';
+    await article.save();
+
+    logAudit({
+      admin_id: (req.admin?.id as string) || 'unknown',
+      action: 'approve_article',
+      ip: getClientIp(req),
+      metadata: { article_id: (article._id as { toString(): string }).toString(), article_title: article.title },
+    });
+
+    await trustScoreWorker.queueUpdate(
+      article.author_id,
+      (article._id as { toString(): string }).toString(),
+      'approve'
+    );
+
+    const { grantBoost, BoostType } = await import('../lib/ladderSystem');
+    await grantBoost(article.author_id.toString(), BoostType.POST_APPROVED);
+
+    await createNotification({
+      user_id: article.author_id,
+      type: 'article_approved',
+      post_id: (article._id as { toString(): string }).toString(),
+      post_title: article.title,
+      message: `Your article "${article.title}" was approved and is now live.`,
+    });
+
+    res.json({ success: true, article });
+  } catch (error) {
+    console.error('Error approving article:', error);
+    res.status(500).json({ code: 'SERVER_ERROR', error: 'Failed to approve article' });
+  }
+});
+
+/**
+ * PATCH /api/admin/articles/:id/reject
+ * Protected — reject pending article with a reason
+ */
+router.patch('/articles/:id/reject', async (req, res) => {
+  try {
+    const { reason } = req.body;
+
+    if (!reason || typeof reason !== 'string' || reason.trim().length === 0) {
+      return res.status(400).json({ code: 'VALIDATION', error: 'Rejection reason is required' });
+    }
+
+    const article = await Article.findById(req.params.id);
+
+    if (!article) {
+      return res.status(404).json({ code: 'NOT_FOUND', error: 'Article not found' });
+    }
+
+    if (article.status === 'rejected') {
+      return res.status(400).json({ code: 'ALREADY_REJECTED', error: 'Article is already rejected' });
+    }
+
+    article.status = 'rejected';
+    article.rejection_reason = reason.trim();
+    await article.save();
+
+    logAudit({
+      admin_id: (req.admin?.id as string) || 'unknown',
+      action: 'reject_article',
+      ip: getClientIp(req),
+      metadata: { article_id: (article._id as { toString(): string }).toString(), article_title: article.title, reason: reason.trim() },
+    });
+
+    await trustScoreWorker.queueUpdate(
+      article.author_id,
+      (article._id as { toString(): string }).toString(),
+      'reject'
+    );
+
+    await createNotification({
+      user_id: article.author_id,
+      type: 'article_rejected',
+      post_id: (article._id as { toString(): string }).toString(),
+      post_title: article.title,
+      message: `Your article "${article.title}" was not approved. Reason: ${reason.trim()}`,
+    });
+
+    res.json({ success: true, article });
+  } catch (error) {
+    console.error('Error rejecting article:', error);
+    res.status(500).json({ code: 'SERVER_ERROR', error: 'Failed to reject article' });
+  }
+});
+
+/**
+ * DELETE /api/admin/articles/:id/cancel — Remove a pending article from review queue
+ */
+router.delete('/articles/:id/cancel', async (req, res) => {
+  try {
+    const article = await Article.findById(req.params.id);
+    if (!article) return res.status(404).json({ code: 'NOT_FOUND', error: 'Article not found' });
+    if (article.status !== 'pending_review') return res.status(400).json({ code: 'INVALID_STATUS', error: 'Only pending articles can be cancelled' });
+
+    await Article.findByIdAndDelete(article._id);
+
+    logAudit({ admin_id: (req.admin?.id as string) || 'unknown', action: 'cancel_article', ip: getClientIp(req), metadata: { article_id: (req.params.id as string).toString(), article_title: article.title }, user_agent: req.headers['user-agent'] || '' });
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error cancelling article:', error);
+    res.status(500).json({ code: 'SERVER_ERROR', error: 'Failed to cancel article' });
+  }
+});
+
+/**
+ * POST /api/admin/articles/bulk/approve — Bulk approve multiple articles
+ */
+router.post('/articles/bulk/approve', async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0 || ids.length > 50) {
+      return res.status(400).json({ code: 'VALIDATION', error: 'Provide 1-50 article IDs' });
+    }
+
+    const { processBatch } = await import('../lib/batchProcessor');
+    let skipped = 0;
+    const result = await processBatch(ids, async (id) => {
+      const article = await Article.findById(id);
+      if (!article) { skipped++; return; }
+      if (article.status === 'approved') { skipped++; return; }
+      article.status = 'approved';
+      await article.save();
+      await trustScoreWorker.queueUpdate(article.author_id, (article._id as { toString(): string }).toString(), 'approve');
+      const { grantBoost, BoostType } = await import('../lib/ladderSystem');
+      await grantBoost(article.author_id.toString(), BoostType.POST_APPROVED);
+      await createNotification({ user_id: article.author_id, type: 'article_approved', post_id: (article._id as { toString(): string }).toString(), post_title: article.title, message: `Your article "${article.title}" was approved.` });
+    });
+
+    res.json({ success: true, approved: result.succeeded, skipped, errors: result.errors.slice(0, 5) });
+  } catch (error) { res.status(500).json({ code: 'SERVER_ERROR', error: 'Bulk approve failed' }); }
+});
+
+/**
+ * POST /api/admin/articles/bulk/reject — Bulk reject multiple articles
+ */
+router.post('/articles/bulk/reject', async (req, res) => {
+  try {
+    const { ids, reason } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0 || ids.length > 50) {
+      return res.status(400).json({ code: 'VALIDATION', error: 'Provide 1-50 article IDs' });
+    }
+    if (!reason || typeof reason !== 'string' || reason.trim().length === 0) {
+      return res.status(400).json({ code: 'VALIDATION', error: 'Rejection reason is required' });
+    }
+
+    const { processBatch } = await import('../lib/batchProcessor');
+    let skipped = 0;
+    const result = await processBatch(ids, async (id) => {
+      const article = await Article.findById(id);
+      if (!article) { skipped++; return; }
+      if (article.status === 'rejected') { skipped++; return; }
+      article.status = 'rejected'; article.rejection_reason = reason.trim();
+      await article.save();
+      await trustScoreWorker.queueUpdate(article.author_id, (article._id as { toString(): string }).toString(), 'reject');
+      await createNotification({ user_id: article.author_id, type: 'article_rejected', post_id: (article._id as { toString(): string }).toString(), post_title: article.title, message: `Your article "${article.title}" was not approved. Reason: ${reason.trim()}` });
     });
 
     res.json({ success: true, rejected: result.succeeded, skipped, errors: result.errors.slice(0, 5) });
