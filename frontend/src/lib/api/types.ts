@@ -217,6 +217,8 @@ export interface ArgumentPost {
   contradict_pct: number;
   votes_a?: number;
   votes_b?: number;
+  item_a_title?: string;
+  item_b_title?: string;
   hero_image_url?: string | null;
 }
 

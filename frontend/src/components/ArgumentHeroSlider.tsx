@@ -1,11 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Icon } from './icons/Icon';
 import { cleanTitle } from '@/lib/dates';
-import { apiFetch } from '@/lib/api/client';
 import type { ArgumentPost } from '@/lib/api/types';
 
 const GRADIENTS = [
@@ -20,10 +19,9 @@ interface ArgumentHeroSliderProps {
   arguments: ArgumentPost[];
 }
 
-function SlideCard({ d, voted, onVote }: {
+function SlideCard({ d, onOpen }: {
   d: ArgumentPost;
-  voted: 'A' | 'B' | null;
-  onVote: (side: 'A' | 'B') => void;
+  onOpen: () => void;
 }) {
   // Same live-first rule as the list cards: real side votes win over the
   // comment-fire proxy so the panels paint the true split immediately.
@@ -32,8 +30,52 @@ function SlideCard({ d, voted, onVote }: {
   const contradictPct = heroVoteTotal > 0 ? Math.round(((d.votes_b ?? 0) / heroVoteTotal) * 100) : (d.contradict_pct ?? 0);
   const hasVotes = supportPct + contradictPct > 0;
 
+  // Hero names the actual contenders (e.g. Ronaldo / Messi) while the buttons
+  // keep the Support / Contradict labels. Fall back when items are missing.
+  const nameA = d.item_a_title || 'Support';
+  const nameB = d.item_b_title || 'Contradict';
+
+  if (d.post_type === 'counter_list') {
+    const rebuttal = d.top_comments?.[0];
+    return (
+      <div className="px-4 pb-4 cursor-pointer" onClick={onOpen}>
+        {/* Creator Row */}
+        <div className="flex items-center gap-2 mt-3 mb-2">
+          <span className="flex items-center justify-center w-6 h-6 rounded-full bg-teal-500/10 text-2xs font-mono text-teal-400 shrink-0 ring-1 ring-teal-500/20">
+            {(d.author_display_name || d.author_username || 'A')[0].toUpperCase()}
+          </span>
+          <span className="text-xs text-zinc-400">{d.author_display_name || d.author_username || 'anonymous'}</span>
+          <Icon name="BadgeCheck" size={12} className="text-blue-400/40" />
+          <span className="ml-auto flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-teal-500/10 text-teal-400">
+            <Icon name="Swords" size={10} />
+            CTR
+          </span>
+        </div>
+
+        {/* Counter Info */}
+        <h3 className="text-base font-bold text-white leading-snug mb-1">{cleanTitle(d.title)}</h3>
+        <p className="text-xs text-zinc-500 leading-relaxed mb-3">
+          {rebuttal
+            ? `Countering with "${rebuttal.item_title || 'a rebuttal'}" — open to read the challenge.`
+            : 'A counter list challenging the ranking — open to read it.'}
+        </p>
+
+        {rebuttal && (
+          <p className="mb-3 border-l-2 border-teal-500/30 pl-3 text-xs text-zinc-500 line-clamp-2 italic">
+            {rebuttal.content.slice(0, 120)}
+          </p>
+        )}
+
+        <span className="w-full flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold border border-teal-500/20 bg-teal-500/5 text-teal-300">
+          <Icon name="ArrowRight" size={15} />
+          Read counter
+        </span>
+      </div>
+    );
+  }
+
   return (
-    <div className="px-4 pb-4">
+    <div className="px-4 pb-4 cursor-pointer" onClick={onOpen}>
       {/* Creator Row */}
       <div className="flex items-center gap-2 mt-3 mb-2">
         <span className="flex items-center justify-center w-6 h-6 rounded-full bg-orange-500/10 text-2xs font-mono text-orange-400 shrink-0 ring-1 ring-orange-500/20">
@@ -44,73 +86,55 @@ function SlideCard({ d, voted, onVote }: {
       </div>
 
       {/* Debate Info */}
-      <Link href={`/${d.slug}`} className="block mb-3">
+      <div className="block mb-3">
         <h3 className="text-base font-bold text-white leading-snug mb-1">{cleanTitle(d.title)}</h3>
         <p className="text-xs text-zinc-500 leading-relaxed">
           {d.top_comments?.[0]?.item_title
             ? `Top debate on "${d.top_comments[0].item_title}" — which side are you on?`
-            : 'Cast your vote and join the discussion.'}
+            : 'Open to pick a side and join the discussion.'}
         </p>
-      </Link>
+      </div>
 
-      {/* Stacked Voting Options */}
+      {/* Stacked Options */}
       <div className="space-y-3 mb-3">
-        {/* Option A (Support) */}
-        <div className="rounded-xl border border-red-500/15 bg-red-500/[0.04] px-3 py-2.5 transition-all hover:border-red-500/30 hover:shadow-[0_0_12px_rgba(239,68,68,0.08)]">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-sm font-medium text-zinc-200">Support</span>
-            <span className="text-sm font-bold font-mono text-red-400 tabular-nums">{hasVotes ? `${supportPct}%` : '--'}</span>
+        {/* Option A */}
+        <div className="rounded-xl border border-red-500/15 bg-red-500/[0.04] px-3 py-2.5">
+          <div className="flex items-center justify-between gap-2 mb-1.5">
+            <span className="text-sm font-medium text-zinc-200 line-clamp-1">{nameA}</span>
+            <span className="text-sm font-bold font-mono text-red-400 tabular-nums shrink-0">{hasVotes ? `${supportPct}%` : '--'}</span>
           </div>
           <div className="h-2 rounded-full bg-zinc-800 overflow-hidden mb-2">
             <div
               className="h-full rounded-full bg-gradient-to-r from-red-500 to-orange-500 transition-all duration-700 ease-out"
               style={{
                 width: `${hasVotes ? supportPct : 0}%`,
-                boxShadow: hasVotes ? '0 0 8px rgba(239,68,68,0.4)' : 'none',
               }}
             />
           </div>
-          <button
-            type="button"
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onVote('A'); }}
-            className={`w-full flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold cursor-pointer transition-all ${
-              voted === 'A'
-                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 shadow-[0_0_12px_rgba(16,185,129,0.2)]'
-                : 'bg-white/5 border border-white/10 text-zinc-300 hover:bg-emerald-500/10 hover:border-emerald-500/40 hover:text-emerald-400'
-            }`}
-          >
+          <span className="w-full flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold bg-white/5 border border-white/10 text-zinc-300">
             <Icon name="ThumbsUp" size={15} />
-            {voted === 'A' ? 'Voted' : 'Support'}
-          </button>
+            Support
+          </span>
         </div>
 
-        {/* Option B (Contradict) */}
-        <div className="rounded-xl border border-blue-500/15 bg-blue-500/[0.04] px-3 py-2.5 transition-all hover:border-blue-500/30 hover:shadow-[0_0_12px_rgba(59,130,246,0.08)]">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-sm font-medium text-zinc-200">Contradict</span>
-            <span className="text-sm font-bold font-mono text-blue-400 tabular-nums">{hasVotes ? `${contradictPct}%` : '--'}</span>
+        {/* Option B */}
+        <div className="rounded-xl border border-blue-500/15 bg-blue-500/[0.04] px-3 py-2.5">
+          <div className="flex items-center justify-between gap-2 mb-1.5">
+            <span className="text-sm font-medium text-zinc-200 line-clamp-1">{nameB}</span>
+            <span className="text-sm font-bold font-mono text-blue-400 tabular-nums shrink-0">{hasVotes ? `${contradictPct}%` : '--'}</span>
           </div>
           <div className="h-2 rounded-full bg-zinc-800 overflow-hidden mb-2">
             <div
               className="h-full rounded-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-700 ease-out"
               style={{
                 width: `${hasVotes ? contradictPct : 0}%`,
-                boxShadow: hasVotes ? '0 0 8px rgba(59,130,246,0.4)' : 'none',
               }}
             />
           </div>
-          <button
-            type="button"
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onVote('B'); }}
-            className={`w-full flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold cursor-pointer transition-all ${
-              voted === 'B'
-                ? 'bg-blue-500/20 text-blue-400 border border-blue-500/50 shadow-[0_0_12px_rgba(59,130,246,0.2)]'
-                : 'bg-white/5 border border-white/10 text-zinc-300 hover:bg-blue-500/10 hover:border-blue-500/40 hover:text-blue-400'
-            }`}
-          >
+          <span className="w-full flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold bg-white/5 border border-white/10 text-zinc-300">
             <Icon name="ThumbsDown" size={15} />
-            {voted === 'B' ? 'Voted' : 'Contradict'}
-          </button>
+            Contradict
+          </span>
         </div>
       </div>
     </div>
@@ -118,9 +142,9 @@ function SlideCard({ d, voted, onVote }: {
 }
 
 export function ArgumentHeroSlider({ arguments: args }: ArgumentHeroSliderProps) {
+  const router = useRouter();
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
-  const [votedMap, setVotedMap] = useState<Record<string, 'A' | 'B' | null>>({});
   const touchStart = useRef<number | null>(null);
   const top = args.slice(0, 5);
 
@@ -164,25 +188,6 @@ export function ArgumentHeroSlider({ arguments: args }: ArgumentHeroSliderProps)
   if (top.length === 0) return null;
 
   const d = top[current];
-
-  const handleVote = (side: 'A' | 'B') => {
-    const pid = d.id;
-    if (!pid) return;
-
-    // Optimistic update — instant UI
-    const prevVoted = votedMap[pid] ?? null;
-    setVotedMap(prev => ({ ...prev, [pid]: side }));
-
-    // Server call in background
-    apiFetch<{ votes_a: number; votes_b: number; voted: string | null }>(`/posts/${pid}/vote`, {
-      method: 'POST',
-      body: JSON.stringify({ side }),
-    }).then((res) => {
-      setVotedMap(prev => ({ ...prev, [pid]: res.voted as 'A' | 'B' | null }));
-    }).catch(() => {
-      setVotedMap(prev => ({ ...prev, [pid]: prevVoted }));
-    });
-  };
 
   return (
     <div
@@ -238,8 +243,7 @@ export function ArgumentHeroSlider({ arguments: args }: ArgumentHeroSliderProps)
               <div key={item.id} className="w-full shrink-0">
                 <SlideCard
                   d={item}
-                  voted={(item.id ? votedMap[item.id] : null) ?? null}
-                  onVote={handleVote}
+                  onOpen={() => { if (item.slug) router.push(`/${item.slug}`); }}
                 />
               </div>
             ))}
