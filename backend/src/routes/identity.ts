@@ -5,7 +5,7 @@ import { UserDevice } from '../models/UserDevice';
 import { AuthChallenge } from '../models/AuthChallenge';
 import { generateChallenge, verifySignature, hashPublicKey, verifyPublicKeyHash } from '../lib/identityCrypto';
 import { logAudit } from '../lib/auditWriter';
-import { getClientIp } from '../middleware/fingerprint';
+import { getClientIp, isCookieBound } from '../middleware/fingerprint';
 import {
   generateKeySchema,
   claimChallengeSchema,
@@ -22,6 +22,18 @@ function userId(req: any): string {
 function requireUser(req: any, res: any): boolean {
   if (!req.user) {
     res.status(401).json({ error: 'Authentication required' });
+    return false;
+  }
+  return true;
+}
+
+// Identity-critical writes require a cookie-bound session: a request resolved
+// from a bare presented fingerprint may be an impersonator reciting someone
+// else's value. The middleware sets a fresh cookie on such sessions, so a
+// reload + retry unblocks legitimate users.
+function requireCookieBound(req: any, res: any): boolean {
+  if (!isCookieBound(req)) {
+    res.status(428).json({ error: 'Confirm this device first: reload the page once, then retry.' });
     return false;
   }
   return true;
@@ -46,6 +58,7 @@ router.get('/status', async (req: any, res: any) => {
 // POST /api/identity/generate-key — Generate seed identity
 router.post('/generate-key', async (req: any, res: any) => {
   if (!requireUser(req, res)) return;
+  if (!requireCookieBound(req, res)) return;
   try {
     const body = generateKeySchema.parse(req.body);
 
@@ -177,6 +190,7 @@ router.post('/claim/verify', async (req: any, res: any) => {
 // POST /api/identity/link — Link additional device fingerprint
 router.post('/link', async (req: any, res: any) => {
   if (!requireUser(req, res)) return;
+  if (!requireCookieBound(req, res)) return;
   try {
     const body = linkDeviceSchema.parse(req.body);
 
@@ -234,6 +248,7 @@ router.get('/devices', async (req: any, res: any) => {
 // DELETE /api/identity/devices/:fingerprint — Unlink a device
 router.delete('/devices/:fingerprint', async (req: any, res: any) => {
   if (!requireUser(req, res)) return;
+  if (!requireCookieBound(req, res)) return;
   try {
     const user = await User.findOne({ user_id: req.user.user_id });
     if (!user) return res.status(404).json({ error: 'User not found' });

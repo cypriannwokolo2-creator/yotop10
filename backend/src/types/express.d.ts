@@ -28,6 +28,9 @@ declare global {
         token_version: number;
       };
       fingerprint?: string;
+      // How the identity was presented: cookie (bound browser), header
+      // (recovery hint only), or grace (freshly minted, anonymous).
+      fingerprintSource?: 'cookie' | 'header' | 'grace';
     }
   }
 }

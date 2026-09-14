@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { User } from '../models/User';
 import { UserDevice } from '../models/UserDevice';
 import { redis } from '../lib/redis';
+import { isCookieBound } from '../middleware/fingerprint';
 
 const router: Router = Router();
 
@@ -49,6 +50,12 @@ router.post('/confirm-merge', async (req, res) => {
     }
 
     const { from_fingerprint, to_user_id } = request;
+
+    // Merge confirmation permanently re-points an identity: require a
+    // cookie-bound session so a bare presented fingerprint cannot adopt accounts.
+    if (!isCookieBound(req)) {
+      return res.status(428).json({ error: 'Confirm this device first: reload the page once, then retry.' });
+    }
 
     // Atomically transfer the existing user's identity to the new fingerprint
     const updated = await User.findOneAndUpdate(

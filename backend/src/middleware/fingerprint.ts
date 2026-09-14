@@ -3,7 +3,7 @@ import { User } from '../models/User';
 import { UserDevice } from '../models/UserDevice';
 import { SystemConfig } from '../models/SystemConfig';
 import crypto from 'crypto';
-import { redis } from '../lib/redis';
+import { redis, atomicCheckRateLimit } from '../lib/redis';
 import { findMatchingUser } from '../lib/fingerprintMatching';
 import { toDefaultShort } from '../lib/username';
 
@@ -22,6 +22,23 @@ export const getClientIp = (req: { headers: Record<string, string | string[] | u
 
 /** Single read of the resolved identity — the "one brain" accessor. */
 export const getFingerprintIdentity = (req: Request) => req.user ?? null;
+
+/**
+ * Cookie-bound check for identity-critical writes (renames, seed keys, device
+ * link/unlink, merge confirm). A session resolved from a bare presented header
+ * value has never completed a cookie round-trip — indistinguishable from an
+ * impersonator reciting someone else's fingerprint — so it may read and post
+ * but may NOT permanently mutate identity. The middleware sets a fresh cookie
+ * on such sessions, so a simple reload + retry unblocks legitimate users.
+ */
+export const isCookieBound = (req: Request): boolean => req.fingerprintSource === 'cookie';
+
+/**
+ * Low-entropy fingerprints (long zero runs) come from broken/headless signal
+ * environments and collide across unrelated visitors. They are the impersonation
+ * vector: never a hard block (real browsers can land here), but always a risk signal.
+ */
+export const isLowEntropyFingerprint = (fp: string): boolean => /^0{6,}[0-9a-f]*$/i.test(fp);
 
 const generateFingerprint = (): string => crypto.randomBytes(16).toString('hex');
 
@@ -56,6 +73,7 @@ type FingerprintUser = {
   username: string;
   custom_display_name?: string | null;
   device_fingerprint: string;
+  device_fingerprint_aliases?: string[];
   trust_score: number;
   trust_locked: boolean;
   rate_limit_override?: { posts_per_hour?: number | null; comments_per_hour?: number | null } | null;
@@ -64,9 +82,11 @@ type FingerprintUser = {
   created_at?: Date;
 };
 
-/** Resolve a fingerprint to its user via direct match, then linked devices. */
+/** Resolve a fingerprint to its user: direct match, retired aliases, then linked devices. */
 export async function findUserByFingerprint(fingerprint: string): Promise<FingerprintUser | null> {
-  const user = await User.findOne({ device_fingerprint: fingerprint });
+  const user = await User.findOne({
+    $or: [{ device_fingerprint: fingerprint }, { device_fingerprint_aliases: fingerprint }],
+  });
   if (user) return user as unknown as FingerprintUser;
   const deviceLink = await UserDevice.findOne({ device_fingerprint: fingerprint });
   if (deviceLink) {
@@ -151,10 +171,17 @@ export const fingerprintMiddleware = async (req: Request, res: Response, next: N
   const headerFingerprint = req.headers['x-device-fingerprint'] as string | undefined;
   const cookieFingerprint = req.cookies?.device_fingerprint as string | undefined;
 
+  // Bootstrap endpoints own their minting (bot challenge lives in the route).
+  // The middleware MUST stay read-only here, or it would mint before the
+  // route's challenge check ever runs.
+  const pathname = (req.originalUrl || req.url || '').split('?')[0];
+  const isBootstrap = pathname === '/api/users/init' || pathname === '/api/users/challenge';
+
   const fingerprint = cookieFingerprint || headerFingerprint;
 
   if (fingerprint) {
     req.fingerprint = fingerprint;
+    req.fingerprintSource = cookieFingerprint ? 'cookie' : 'header';
 
     try {
       let user = await findUserByFingerprint(fingerprint);
@@ -169,13 +196,27 @@ export const fingerprintMiddleware = async (req: Request, res: Response, next: N
         }
       }
 
+      // Canonicalize: an alias or linked fingerprint always rebinds to the
+      // stored identity, and the cookie is re-set so the next request is
+      // cookie-bound. A bare presented value never sticks on its own.
+      if (user && user.device_fingerprint !== req.fingerprint) {
+        req.fingerprint = user.device_fingerprint;
+        recovered = true;
+      }
+
       if (!cookieFingerprint || recovered) {
         setIdentityCookie(res, req.fingerprint as string);
       }
 
       if (!user) {
-        if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') {
+        if (isBootstrap || req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') {
           return next();
+        }
+        // Write-path minting is rate-limited per IP: one device needs one
+        // identity; scripts needing hundreds get throttled here.
+        const mintRl = await atomicCheckRateLimit(`rl:write-mint:${getClientIp(req)}`, 3600000, 10);
+        if (!mintRl.allowed) {
+          return res.status(429).json({ error: 'Too many new identities from this address.' });
         }
         user = await createUserForFingerprint(req, res, req.fingerprint as string);
       }
@@ -212,6 +253,7 @@ export const fingerprintMiddleware = async (req: Request, res: Response, next: N
       const newFingerprint = generateFingerprint();
       setIdentityCookie(res, newFingerprint);
       req.fingerprint = newFingerprint;
+      req.fingerprintSource = 'grace';
       return next();
     }
 
