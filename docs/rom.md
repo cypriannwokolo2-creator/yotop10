@@ -1060,6 +1060,7 @@ This audit analyzed 39 source files:
 | NEW (2026-09-14) | Bot mass-registration (19 accounts/24h) | ✅ Challenge + per-IP rate limits on init; bootstrap exempt from middleware minting; 20 bot accounts removed |
 | NEW (2026-09-14) | Presented-fingerprint impersonation | ✅ Cookie-bound gate (428) on rename/seed-key/link/unlink/merge-confirm; SHA-256 client hash; fp aliases + rotation |
 | NEW (2026-09-14) | Silent cross-device demotion to 0.7 | ✅ Cross-user-only + audit receipt (`auto_demote_cross_device`) |
+| NEW (2026-09-14) | Math challenge solvable by scripts (loop) | ✅ Proof-of-effort (20-bit SHA-256) + cookie-bound mint; maturity freeze on rename/seed |
 
 ### Still Open ⏳
 | Section | Issue | Notes |
