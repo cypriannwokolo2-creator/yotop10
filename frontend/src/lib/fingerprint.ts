@@ -171,19 +171,28 @@ const collectAllSignals = async (): Promise<FingerprintData> => {
   };
 };
 
-// Generate stable hash from signals
-const generateHash = (data: FingerprintData): string => {
+// Generate stable hash from signals — SHA-256 so unrelated visitors never
+// collide (the legacy 32-bit hash produced zero-padded clusters across bots).
+// Falls back to the legacy hash only where SubtleCrypto is unavailable.
+const generateHash = async (data: FingerprintData): Promise<string> => {
   const allSignals = [
     ...Object.values(data.tier1),
     ...Object.values(data.tier2),
   ].join('|');
-  
+
+  try {
+    if (typeof crypto !== 'undefined' && crypto.subtle) {
+      const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(allSignals));
+      return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('');
+    }
+  } catch { /* fall through to legacy */ }
+
   let hash = 0;
   for (let i = 0; i < allSignals.length; i++) {
     hash = ((hash << 5) - hash) + allSignals.charCodeAt(i);
     hash = hash & hash;
   }
-  
+
   return Math.abs(hash).toString(16).padStart(16, '0');
 };
 
@@ -201,7 +210,7 @@ export const getFingerprint = async (): Promise<string> => {
   if (cached) return cached;
 
   const data = await collectAllSignals();
-  data.hash = generateHash(data);
+  data.hash = await generateHash(data);
   
   safeSetItem('yotop10_fp', data.hash);
   safeSetItem('yotop10_fp_full', JSON.stringify(data));

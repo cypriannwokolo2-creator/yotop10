@@ -11,6 +11,7 @@ export interface IUser extends Document {
   default_short?: string;
   custom_short?: string;
   device_fingerprint: string;
+  device_fingerprint_aliases?: string[];
   trust_score: number;
   trust_version: number;
   trust_locked: boolean;
@@ -81,6 +82,13 @@ const userSchema = new Schema<IUser>(
       type: String,
       required: true,
       unique: true,
+    },
+    // Retired fingerprints that still resolve to this user (e.g. after a
+    // security rotation). Looked up on every request; the cookie is then
+    // re-bound to device_fingerprint, so aliases are strictly transitional.
+    device_fingerprint_aliases: {
+      type: [String],
+      default: [],
     },
     is_admin: {
       type: Boolean,
