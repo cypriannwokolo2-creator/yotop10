@@ -14,6 +14,15 @@ interface PendingPost {
   intro: string;
   slug?: string;
   status?: string;
+  category_slug?: string;
+  view_count?: number;
+  comment_count?: number;
+  fire_count?: number;
+  votes_a?: number;
+  votes_b?: number;
+  featured?: boolean;
+  comments_locked?: boolean;
+  published_at?: string | null;
   items: Array<{
     id: string;
     rank: number;
@@ -167,6 +176,79 @@ export default function PendingPostDetailClient() {
       )}
 
       <div className="space-y-4 sm:space-y-6 mt-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+            <h3 className="text-white font-semibold mb-3 text-sm">Details</h3>
+            <dl className="space-y-2 text-sm2">
+              <div className="flex items-center justify-between gap-3">
+                <dt className="text-white/40">Status</dt>
+                <dd>
+                  <span className={`rounded-full px-2.5 py-0.5 text-3xs font-semibold uppercase tracking-wider ${post.status === 'approved' ? 'bg-green-500/15 text-green-400' : post.status === 'rejected' ? 'bg-red-500/15 text-red-400' : 'bg-orange-500/15 text-orange-400'}`}>
+                    {(post.status || 'pending_review').replace(/_/g, ' ')}
+                  </span>
+                </dd>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <dt className="text-white/40">Type</dt>
+                <dd className="text-white">{post.post_type}</dd>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <dt className="text-white/40">Category</dt>
+                <dd className="text-white truncate max-w-[60%]">{post.category_slug || '—'}</dd>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <dt className="text-white/40">Author</dt>
+                <dd className="text-white">{post.author_username}</dd>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <dt className="text-white/40">Created</dt>
+                <dd className="text-white/70">{new Date(post.created_at).toLocaleString()}</dd>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <dt className="text-white/40">Published</dt>
+                <dd className="text-white/70">{post.published_at ? new Date(post.published_at).toLocaleString() : '—'}</dd>
+              </div>
+              {(post.featured || post.comments_locked) && (
+                <div className="flex items-center gap-2 pt-1">
+                  {post.featured && <span className="rounded-md bg-amber-500/15 px-2 py-0.5 text-3xs font-semibold text-amber-400">FEATURED</span>}
+                  {post.comments_locked && <span className="rounded-md bg-white/10 px-2 py-0.5 text-3xs font-semibold text-white/60">LOCKED</span>}
+                </div>
+              )}
+            </dl>
+          </div>
+          <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+            <h3 className="text-white font-semibold mb-3 text-sm">Stats</h3>
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="rounded-lg bg-white/5 px-2 py-3">
+                <p className="text-lg font-bold text-white">{post.view_count ?? 0}</p>
+                <p className="text-3xs text-white/40 uppercase tracking-wider mt-0.5">Views</p>
+              </div>
+              <div className="rounded-lg bg-white/5 px-2 py-3">
+                <p className="text-lg font-bold text-white">{post.comment_count ?? 0}</p>
+                <p className="text-3xs text-white/40 uppercase tracking-wider mt-0.5">Comments</p>
+              </div>
+              <div className="rounded-lg bg-white/5 px-2 py-3">
+                <p className="text-lg font-bold text-white">{post.fire_count ?? 0}</p>
+                <p className="text-3xs text-white/40 uppercase tracking-wider mt-0.5">Fire</p>
+              </div>
+            </div>
+            <div className="mt-2 grid grid-cols-3 gap-2 text-center">
+              <div className="rounded-lg bg-white/5 px-2 py-2.5">
+                <p className="text-base font-bold text-white">{post.items.length}</p>
+                <p className="text-3xs text-white/40 uppercase tracking-wider mt-0.5">Items</p>
+              </div>
+              <div className="rounded-lg bg-white/5 px-2 py-2.5">
+                <p className="text-base font-bold text-white">{post.votes_a ?? 0}</p>
+                <p className="text-3xs text-white/40 uppercase tracking-wider mt-0.5">Votes A</p>
+              </div>
+              <div className="rounded-lg bg-white/5 px-2 py-2.5">
+                <p className="text-base font-bold text-white">{post.votes_b ?? 0}</p>
+                <p className="text-3xs text-white/40 uppercase tracking-wider mt-0.5">Votes B</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div>
           <h1 className="text-white text-xl sm:text-2xl font-bold">{post.title}</h1>
           <p className="text-white/50 text-sm2 mt-1">
