@@ -99,7 +99,7 @@ export function ArgumentCard({ argument }: ArgumentCardProps) {
 
           <ArgumentBar supportPct={supportPct} contradictPct={contradictPct} className="mb-3" />
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-3">
               {isVotable ? (
                 <>
