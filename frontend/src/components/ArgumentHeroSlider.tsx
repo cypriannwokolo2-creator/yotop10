@@ -25,8 +25,11 @@ function SlideCard({ d, voted, onVote }: {
   voted: 'A' | 'B' | null;
   onVote: (side: 'A' | 'B') => void;
 }) {
-  const supportPct = d.support_pct ?? 0;
-  const contradictPct = d.contradict_pct ?? 0;
+  // Same live-first rule as the list cards: real side votes win over the
+  // comment-fire proxy so the panels paint the true split immediately.
+  const heroVoteTotal = (d.votes_a ?? 0) + (d.votes_b ?? 0);
+  const supportPct = heroVoteTotal > 0 ? Math.round(((d.votes_a ?? 0) / heroVoteTotal) * 100) : (d.support_pct ?? 0);
+  const contradictPct = heroVoteTotal > 0 ? Math.round(((d.votes_b ?? 0) / heroVoteTotal) * 100) : (d.contradict_pct ?? 0);
   const hasVotes = supportPct + contradictPct > 0;
 
   return (

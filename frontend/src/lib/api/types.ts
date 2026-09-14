@@ -215,6 +215,8 @@ export interface ArgumentPost {
   }>;
   support_pct: number;
   contradict_pct: number;
+  votes_a?: number;
+  votes_b?: number;
   hero_image_url?: string | null;
 }
 

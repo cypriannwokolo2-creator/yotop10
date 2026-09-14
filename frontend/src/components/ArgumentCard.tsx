@@ -18,8 +18,15 @@ interface ArgumentCardProps {
 }
 
 export function ArgumentCard({ argument }: ArgumentCardProps) {
-  const [supportPct, setSupportPct] = useState(argument.support_pct);
-  const [contradictPct, setContradictPct] = useState(argument.contradict_pct);
+  // Initial split comes from real side votes, not the comment-fire proxy:
+  // debates with votes paint their true split on first paint.
+  const voteTotal = (argument.votes_a ?? 0) + (argument.votes_b ?? 0);
+  const [supportPct, setSupportPct] = useState(
+    voteTotal > 0 ? Math.round(((argument.votes_a ?? 0) / voteTotal) * 100) : argument.support_pct
+  );
+  const [contradictPct, setContradictPct] = useState(
+    voteTotal > 0 ? Math.round(((argument.votes_b ?? 0) / voteTotal) * 100) : argument.contradict_pct
+  );
   const [voted, setVoted] = useState<'A' | 'B' | null>(null);
 
   const config = POST_TYPE_CONFIG[argument.post_type] ?? {
