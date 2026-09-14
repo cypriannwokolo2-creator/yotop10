@@ -34,11 +34,12 @@ export default function AccountSettingsClient() {
       setEditingName(false);
       setNameError(null);
     } catch (e) {
-      // Surface the server's reason (taken name, maturity lock, device check)
-      // instead of a generic failure so the user knows what to do.
+      // Surface the server's reason (taken name, maturity lock, device check,
+      // validation) instead of a generic failure so the user knows what to do.
       const msg = e instanceof Error ? e.message : '';
-      const m = msg.match(/\{"error":"([^"]+)"\}/);
-      setNameError(m ? m[1] : 'Failed to update display name.');
+      const single = msg.match(/\{"error":"([^"]+)"\}/);
+      const firstValidation = msg.match(/"msg":"([^"]+)"/);
+      setNameError(single ? single[1] : firstValidation ? firstValidation[1] : 'Failed to update display name.');
     }
   };
 

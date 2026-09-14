@@ -151,7 +151,7 @@ router.post('/init', async (req, res) => {
       return res.status(403).json({ error: 'Identity blocked for abuse. Clear site data and retry.' });
     }
     const ip = getClientIp(req);
-    const rl = await atomicCheckRateLimit(`rl:init:${ip}`, 3600000, 20);
+    const rl = await atomicCheckRateLimit(`rl:init:${ip}`, 3600000, 5);
     if (!rl.allowed) {
       return res.status(429).json({ error: 'Too many identities from this address.' });
     }

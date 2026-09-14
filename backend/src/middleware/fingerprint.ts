@@ -234,7 +234,7 @@ export const fingerprintMiddleware = async (req: Request, res: Response, next: N
         }
         // Write-path minting is rate-limited per IP: one device needs one
         // identity; scripts needing hundreds get throttled here.
-        const mintRl = await atomicCheckRateLimit(`rl:write-mint:${getClientIp(req)}`, 3600000, 10);
+        const mintRl = await atomicCheckRateLimit(`rl:write-mint:${getClientIp(req)}`, 3600000, 5);
         if (!mintRl.allowed) {
           return res.status(429).json({ error: 'Too many new identities from this address.' });
         }
