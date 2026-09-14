@@ -6,6 +6,7 @@ import { Icon } from '@/components/icons/Icon';
 import { CustomDropdown } from '@/components/CustomDropdown';
 import { ArgumentHeroSlider } from '@/components/ArgumentHeroSlider';
 import { ArgumentCard } from '@/components/ArgumentCard';
+import { CounterCard } from '@/components/CounterCard';
 import type { ArgumentPost, Category } from '@/lib/api/types';
 import { API } from '@/lib/api';
 
@@ -155,7 +156,9 @@ export default function ArgumentsClient({ initialPosts, initialCategories, initi
           <>
             <div className="space-y-3 pb-24">
               {posts.map((post) => (
-                <ArgumentCard key={post.id} argument={post} />
+                post.post_type === 'counter_list'
+                  ? <CounterCard key={post.id} argument={post} />
+                  : <ArgumentCard key={post.id} argument={post} />
               ))}
             </div>
             <div ref={sentinelRef} className="h-px" />
