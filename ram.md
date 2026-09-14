@@ -1,9 +1,9 @@
 # RAM.md — Random Access Memory: Current Task State
 
 > **Last updated**: 2026-09-14
-> **Working tree**: One-brain identity + real views — implemented, verified, see commit below
-> **Branch**: main → push after commit
-> **Latest commit**: `[M15.1] One-brain identity + real view counting` (pending push at time of writing)
+> **Working tree**: Clean — committed and pushed
+> **Branch**: main → up to date with origin/main
+> **Latest commits**: `d1d0526 [M04.1]`, `122960f [M15.1] One-brain identity + real view counting`
 
 ---
 
