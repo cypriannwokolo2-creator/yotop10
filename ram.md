@@ -119,6 +119,12 @@ Hardcoded JWT, orphaned setInterval, $regex injection, stub 200s, health check o
   removed, mint limits tightened to 5/hr/IP, their rename attempts blocked by the maturity lock
   (the 403s in logs are the bot's, not the owner's — cutie is mature and exempt). Rename form
   now surfaces validation messages too.
+- **M23 pending articles (2026-09-14)** — admin had zero article moderation (articles sat in
+  pending_review with no UI and no API). Added: Article rejection_reason, article notification
+  types, articles:read/approve permissions (catalog, map, presets), 7 admin endpoints
+  (list/detail/approve/reject/cancel/bulk), full review UI (queue + detail) + sidebar entry.
+  Verified live with admin session; 1 flood-debris article waiting in the queue for the owner.
+  Backend 682 tests ✅, frontend build ✅ EXIT 0.
 - **M22.2 (2026-09-14)** — article/list-image validators demanded absolute URLs while the
   uploader returns site-relative paths (every uploaded cover 400'd). Shared `uploadUrl`
   validator + tests, used by both routes; verified live with the reporter's exact file
