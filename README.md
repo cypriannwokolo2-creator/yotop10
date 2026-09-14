@@ -2,9 +2,9 @@
 
 > **Fact mine. Debate ground. Your list vs the world.**
 
-[![CI](https://github.com/nekwasar/yotop10/actions/workflows/ci.yml/badge.svg)](https://github.com/nekwasar/yotop10/actions/workflows/ci.yml) [![CD](https://github.com/nekwasar/yotop10/actions/workflows/cd.yml/badge.svg)](https://github.com/nekwasar/yotop10/actions/workflows/cd.yml)
+[![CI](https://github.com/nekwasar/yotop10/actions/workflows/ci.yml/badge.svg)](https://github.com/nekwasar/yotop10/actions/workflows/ci.yml) [![CD](https://github.com/nekwasar/yotop10/actions/workflows/cd.yml/badge.svg)](https://github.com/nekwasar/yotop10/actions/workflows/cd.yml) [![Stars](https://img.shields.io/github/stars/nekwasar/yotop10?style=social)](https://github.com/nekwasar/yotop10/stargazers)
 
-**[Live site](https://yotop10.com)** ·
+**[yotop10.com](https://yotop10.com)** ·
 **[Documentation](./docs/product_spec.md)** ·
 **[Report a bug](https://github.com/nekwasar/yotop10/issues)** ·
 **[Request a feature](https://github.com/nekwasar/yotop10/issues)**
