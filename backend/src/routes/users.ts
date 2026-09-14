@@ -11,8 +11,10 @@ import { isUsernameAvailable, recordUsernameChange } from '../lib/usernameServic
 import { calculateEffectivePostLimit, calculateEffectiveCommentLimit, RateLimitStatus, getRateLimitKey } from '../lib/rateLimit';
 import { getCategoryNameMap } from '../lib/categoryCache';
 import { checkAndPromoteUser } from '../lib/trustScore';
-import { redis } from '../lib/redis';
-import { findUserByFingerprint, createUserForFingerprint } from '../middleware/fingerprint';
+import { redis, atomicCheckRateLimit } from '../lib/redis';
+import { findUserByFingerprint, createUserForFingerprint, getClientIp, isLowEntropyFingerprint, isCookieBound } from '../middleware/fingerprint';
+import { issueChallenge, verifyChallenge } from '../lib/botChallenge';
+import { initIdentitySchema } from '../schemas/identity';
 import { toShortUsername, toCustomShort, toDefaultShort, isDefaultFormat } from '../lib/username';
 
 const router: Router = Router();
@@ -107,11 +109,32 @@ router.get('/me', async (req, res) => {
 });
 
 /**
+ * M11.A1: GET /api/users/challenge
+ * Issues a simple bot challenge ({challenge_id, a, b}) that POST /init must
+ * solve (answer a + b). Public. Rate-limited per IP to prevent store flooding.
+ */
+router.get('/challenge', async (req, res) => {
+  try {
+    const ip = getClientIp(req);
+    const rl = await atomicCheckRateLimit(`rl:challenge:${ip}`, 600000, 30);
+    if (!rl.allowed) {
+      return res.status(429).json({ error: 'Too many challenges. Slow down.' });
+    }
+    return res.json(await issueChallenge());
+  } catch (error) {
+    console.error('GET /users/challenge error:', error);
+    return res.status(500).json({ error: 'Failed to issue challenge' });
+  }
+});
+
+/**
  * M11.A2: POST /api/users/init
  * Explicit identity bootstrap — the ONLY read-safe way to mint an identity.
  * The middleware never creates users on reads, so fresh visitors call this
  * once (single-flight from AuthInitializer) to claim their cookie identity.
- * Public. Body: none. Returns the user summary, same shape as GET /me core fields.
+ * Requires a solved bot challenge {challenge_id, answer} when minting ONLY
+ * when no identity exists yet — recovery of a known identity needs no challenge.
+ * Public. Returns the user summary, same shape as GET /me core fields.
  */
 router.post('/init', async (req, res) => {
   try {
@@ -126,8 +149,24 @@ router.post('/init', async (req, res) => {
     if (!fingerprint) {
       return res.status(425).json({ error: 'Fingerprint not initialized. Please retry.', retry_after: 1 });
     }
+    const ip = getClientIp(req);
+    const rl = await atomicCheckRateLimit(`rl:init:${ip}`, 3600000, 20);
+    if (!rl.allowed) {
+      return res.status(429).json({ error: 'Too many identities from this address.' });
+    }
     let user = await findUserByFingerprint(fingerprint);
     if (!user) {
+      // New identity: prove humanness first.
+      const parsed = initIdentitySchema.safeParse(req.body || {});
+      if (!parsed.success) {
+        return res.status(400).json({ error: 'A solved challenge is required to create an identity.' });
+      }
+      if (!(await verifyChallenge(parsed.data.challenge_id, parsed.data.answer))) {
+        return res.status(403).json({ error: 'Challenge failed. Fetch a new one and retry.' });
+      }
+      if (isLowEntropyFingerprint(fingerprint)) {
+        console.warn(`[Abuse] Low-entropy identity claim from ${ip}`);
+      }
       user = await createUserForFingerprint(req, res, fingerprint);
     }
     if (!req.cookies?.device_fingerprint) {
@@ -236,6 +275,12 @@ router.patch('/me', ...validateDisplayName as any[], async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
+    }
+
+    // Renames permanently mutate identity: require a cookie-bound session so a
+    // bare presented fingerprint cannot squat or steal handles.
+    if (!isCookieBound(req)) {
+      return res.status(428).json({ error: 'Confirm this device first: reload the page once, then retry.' });
     }
 
     let displayName = req.body.display_name.trim().toLowerCase();

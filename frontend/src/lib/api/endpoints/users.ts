@@ -3,10 +3,14 @@ import { apiFetch } from '../client';
 export const usersApi = {
   getCurrentUser: () => apiFetch('/users/me'),
 
-  initIdentity: () =>
+  initIdentity: (challenge_id: string, answer: number) =>
     apiFetch<{ user_id: string; username: string; custom_display_name: string | null; trust_score: number; created_at?: string }>('/users/init', {
       method: 'POST',
+      body: JSON.stringify({ challenge_id, answer }),
     }),
+
+  getChallenge: () =>
+    apiFetch<{ challenge_id: string; a: number; b: number }>('/users/challenge'),
 
   updateDisplayName: (display_name: string) =>
     apiFetch('/users/me', {
