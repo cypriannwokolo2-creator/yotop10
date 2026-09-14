@@ -29,6 +29,8 @@ export const PERMISSION_CATALOG = [
   'posts:edit',
   'posts:delete',
   'posts:manage',
+  'articles:read',
+  'articles:approve',
   'comments:read',
   'comments:moderate',
   'comments:penalty',

@@ -3,7 +3,7 @@ import { registerModel } from '../lib/modelRegistry';
 
 export interface INotification extends Document {
   user_id: string;
-  type: 'post_approved' | 'post_rejected' | 'revision_requested';
+  type: 'post_approved' | 'post_rejected' | 'revision_requested' | 'article_approved' | 'article_rejected';
   post_id: string;
   post_title: string;
   message: string;
@@ -16,7 +16,7 @@ export interface INotification extends Document {
 const notificationSchema = new Schema<INotification>(
   {
     user_id: { type: String, required: true, index: true },
-    type: { type: String, required: true, enum: ['post_approved', 'post_rejected', 'revision_requested'] },
+    type: { type: String, required: true, enum: ['post_approved', 'post_rejected', 'revision_requested', 'article_approved', 'article_rejected'] },
     post_id: { type: String, required: true },
     post_title: { type: String, required: true },
     message: { type: String, required: true },

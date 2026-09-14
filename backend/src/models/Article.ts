@@ -20,6 +20,7 @@ export interface IArticle extends Document {
   category_slug: string;
   created_at: Date;
   updated_at: Date;
+  rejection_reason?: string;
 }
 
 const articleSchema = new Schema<IArticle>(
@@ -44,6 +45,7 @@ const articleSchema = new Schema<IArticle>(
     comment_count: { type: Number, default: 0 },
     bookmark_count: { type: Number, default: 0 },
     category_slug: { type: String, required: true, index: true },
+    rejection_reason: { type: String },
   },
   { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } }
 );
