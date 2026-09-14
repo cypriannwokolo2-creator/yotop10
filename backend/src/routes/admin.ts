@@ -3486,6 +3486,36 @@ router.get('/posts/battles', async (req, res) => {
   }
 });
 
+// 24b. Admin get single post (any status) — for preview/edit
+// NOTE: must be registered after all specific GET /posts/* routes
+// (/posts/stats, /posts/export, /posts/compare, /posts/battles, /posts/pending)
+// otherwise Express would match id="stats"|"export"|"compare"|"battles"|"pending".
+router.get('/posts/:id', async (req, res) => {
+  try {
+    const { fields } = req.query;
+    const projection = typeof fields === 'string' && fields.trim() ? fields.split(',').join(' ') : '-__v';
+    const post = await Post.findById(req.params.id).select(projection).lean();
+    if (!post) return res.status(404).json({ code: 'NOT_FOUND', error: 'Post not found' });
+
+    const rawItems = await ListItem.find({ post_id: post._id })
+      .sort({ rank: 1 })
+      .select('rank title justification')
+      .lean();
+
+    const items = rawItems.map((item: Record<string, unknown>) => ({
+      id: (item._id as mongoose.Types.ObjectId).toString(),
+      rank: item.rank,
+      title: item.title,
+      justification: item.justification,
+    }));
+
+    res.json({ post: { ...post, items } });
+  } catch (error) {
+    console.error('Error fetching admin post:', error);
+    res.status(500).json({ code: 'SERVER_ERROR', error: 'Failed to fetch post' });
+  }
+});
+
 // ── Fingerprint Settings (super_admin only) ──
 
 router.get('/settings/fingerprint', async (req: any, res: any) => {

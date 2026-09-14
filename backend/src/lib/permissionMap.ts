@@ -60,6 +60,7 @@ export const ROUTE_PERMISSIONS: Record<string, string> = {
   'PATCH /posts/:id/items/:itemId': 'posts:edit',
   'POST /posts/:id/items': 'posts:edit',
   'DELETE /posts/:id/items/:itemId': 'posts:edit',
+  'GET /posts/:id': 'posts:read',
   'GET /posts/:id/activity': 'posts:read',
   'GET /posts/:id/revisions': 'posts:read',
   'GET /posts/compare': 'posts:read',

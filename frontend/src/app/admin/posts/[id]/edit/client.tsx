@@ -19,10 +19,9 @@ export default function EditPostClient() {
   useEffect(() => {
     (async () => {
       try {
-        const data = await apiFetch<{ post: EditPost }>(`/admin/posts/${postId}?fields=title,intro,post_type,category_slug,status,version`);
+        const data = await apiFetch<{ post: EditPost & { items?: Array<{ id: string; _id?: string; rank: number; title: string; justification: string }> } }>(`/admin/posts/${postId}?fields=title,intro,post_type,category_slug,status,version`);
         const p = data.post; setPost(p); setTitle(p.title); setIntro(p.intro || ''); setCategorySlug(p.category_slug);
-        const itemsData = await apiFetch<{ post: { items: Array<{ _id: string; rank: number; title: string; justification: string }> } }>(`/admin/posts/pending/${postId}`);
-        setItems(itemsData.post.items || []);
+        setItems((p.items || []).map(i => ({ _id: (i._id ?? (i as { id?: string }).id) as string, rank: i.rank, title: i.title, justification: i.justification })));
       } catch { setError('Failed to load post.'); }
       finally { setLoading(false); }
     })();
