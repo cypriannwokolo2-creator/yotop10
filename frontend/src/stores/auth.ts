@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { API } from '@/lib/api';
+import { solvePowChallenge } from '@/lib/proofOfWork';
 
 interface AuthUser {
   user_id: string;
@@ -43,12 +44,13 @@ export const useAuthStore = create<AuthState>((set) => {
       set({ user: data, loading: false, initialized: true });
     } catch (err) {
       // 425 = cookie exists but no identity yet — claim it explicitly once,
-      // solving the bot challenge first, then load. Identity is minted only
-      // here, never on reads.
+      // solving the proof-of-effort challenge first, then load. Identity is
+      // minted only here, never on reads.
       if (err instanceof Error && err.message.includes('425')) {
         try {
           const ch = await API.getChallenge();
-          await API.initIdentity(ch.challenge_id, ch.a + ch.b);
+          const nonce = await solvePowChallenge(ch.challenge_id, ch.difficulty);
+          await API.initIdentity(ch.challenge_id, nonce);
           const data = await API.getCurrentUser() as AuthUser;
           set({ user: data, loading: false, initialized: true });
           return;
@@ -83,11 +85,12 @@ export const useAuthStore = create<AuthState>((set) => {
         localStorage.setItem('yotop10_fp', uniqueFp);
       } catch { /* fingerprint failed — try without it */ }
 
-      // Claim the fresh identity explicitly (challenge first), then load it
+      // Claim the fresh identity explicitly (proof-of-effort first), then load it
       set({ user: null, loading: false, initialized: false });
       try {
         const ch = await API.getChallenge();
-        await API.initIdentity(ch.challenge_id, ch.a + ch.b);
+        const nonce = await solvePowChallenge(ch.challenge_id, ch.difficulty);
+        await API.initIdentity(ch.challenge_id, nonce);
         const data = await API.getCurrentUser() as AuthUser;
         set({ user: data, initialized: true });
         const { toast } = await import('@/lib/toast');

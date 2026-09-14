@@ -105,16 +105,15 @@ describe('ShareButton', () => {
     });
   });
 
-  it('calls API.trackShare after click', async () => {
+  it('does not track a share on modal open (copy counts, opening does not)', async () => {
     mockTrackShare.mockResolvedValue({ success: true });
 
     render(<ShareButton slug="test-post" title="Test Post" postId="post123" />);
 
     fireEvent.click(screen.getByRole('button'));
 
-    await waitFor(() => {
-      expect(mockTrackShare).toHaveBeenCalledWith('test-post');
-    });
+    await screen.findByText('Copy');
+    expect(mockTrackShare).not.toHaveBeenCalled();
   });
 
   it('shows error toast when clipboard fails', async () => {
@@ -154,18 +153,13 @@ describe('ShareButton', () => {
     });
   });
 
-  it('disables button while pending', async () => {
-    mockTrackShare.mockImplementation(
-      () => new Promise(() => { /* never resolves */ })
-    );
-
+  it('stays enabled after click (no pending state on open)', async () => {
     render(<ShareButton slug="test-post" title="Test Post" postId="post123" />);
 
     const button = screen.getByRole('button');
     fireEvent.click(button);
 
-    await waitFor(() => {
-      expect(button).toBeDisabled();
-    });
+    await screen.findByText('Copy');
+    expect(button).not.toBeDisabled();
   });
 });
