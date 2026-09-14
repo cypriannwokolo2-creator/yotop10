@@ -91,8 +91,11 @@ Hardcoded JWT, orphaned setInterval, $regex injection, stub 200s, health check o
   rotation of the exposed nabbed identity (seamless via alias); cross-user-only demotion with audit
   receipts. DB surgery: 20 bot + 11 test accounts removed (zero content each, verified first),
   3 ghost-authored seed posts re-homed, admin password rotated + sessions killed (old pw 401s).
-  Users: exactly 3 legit remain. Backend typecheck ✅ lint ✅ tests ✅ 674 passed. Frontend
-  typecheck ✅ lint ✅ **build ✅ EXIT 0, zero errors**.
+  Users: exactly 3 legit remain. Admin password rotated + sessions killed (old pw 401s).
+  Follow-up M20.4: refused to merge the "stranger" account (its fingerprint is a hand-set bot
+  value looping re-mints — merging would have armed it with the cutie identity); deleted it and
+  denied the value instead (403 on mint, grace-heal on reads). Backend typecheck ✅ lint ✅
+  tests ✅ 674 passed. Frontend typecheck ✅ lint ✅ **build ✅ EXIT 0, zero errors**.
 - **Profile hydration (M18.6)** — `/a/cutie` hydration mismatch traced to a STALE cached app-page
   chunk in the browser (old `md:hidden` mobile-wrapper bundle hydrating fresh server HTML; the served
   chunk and server HTML were verified fresh and matching). Immediate fix for the viewer: hard refresh.
