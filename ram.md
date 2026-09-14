@@ -113,7 +113,12 @@ Hardcoded JWT, orphaned setInterval, $regex injection, stub 200s, health check o
   (young + untrusted), correct behavior; rename form now shows the server's real reason instead
   of a generic failure. Missing seed images regenerated locally (gradient covers, exact
   filenames) — all 4 serve 200. Bio placeholder rewritten to invite a real bio. Frontend
-  typecheck ✅ lint ✅ build ✅ EXIT 0. Frontend typecheck ✅ lint ✅ **build ✅ EXIT 0, zero errors**.
+  typecheck ✅ lint ✅ build ✅ EXIT 0.
+- **M22.1 (2026-09-14)** — seed posts use the standard imageless background (DB refs nulled,
+  generated covers removed — no fake art). Bot still trickling (~1/min, PoW-bound): 3 more
+  removed, mint limits tightened to 5/hr/IP, their rename attempts blocked by the maturity lock
+  (the 403s in logs are the bot's, not the owner's — cutie is mature and exempt). Rename form
+  now surfaces validation messages too. Frontend typecheck ✅ lint ✅ **build ✅ EXIT 0, zero errors**.
 - **Profile hydration (M18.6)** — `/a/cutie` hydration mismatch traced to a STALE cached app-page
   chunk in the browser (old `md:hidden` mobile-wrapper bundle hydrating fresh server HTML; the served
   chunk and server HTML were verified fresh and matching). Immediate fix for the viewer: hard refresh.
