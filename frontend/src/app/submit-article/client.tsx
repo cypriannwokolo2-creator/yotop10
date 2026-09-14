@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { API } from '@/lib/api';
 import type { ArticleSubmission } from '@/lib/api/types';
 import { Icon } from '@/components/icons/Icon';
@@ -22,6 +22,7 @@ interface FormErrors {
 }
 
 export default function SubmitArticleClient() {
+  const router = useRouter();
   const idCounter = useRef(0);
   const generateId = () => `source-${++idCounter.current}`;
 
@@ -33,7 +34,6 @@ export default function SubmitArticleClient() {
   const [coverImage, setCoverImage] = useState('');
   const [sources, setSources] = useState<SourceField[]>([]);
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
   const validate = useCallback((): boolean => {
@@ -101,7 +101,8 @@ export default function SubmitArticleClient() {
 
     try {
       await API.submitArticle(payload);
-      setSubmitted(true);
+      const params = new URLSearchParams({ title: title.trim(), type: 'article' });
+      router.push(`/pending?${params.toString()}`);
     } catch (e) {
       const msg = e instanceof Error ? e.message : '';
       let body: unknown = null;
@@ -117,43 +118,6 @@ export default function SubmitArticleClient() {
       setSubmitting(false);
     }
   };
-
-  if (submitted) {
-    return (
-      <main className="mx-auto min-h-screen max-w-2xl px-4 py-12 sm:px-6 lg:py-16">
-        <div className="rounded-2xl border border-white/5 bg-white/5 p-8 text-center backdrop-blur-xl sm:p-12">
-          <Icon name="Check" size={48} className="mx-auto mb-4 text-emerald-400" />
-          <h1 className="font-display text-2xl text-white">Article Submitted</h1>
-          <p className="mt-3 text-zinc-400">
-            Your article has been submitted for review. We&apos;ll notify you once it&apos;s published.
-          </p>
-          <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-            <Link
-              href="/articles"
-              className="rounded-xl bg-gradient-to-r from-orange-500 to-red-600 px-6 py-3 text-sm font-bold text-white transition hover:opacity-90"
-            >
-              View all articles
-            </Link>
-            <button
-              onClick={() => {
-                setSubmitted(false);
-                setTitle('');
-                setBody('');
-                setCategorySlug('');
-                setCoverImage('');
-                setSources([]);
-                setErrors({});
-                setError(null);
-              }}
-              className="rounded-xl border border-white/10 bg-white/5 px-6 py-3 text-sm text-zinc-400 backdrop-blur-xl transition hover:border-white/20 hover:text-white"
-            >
-              Submit another
-            </button>
-          </div>
-        </div>
-      </main>
-    );
-  }
 
   return (
     <main className="mx-auto min-h-screen max-w-2xl px-4 py-12 sm:px-6 lg:py-16">

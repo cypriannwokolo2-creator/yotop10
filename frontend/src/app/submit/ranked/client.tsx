@@ -2,12 +2,10 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { API, PostSubmission, TitleCheckResponse } from '@/lib/api';
 import { Icon } from '@/components/icons/Icon';
 import { ImageUploader } from '@/components/ImageUploader';
-import { useAuthStore } from '@/stores/auth';
-import { toast } from '@/lib/toast';
-import { toPublicSlug } from '@/lib/username';
 import CategoryPickerModal from '@/components/CategoryPickerModal';
 import { getCategoryPath } from '@/lib/categories';
 
@@ -48,7 +46,6 @@ interface FormErrors {
   title?: string;
   intro?: string;
   items?: string;
-  author_display_name?: string;
   titleSimilarity?: string;
 }
 
@@ -58,7 +55,6 @@ interface DraftData {
   title?: string;
   intro?: string;
   items?: Array<{ title: string; justification: string; source_url: string; image_url: string }>;
-  author_display_name?: string;
   savedAt: number;
 }
 
@@ -71,6 +67,7 @@ const debounce = <T extends unknown[]>(fn: (...args: T) => void, ms: number) => 
 };
 
 export default function RankedSubmitClient({ initialType, parentSlug }: { initialType?: 'top_list' | 'best_of' | 'worst_of' | 'counter_list'; parentSlug?: string }) {
+  const router = useRouter();
   const idCounter = useRef(0);
   const generateId = () => `item-${++idCounter.current}`;
 
@@ -89,10 +86,8 @@ export default function RankedSubmitClient({ initialType, parentSlug }: { initia
     { id: generateId(), rank: 2, title: '', justification: '', source_url: '', image_url: '' },
     { id: generateId(), rank: 3, title: '', justification: '', source_url: '', image_url: '' },
   ]);
-  const [authorName, setAuthorName] = useState('');
-
-  const formDataRef = useRef({ postType, categorySlug, title, intro, items, authorName });
-  formDataRef.current = { postType, categorySlug, title, intro, items, authorName };
+  const formDataRef = useRef({ postType, categorySlug, title, intro, items });
+  formDataRef.current = { postType, categorySlug, title, intro, items };
 
   const saveTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
@@ -111,13 +106,6 @@ export default function RankedSubmitClient({ initialType, parentSlug }: { initia
   } | null>(null);
 
   const [heroImageUrl, setHeroImageUrl] = useState('');
-  const [submitted, setSubmitted] = useState<{
-    title: string;
-    id: string;
-    status: string;
-    itemCount: number;
-    username?: string;
-  } | null>(null);
 
   useEffect(() => {
     API.getCategories()
@@ -145,7 +133,6 @@ export default function RankedSubmitClient({ initialType, parentSlug }: { initia
             while (restored.length < MIN_ITEMS) restored.push({ id: generateId(), rank: restored.length + 1, title: '', justification: '', source_url: '', image_url: '' });
             setItems(restored);
           }
-          if (data.author_display_name) setAuthorName(data.author_display_name);
         } else {
           localStorage.removeItem(DRAFT_KEY);
         }
@@ -159,27 +146,27 @@ export default function RankedSubmitClient({ initialType, parentSlug }: { initia
   const saveDraft = useCallback(() => {
     clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(() => {
-      const { categorySlug: cat, title: t, intro: i, items: it, authorName: a } = formDataRef.current;
-      if (!t && !i && !it.some(item => item.title || item.justification) && !a) return;
+      const { categorySlug: cat, title: t, intro: i, items: it } = formDataRef.current;
+      if (!t && !i && !it.some(item => item.title || item.justification)) return;
       const draft: DraftData = {
         category_slug: cat || undefined, title: t || undefined, intro: i || undefined,
         items: it.map(({ title, justification, source_url, image_url }) => ({ title, justification, source_url, image_url })),
-        author_display_name: a || undefined, savedAt: Date.now(),
+        savedAt: Date.now(),
       };
       localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
     }, 1000);
   }, []);
 
-  useEffect(() => { saveDraft(); }, [categorySlug, title, intro, items, authorName, saveDraft]);
+  useEffect(() => { saveDraft(); }, [categorySlug, title, intro, items, saveDraft]);
 
   useEffect(() => {
     const flush = () => {
-      const { categorySlug: cat, title: t, intro: i, items: it, authorName: a } = formDataRef.current;
-      if (!t && !i && !it.some(item => item.title || item.justification) && !a) return;
+      const { categorySlug: cat, title: t, intro: i, items: it } = formDataRef.current;
+      if (!t && !i && !it.some(item => item.title || item.justification)) return;
       localStorage.setItem(DRAFT_KEY, JSON.stringify({
         category_slug: cat || undefined, title: t || undefined, intro: i || undefined,
         items: it.map(({ title, justification, source_url, image_url }) => ({ title, justification, source_url, image_url })),
-        author_display_name: a || undefined, savedAt: Date.now(),
+        savedAt: Date.now(),
       }));
     };
     window.addEventListener('beforeunload', flush);
@@ -215,7 +202,6 @@ export default function RankedSubmitClient({ initialType, parentSlug }: { initia
         if (postType === 'top_list' || postType === 'counter_list') { const f = validateListTitle(value); if (!f.valid) return f.error; }
         return undefined;
       case 'intro': return postType === 'counter_list' ? undefined : (!value ? 'Introduction is required' : value.length > 2000 ? 'Introduction must be less than 2000 characters' : undefined);
-      case 'author_display_name': return value && value.length > 50 ? 'Name must be less than 50 characters' : undefined;
       default: return undefined;
     }
   };
@@ -238,7 +224,6 @@ export default function RankedSubmitClient({ initialType, parentSlug }: { initia
     const te = validateField('title', title); if (te) newErrors.title = te;
     const ie = validateField('intro', intro); if (ie) newErrors.intro = ie;
     const ve = validateItems(); if (ve) newErrors.items = ve;
-    const ae = validateField('author_display_name', authorName); if (ae) newErrors.author_display_name = ae;
     if (titleCheck?.blocked) newErrors.titleSimilarity = 'This list already exists. Please choose a different title.';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -304,19 +289,16 @@ export default function RankedSubmitClient({ initialType, parentSlug }: { initia
         const submission: PostSubmission = {
           title, post_type: postType, intro, category_slug: categorySlug, hero_image_url: heroImageUrl || undefined, format: heroImageUrl ? 'hero_list' as const : undefined,
           items: items.map((item, idx) => ({ rank: idx + 1, title: item.title, justification: item.justification, image_url: item.image_url || undefined, source_url: item.source_url || undefined })),
-          author_display_name: authorName || undefined,
         };
         response = await API.addPost(submission);
       }
 
       localStorage.removeItem(DRAFT_KEY);
-      const authUser = useAuthStore.getState().user;
       const p = response.post as Record<string, string> | undefined;
-      setSubmitted({
-        title: p?.title || title, id: p?.id || '', status: p?.status || 'pending_review',
-        itemCount: (response.items as Array<unknown>)?.length || items.length, username: authUser?.username || '',
-      });
-      toast.success('Post submitted! It\'s now pending review.');
+      const pendingId = p?.id || '';
+      const params = new URLSearchParams({ title: p?.title || title, type: postType });
+      if (pendingId) params.set('id', pendingId);
+      router.push(`/pending?${params.toString()}`);
     } catch (err: unknown) {
       console.error('Submit failed:', err);
       const msg = err instanceof Error ? err.message : '';
@@ -333,42 +315,6 @@ export default function RankedSubmitClient({ initialType, parentSlug }: { initia
       else setErrors({ title: msg || 'Failed to submit post.' });
     } finally { setSubmitting(false); }
   };
-
-  if (submitted) {
-    return (
-      <div className="mx-auto max-w-3xl px-3 py-8 sm:px-6 sm:py-12">
-        <div className="rounded-2xl border border-green-500/30 bg-white/5 p-6 text-center backdrop-blur-sm sm:p-10">
-          <h1 className="mb-3 flex items-center justify-center gap-2 text-2xl font-bold text-green-400">
-            <Icon name="Check" size={24} color="#4ade80" /> Post submitted!
-          </h1>
-          <p className="mb-4 text-base text-white sm:text-lg">Your list is now pending review.</p>
-          <div className="my-6 rounded-xl bg-white/5 p-5 text-left">
-            <p className="text-white"><strong className="text-white">Title:</strong> {submitted.title}</p>
-            <p className="text-white"><strong className="text-white">Status:</strong> <span className="inline-block rounded-lg bg-orange-500/10 px-2 py-0.5 text-sm text-orange-400">Pending Review</span></p>
-            <p className="text-white"><strong className="text-white">Items:</strong> {submitted.itemCount} items</p>
-          </div>
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
-            {submitted.username && (
-              <Link href={`/a/${toPublicSlug(submitted.username)}`} className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-pink-500 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-orange-500/25 transition hover:shadow-xl active:scale-[0.98]">
-                View My Profile
-              </Link>
-            )}
-            <button onClick={() => { setSubmitted(null); setTitle('Top 10 '); setIntro('');
-              setItems([{ id: generateId(), rank: 1, title: '', justification: '', source_url: '', image_url: '' },
-                { id: generateId(), rank: 2, title: '', justification: '', source_url: '', image_url: '' },
-                { id: generateId(), rank: 3, title: '', justification: '', source_url: '', image_url: '' }]);
-              setAuthorName(''); localStorage.removeItem(DRAFT_KEY);
-            }} className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-pink-500 px-6 py-3 text-sm font-bold text-white shadow-lg transition hover:shadow-xl active:scale-[0.98]">
-              Submit Another
-            </button>
-            <Link href="/" className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-6 py-3 text-sm font-semibold text-zinc-300 backdrop-blur-sm transition hover:border-white/20 hover:bg-white/10">
-              Go to Feed
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   const typeHelp: Record<string, { title: string; tip: string; color: string }> = {
     top_list: { title: 'Submit a Ranked List', tip: 'Rank items from best to worst. Title must contain a number and ranking keyword (e.g. "Top 10", "Best 5").', color: 'border-orange-500/20 bg-orange-500/5 text-orange-400' },
@@ -511,15 +457,6 @@ export default function RankedSubmitClient({ initialType, parentSlug }: { initia
         </div>
 
         <ImageUploader currentUrl={heroImageUrl} onUpload={setHeroImageUrl} label="Cover Image (optional)" />
-
-        <div>
-          <label htmlFor="author" className="mb-1 block text-xs font-medium text-zinc-400">Display Name <span className="text-zinc-600">(optional)</span></label>
-          <input id="author" type="text" value={authorName} onChange={e => { setAuthorName(e.target.value); clearError('author_display_name'); }}
-            maxLength={50} placeholder="Leave blank for auto-generated username"
-            className={`w-full rounded-xl bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:outline-none ${errors.author_display_name ? 'border-2 border-red-400' : 'border border-white/10 focus:border-orange-500/50'}`}
-          />
-          {errors.author_display_name && <div className="mt-1 text-xs text-red-400">{errors.author_display_name}</div>}
-        </div>
 
         {(() => {
           const entries = Object.entries(errors).filter(([, v]) => Boolean(v) && String(v).trim().length > 0) as Array<[string, string]>;

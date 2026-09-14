@@ -9,7 +9,9 @@ services:
       - "8100:8000"
     environment:
       - NODE_ENV=development
-      - CORS_ORIGINS=http://localhost:3100
+      - CORS_ORIGINS=https://yotop10.com,https://www.yotop10.com
+      - NEXT_PUBLIC_API_URL=https://yotop10.com/api
+      - NEXT_PUBLIC_SITE_URL=https://yotop10.com
       - MONGODB_URI=mongodb://mongodb:27017/yotop10
       - MONGO_HOST=mongodb
       - MONGO_PORT=27017
@@ -21,7 +23,7 @@ services:
       - ELASTICSEARCH_URL=http://elasticsearch:9200
       - ES_PASSWORD=${ES_PASSWORD}
       - JWT_SECRET=${JWT_SECRET}
-      - INTERNAL_API_URL=http://localhost:8000/api
+      - INTERNAL_API_URL=http://yotop10_dev:8000/api
     volumes:
       - ./backend/src:/app/backend/src
       - ./frontend/src:/app/frontend/src
@@ -38,13 +40,6 @@ services:
       - yotop10_backend_net
     extra_hosts:
       - "yotop10.fun:host-gateway"
-    depends_on:
-      mongodb:
-        condition: service_started
-      redis:
-        condition: service_started
-      elasticsearch:
-        condition: service_healthy
 
 volumes:
   next_cache:
@@ -52,7 +47,7 @@ volumes:
 networks:
   yotop10_frontend_net:
     external: true
-    name: yotop10_frontend_net
+    name: yotop10prod_frontend_net
   yotop10_backend_net:
     external: true
-    name: yotop10_backend_net
+    name: yotop10prod_backend_net

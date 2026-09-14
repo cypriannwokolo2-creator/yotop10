@@ -25,11 +25,6 @@ services:
       - /var/log/nginx:/var/log/nginx
     networks:
       - frontend_net
-    depends_on:
-      frontend:
-        condition: service_healthy
-      backend:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "nginx", "-t"]
       interval: 30s

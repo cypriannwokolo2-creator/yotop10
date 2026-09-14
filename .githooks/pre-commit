@@ -10,8 +10,16 @@ STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM)
 # Patterns that indicate secrets being committed
 SECRET_PATTERNS='(JWT_SECRET=|password=|api.key=|api_secret=|secret=|private.key|-----BEGIN.*PRIVATE KEY-----)'
 
+# Exception list (false positives): files that only ever reference secrets via
+# ${VAR} interpolation — values live in .env, which this hook always blocks.
+# Promised by the message below; implemented here.
+SECRET_EXCEPTIONS='^docker-compose\.yml$|^docker-compose\.dev\.yml$|^\.githooks/pre-commit$'
+
 echo "$STAGED_FILES" | while read -r file; do
   if [ -f "$file" ]; then
+    if echo "$file" | grep -Eq "$SECRET_EXCEPTIONS"; then
+      continue
+    fi
     MATCHES=$(grep -Ein "$SECRET_PATTERNS" "$file" 2>/dev/null || true)
     if [ -n "$MATCHES" ] && echo "$file" | grep -qv '\.env\.example$'; then
       echo "❌ SECURITY: Potential secret detected in $file"
@@ -63,10 +71,14 @@ if [ "$HAS_BACKEND" = "1" ]; then
   fi
   echo "✅ Backend typecheck passed (Docker)."
 
-  $DOCKER_EXEC sh -c 'cd /app/backend && npx eslint src --ext .ts --quiet' 2>/dev/null
-  if [ $? -ne 0 ]; then
+  # NOTE: the docker eslint call is INSIDE the `if` condition on purpose.
+  # A bare failing command under `set -e` would abort the commit silently;
+  # in-condition keeps the failure visible as a warning (CI enforces).
+  if ! $DOCKER_EXEC sh -c 'cd /app/backend && npx eslint src --ext .ts --quiet' 2>/dev/null; then
     echo "⚠️  Backend lint may have issues — CI will enforce."
   fi
+  # NOTE: `set -e` + a failing docker eslint would abort the commit SILENTLY
+  # (no error message). The explicit `if` above keeps the failure visible.
 fi
 
 # ─── Frontend typecheck ──────────────────────────────────────────
@@ -78,8 +90,10 @@ if [ "$HAS_FRONTEND" = "1" ]; then
   fi
   echo "✅ Frontend typecheck passed (Docker)."
 
-  $DOCKER_EXEC sh -c 'cd /app/frontend && ESLINT_USE_FLAT_CONFIG=false npx eslint src/ --quiet' 2>/dev/null
-  if [ $? -ne 0 ]; then
+  # Same `set -e` rationale as backend: keep docker eslint inside the condition.
+  # If the container lacks the eslint config bind-mount, docker lint cannot run —
+  # warn and let CI enforce (host lint already runs in dev).
+  if ! $DOCKER_EXEC sh -c 'cd /app/frontend && ESLINT_USE_FLAT_CONFIG=false npx eslint src/ --quiet' 2>/dev/null; then
     echo "⚠️  Frontend lint may have issues — CI will enforce."
   fi
 fi

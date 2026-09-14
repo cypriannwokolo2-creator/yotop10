@@ -2,17 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/icons/Icon';
 import { API } from '@/lib/api';
-import { toast } from '@/lib/toast';
 
 const FACT_DRAFT_KEY = 'yotop10_fact_draft';
 
 export default function FactClient() {
+  const router = useRouter();
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [sourceUrl, setSourceUrl] = useState('');
-  const [authorName, setAuthorName] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,7 +26,6 @@ export default function FactClient() {
           if (d.title) setTitle(d.title);
           if (d.body) setBody(d.body);
           if (d.sourceUrl) setSourceUrl(d.sourceUrl);
-          if (d.authorName) setAuthorName(d.authorName);
         } else {
           localStorage.removeItem(FACT_DRAFT_KEY);
         }
@@ -37,11 +36,11 @@ export default function FactClient() {
   // Save draft on change
   useEffect(() => {
     const timeout = setTimeout(() => {
-      const data = { title, body, sourceUrl, authorName, savedAt: Date.now() };
+      const data = { title, body, sourceUrl, savedAt: Date.now() };
       localStorage.setItem(FACT_DRAFT_KEY, JSON.stringify(data));
     }, 800);
     return () => clearTimeout(timeout);
-  }, [title, body, sourceUrl, authorName]);
+  }, [title, body, sourceUrl]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,15 +62,15 @@ export default function FactClient() {
         intro: body,
         category_slug: 'education',
         items: [{ rank: 1, title: title, justification: body, source_url: sourceUrl }],
-        author_display_name: authorName || undefined,
       }) as { post?: { id: string; title: string; status: string; slug?: string } };
 
       localStorage.removeItem(FACT_DRAFT_KEY);
-      const slug = response.post?.slug || '';
 
       setSubmitting(false);
-      toast.success('Fact submitted! It\'s now pending review.');
-      window.location.href = `/${slug}`;
+      const post = response.post;
+      const params = new URLSearchParams({ title: post?.title || title, type: 'fact_drop' });
+      if (post?.id) params.set('id', post.id);
+      router.push(`/pending?${params.toString()}`);
     } catch (err) {
       setSubmitting(false);
       const msg = err instanceof Error ? err.message : '';
@@ -142,15 +141,6 @@ export default function FactClient() {
             className="w-full rounded-xl bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:outline-none border border-white/10 focus:border-pink-500/50"
           />
           <p className="mt-1 text-3xs text-zinc-600">Facts require a verifiable source for credibility.</p>
-        </div>
-
-        {/* Author */}
-        <div>
-          <label htmlFor="fact-author" className="mb-1 block text-xs font-medium text-zinc-400">Display Name <span className="text-zinc-600">(optional)</span></label>
-          <input id="fact-author" type="text" value={authorName} onChange={e => setAuthorName(e.target.value)} maxLength={50}
-            placeholder="Leave blank for auto-generated username"
-            className="w-full rounded-xl bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:outline-none border border-white/10 focus:border-pink-500/50"
-          />
         </div>
 
         {/* Error */}

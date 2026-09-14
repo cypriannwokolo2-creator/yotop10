@@ -2,15 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/icons/Icon';
 import { API } from '@/lib/api';
-import { toast } from '@/lib/toast';
 import CategoryPickerModal from '@/components/CategoryPickerModal';
 import { getCategoryPath } from '@/lib/categories';
 
 const DEBATE_DRAFT_KEY = 'yotop10_debate_draft';
 
 export default function DebateClient() {
+  const router = useRouter();
   const [title, setTitle] = useState('');
   const [categorySlug, setCategorySlug] = useState('');
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -20,7 +21,6 @@ export default function DebateClient() {
   const [sideB, setSideB] = useState('');
   const [sideBJustification, setSideBJustification] = useState('');
   const [sideBSource, setSideBSource] = useState('');
-  const [authorName, setAuthorName] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,7 +41,6 @@ export default function DebateClient() {
           if (d.sideB) setSideB(d.sideB);
           if (d.sideBJustification) setSideBJustification(d.sideBJustification);
           if (d.sideBSource) setSideBSource(d.sideBSource);
-          if (d.authorName) setAuthorName(d.authorName);
         } else {
           localStorage.removeItem(DEBATE_DRAFT_KEY);
         }
@@ -52,11 +51,11 @@ export default function DebateClient() {
   // Save draft on change
   useEffect(() => {
     const timeout = setTimeout(() => {
-      const data = { title, categorySlug, sideA, sideAJustification, sideASource, sideB, sideBJustification, sideBSource, authorName, savedAt: Date.now() };
+      const data = { title, categorySlug, sideA, sideAJustification, sideASource, sideB, sideBJustification, sideBSource, savedAt: Date.now() };
       localStorage.setItem(DEBATE_DRAFT_KEY, JSON.stringify(data));
     }, 800);
     return () => clearTimeout(timeout);
-  }, [title, categorySlug, sideA, sideAJustification, sideASource, sideB, sideBJustification, sideBSource, authorName]);
+  }, [title, categorySlug, sideA, sideAJustification, sideASource, sideB, sideBJustification, sideBSource]);
 
   useEffect(() => {
     API.getCategories()
@@ -86,19 +85,15 @@ export default function DebateClient() {
           { rank: 1, title: sideA, justification: sideAJustification, source_url: sideASource || undefined },
           { rank: 2, title: sideB, justification: sideBJustification, source_url: sideBSource || undefined },
         ],
-        author_display_name: authorName || undefined,
       });
-      const slug = (response as { post?: { slug?: string } }).post?.slug || '';
+      const post = (response as { post?: { id?: string; title?: string } }).post;
 
       localStorage.removeItem(DEBATE_DRAFT_KEY);
       setSubmitting(false);
 
-      if (slug) {
-        toast.success('Debate submitted! It\'s now pending review.');
-        window.location.href = `/${slug}`;
-      } else {
-        setError('Debate was created but could not determine the URL. Check your pending posts.');
-      }
+      const params = new URLSearchParams({ title: post?.title || title, type: 'this_vs_that' });
+      if (post?.id) params.set('id', post.id);
+      router.push(`/pending?${params.toString()}`);
     } catch (err) {
       setSubmitting(false);
       const msg = err instanceof Error ? err.message : '';
@@ -207,15 +202,6 @@ export default function DebateClient() {
               className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-xs text-zinc-400 placeholder:text-zinc-600 focus:outline-none focus:border-blue-500/50"
             />
           </div>
-        </div>
-
-        {/* Author */}
-        <div>
-          <label htmlFor="debate-author" className="mb-1 block text-xs font-medium text-zinc-400">Display Name <span className="text-zinc-600">(optional)</span></label>
-          <input id="debate-author" type="text" value={authorName} onChange={e => setAuthorName(e.target.value)} maxLength={50}
-            placeholder="Leave blank for auto-generated username"
-            className="w-full rounded-xl bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:outline-none border border-white/10 focus:border-purple-500/50"
-          />
         </div>
 
         {/* Error */}
