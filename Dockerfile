@@ -8,7 +8,7 @@ WORKDIR /app
 COPY pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY frontend/package.json ./frontend/
 COPY backend/package.json ./backend/
-RUN pnpm install --frozen-lockfile --config.dangerously-allow-all-builds=true
+RUN pnpm install --frozen-lockfile
 
 # Build stage
 FROM base AS builder

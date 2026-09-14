@@ -7,7 +7,7 @@ on:
       - develop
 
 jobs:
-  deploy:
+  build-and-push:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -43,17 +43,3 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-
-      - name: Deploy to Server via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          script: |
-            cd /home/o4ainnovations/yotop10
-            git config --global --add safe.directory /home/o4ainnovations/yotop10
-            git fetch origin
-            git reset --hard origin/main
-            docker compose pull
-            docker compose up -d
