@@ -12,7 +12,7 @@ import { calculateEffectivePostLimit, calculateEffectiveCommentLimit, RateLimitS
 import { getCategoryNameMap } from '../lib/categoryCache';
 import { checkAndPromoteUser } from '../lib/trustScore';
 import { redis, atomicCheckRateLimit } from '../lib/redis';
-import { findUserByFingerprint, createUserForFingerprint, getClientIp, isLowEntropyFingerprint, isCookieBound } from '../middleware/fingerprint';
+import { findUserByFingerprint, createUserForFingerprint, getClientIp, isLowEntropyFingerprint, isCookieBound, isDeniedFingerprint } from '../middleware/fingerprint';
 import { issueChallenge, verifyChallenge } from '../lib/botChallenge';
 import { initIdentitySchema } from '../schemas/identity';
 import { toShortUsername, toCustomShort, toDefaultShort, isDefaultFormat } from '../lib/username';
@@ -148,6 +148,9 @@ router.post('/init', async (req, res) => {
       (req.headers['x-device-fingerprint'] as string | undefined);
     if (!fingerprint) {
       return res.status(425).json({ error: 'Fingerprint not initialized. Please retry.', retry_after: 1 });
+    }
+    if (isDeniedFingerprint(fingerprint)) {
+      return res.status(403).json({ error: 'Identity blocked for abuse. Clear site data and retry.' });
     }
     const ip = getClientIp(req);
     const rl = await atomicCheckRateLimit(`rl:init:${ip}`, 3600000, 20);

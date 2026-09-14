@@ -40,6 +40,19 @@ export const isCookieBound = (req: Request): boolean => req.fingerprintSource ==
  */
 export const isLowEntropyFingerprint = (fp: string): boolean => /^0{6,}[0-9a-f]*$/i.test(fp);
 
+/**
+ * Denied fingerprints: values proven to be hand-set by abuse scripts (wrong
+ * format for any generator in this codebase, seen re-minting in a loop).
+ * Presented values are ignored entirely — the request falls through to the
+ * grace path and receives a fresh cookie, which also heals poisoned browsers.
+ */
+const DENIED_FINGERPRINTS = new Set([
+  '000000000f6f92bf', // bot script static value, loop-minted 2026-09-14
+]);
+
+export const isDeniedFingerprint = (fp: string | undefined): boolean =>
+  !!fp && DENIED_FINGERPRINTS.has(fp);
+
 const generateFingerprint = (): string => crypto.randomBytes(16).toString('hex');
 
 const setIdentityCookie = (res: Response, fingerprint: string): void => {
@@ -168,8 +181,11 @@ export async function createUserForFingerprint(
  * anonymous requests flow through without `req.user`.
  */
 export const fingerprintMiddleware = async (req: Request, res: Response, next: NextFunction) => {
-  const headerFingerprint = req.headers['x-device-fingerprint'] as string | undefined;
-  const cookieFingerprint = req.cookies?.device_fingerprint as string | undefined;
+  const rawHeader = req.headers['x-device-fingerprint'] as string | undefined;
+  const rawCookie = req.cookies?.device_fingerprint as string | undefined;
+  // Denied values are dropped before anything else: neither resolved nor minted.
+  const headerFingerprint = isDeniedFingerprint(rawHeader) ? undefined : rawHeader;
+  const cookieFingerprint = isDeniedFingerprint(rawCookie) ? undefined : rawCookie;
 
   // Bootstrap endpoints own their minting (bot challenge lives in the route).
   // The middleware MUST stay read-only here, or it would mint before the
