@@ -13,8 +13,9 @@ import { getCategoryNameMap } from '../lib/categoryCache';
 import { checkAndPromoteUser } from '../lib/trustScore';
 import { redis, atomicCheckRateLimit } from '../lib/redis';
 import { findUserByFingerprint, createUserForFingerprint, getClientIp, isLowEntropyFingerprint, isCookieBound, isDeniedFingerprint } from '../middleware/fingerprint';
-import { issueChallenge, verifyChallenge } from '../lib/botChallenge';
+import { issuePowChallenge, verifyPowChallenge } from '../lib/proofOfWork';
 import { initIdentitySchema } from '../schemas/identity';
+import { isIdentityMature } from '../lib/identityMaturity';
 import { toShortUsername, toCustomShort, toDefaultShort, isDefaultFormat } from '../lib/username';
 
 const router: Router = Router();
@@ -110,8 +111,8 @@ router.get('/me', async (req, res) => {
 
 /**
  * M11.A1: GET /api/users/challenge
- * Issues a simple bot challenge ({challenge_id, a, b}) that POST /init must
- * solve (answer a + b). Public. Rate-limited per IP to prevent store flooding.
+ * Issues a proof-of-effort challenge ({challenge_id, difficulty}) that POST
+ * /init must solve with a valid nonce. Public. Rate-limited per IP.
  */
 router.get('/challenge', async (req, res) => {
   try {
@@ -120,7 +121,7 @@ router.get('/challenge', async (req, res) => {
     if (!rl.allowed) {
       return res.status(429).json({ error: 'Too many challenges. Slow down.' });
     }
-    return res.json(await issueChallenge());
+    return res.json(await issuePowChallenge());
   } catch (error) {
     console.error('GET /users/challenge error:', error);
     return res.status(500).json({ error: 'Failed to issue challenge' });
@@ -130,25 +131,22 @@ router.get('/challenge', async (req, res) => {
 /**
  * M11.A2: POST /api/users/init
  * Explicit identity bootstrap — the ONLY read-safe way to mint an identity.
- * The middleware never creates users on reads, so fresh visitors call this
- * once (single-flight from AuthInitializer) to claim their cookie identity.
- * Requires a solved bot challenge {challenge_id, answer} when minting ONLY
- * when no identity exists yet — recovery of a known identity needs no challenge.
+ * Minting requires the cookie this site previously issued (proof of a real
+ * ongoing visit — one-shot scripts carry none) PLUS a solved proof-of-effort
+ * challenge. Recovery of a known identity needs no challenge.
  * Public. Returns the user summary, same shape as GET /me core fields.
  */
 router.post('/init', async (req, res) => {
   try {
-    // Only a client-presented fingerprint (cookie or header) may mint an
-    // identity. req.fingerprint is ignored here on purpose: when the request
-    // carries no identity the middleware fills it with a fresh grace value,
-    // and that must NEVER be minted — otherwise any anonymous hit could
-    // create junk users.
-    const fingerprint =
-      (req.cookies?.device_fingerprint as string | undefined) ||
-      (req.headers['x-device-fingerprint'] as string | undefined);
-    if (!fingerprint) {
-      return res.status(425).json({ error: 'Fingerprint not initialized. Please retry.', retry_after: 1 });
+    // The identity is bound to the cookie we issued, never to a bare header:
+    // when the request carries no identity the middleware fills req.fingerprint
+    // with a fresh grace value, and that must NEVER be minted — otherwise any
+    // anonymous hit could create junk users.
+    const cookieFp = req.cookies?.device_fingerprint as string | undefined;
+    if (!cookieFp) {
+      return res.status(428).json({ error: 'Confirm this device first: reload the page once, then retry.' });
     }
+    const fingerprint = cookieFp;
     if (isDeniedFingerprint(fingerprint)) {
       return res.status(403).json({ error: 'Identity blocked for abuse. Clear site data and retry.' });
     }
@@ -159,26 +157,18 @@ router.post('/init', async (req, res) => {
     }
     let user = await findUserByFingerprint(fingerprint);
     if (!user) {
-      // New identity: prove humanness first.
+      // New identity: prove effort first.
       const parsed = initIdentitySchema.safeParse(req.body || {});
       if (!parsed.success) {
         return res.status(400).json({ error: 'A solved challenge is required to create an identity.' });
       }
-      if (!(await verifyChallenge(parsed.data.challenge_id, parsed.data.answer))) {
+      if (!(await verifyPowChallenge(parsed.data.challenge_id, parsed.data.nonce))) {
         return res.status(403).json({ error: 'Challenge failed. Fetch a new one and retry.' });
       }
       if (isLowEntropyFingerprint(fingerprint)) {
         console.warn(`[Abuse] Low-entropy identity claim from ${ip}`);
       }
       user = await createUserForFingerprint(req, res, fingerprint);
-    }
-    if (!req.cookies?.device_fingerprint) {
-      res.cookie('device_fingerprint', fingerprint, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 365 * 24 * 60 * 60 * 1000,
-      });
     }
     return res.json({
       user_id: user.user_id,
@@ -284,6 +274,15 @@ router.patch('/me', ...validateDisplayName as any[], async (req, res) => {
     // bare presented fingerprint cannot squat or steal handles.
     if (!isCookieBound(req)) {
       return res.status(428).json({ error: 'Confirm this device first: reload the page once, then retry.' });
+    }
+
+    // Renames unlock with maturity: farmed accounts cannot squat handles.
+    const renameSubject = await User.findOne({ user_id: req.user.user_id }).select('created_at trust_score').lean() as unknown as { created_at?: Date; trust_score?: number } | null;
+    if (!renameSubject) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    if (!isIdentityMature(renameSubject.created_at, renameSubject.trust_score)) {
+      return res.status(403).json({ error: 'Renames unlock 7 days after joining, or once your account is trusted.' });
     }
 
     let displayName = req.body.display_name.trim().toLowerCase();

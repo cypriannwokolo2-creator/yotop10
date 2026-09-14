@@ -225,7 +225,11 @@ export const fingerprintMiddleware = async (req: Request, res: Response, next: N
       }
 
       if (!user) {
-        if (isBootstrap || req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') {
+        // Anonymous unless this request carries the cookie we issued: minting
+        // requires proof of an ongoing visit, which one-shot scripts lack.
+        // Bootstrap, reads, and cookie-less writes all flow through anonymous;
+        // writes then fail closed downstream (401/425) until identity exists.
+        if (isBootstrap || req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS' || !cookieFingerprint) {
           return next();
         }
         // Write-path minting is rate-limited per IP: one device needs one

@@ -6,6 +6,7 @@ import { AuthChallenge } from '../models/AuthChallenge';
 import { generateChallenge, verifySignature, hashPublicKey, verifyPublicKeyHash } from '../lib/identityCrypto';
 import { logAudit } from '../lib/auditWriter';
 import { getClientIp, isCookieBound } from '../middleware/fingerprint';
+import { isIdentityMature } from '../lib/identityMaturity';
 import {
   generateKeySchema,
   claimChallengeSchema,
@@ -71,6 +72,11 @@ router.post('/generate-key', async (req: any, res: any) => {
     const existingAuth = await User.findOne({ authority_id: body.authority_id });
     if (existingAuth) {
       return res.status(409).json({ code: 'AUTHORITY_TAKEN', error: 'This identity key is already claimed by another account' });
+    }
+
+    // Seed keys unlock with maturity: farmed accounts cannot grab permanent keys.
+    if (!isIdentityMature(existing.created_at, existing.trust_score)) {
+      return res.status(403).json({ code: 'ACCOUNT_TOO_NEW', error: 'Seed phrases unlock 7 days after joining, or once your account is trusted.' });
     }
 
     const keyHash = await hashPublicKey(body.authority_id);
