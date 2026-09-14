@@ -33,8 +33,12 @@ export default function AccountSettingsClient() {
       await fetchAuthUser();
       setEditingName(false);
       setNameError(null);
-    } catch {
-      setNameError('Failed to update display name.');
+    } catch (e) {
+      // Surface the server's reason (taken name, maturity lock, device check)
+      // instead of a generic failure so the user knows what to do.
+      const msg = e instanceof Error ? e.message : '';
+      const m = msg.match(/\{"error":"([^"]+)"\}/);
+      setNameError(m ? m[1] : 'Failed to update display name.');
     }
   };
 
@@ -131,7 +135,7 @@ export default function AccountSettingsClient() {
               <textarea
                 value={bio}
                 onChange={e => setBio(e.target.value)}
-                placeholder="What do you rank? e.g. Top 10 horror obsessive"
+                placeholder="Tell people about yourself — your obsessions, hot takes, what you rank"
                 maxLength={500}
                 rows={3}
                 className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:border-orange-500/50 focus:outline-none resize-y"
