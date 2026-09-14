@@ -69,7 +69,7 @@ describe('HallOfFameCard — public variant', () => {
 
   it('renders author username', () => {
     render(<HallOfFameCard entry={mockEntry()} variant="public" />);
-    expect(screen.getByText(/film/)).toBeInTheDocument();
+    expect(screen.getByText(/film/i)).toBeInTheDocument();
   });
 
   it('renders comment and view counts', () => {
