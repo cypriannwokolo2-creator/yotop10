@@ -203,8 +203,11 @@ export default function PendingPostDetailClient() {
           </div>
         ) : (
           <div className="flex gap-3 flex-wrap mt-8">
+            <button onClick={() => router.push(`/admin/posts/${postId}/edit`)} className={btnPrimaryClass}>
+              <Icon name="Pencil" size={16} color="#fff" /> Edit in admin
+            </button>
             {post.slug && (
-              <button onClick={() => window.open(`/${post.slug}`, '_blank')} className={btnPrimaryClass}>
+              <button onClick={() => window.open(`/${post.slug}`, '_blank')} className={btnSecondaryClass}>
                 <Icon name="ExternalLink" size={16} color="#fff" /> Open live post
               </button>
             )}
