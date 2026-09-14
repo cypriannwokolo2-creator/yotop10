@@ -1,5 +1,17 @@
 # Re-link Runbook — reconnect a stranded visitor to their account
 
+## Prerequisites — the database comes first
+
+This runbook operates on the LIVE database. If you are standing up a new
+server, restore it first per [db-restore.md](./db-restore.md): a
+`mongodump --archive` file (conventionally named `yotop10-db.archive`) is
+transferred to the new machine out-of-band and restored with `mongorestore
+--drop` before the app boots. The archive is NEVER stored in the repo (it
+contains password hashes) — expect it as a hand-delivered file, typically
+outside the repo tree (e.g. `/root/` or `/tmp/`), and delete it after a
+verified restore. Every query below assumes that restore is done and the
+stack is up.
+
 ## Why this exists
 
 Identity on this platform is a cookie (`device_fingerprint`). The cookie is

@@ -43,3 +43,10 @@ into the new server's `uploads_data` volume before starting the backend.
   5 articles, 341 categories — re-count the source if time has passed).
 - Owner profile loads, admin login works with the current password.
 - The pending-review queues show the same items as the old server.
+
+## After a host change — visitors will strand
+
+New origins mean new empty identities for everyone (cookies never cross
+hosts). Do NOT treat the resulting stranger accounts as an attack. Reconnect
+each reporter per [relink.md](./relink.md), owner first. Then delete the
+transferred archive file — it contains password hashes and must not linger.
