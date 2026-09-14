@@ -3,7 +3,7 @@
 > **Last updated**: 2026-09-14
 > **Working tree**: Clean — committed and pushed
 > **Branch**: main → up to date with origin/main
-> **Latest commits**: `d1d0526 [M04.1]`, `122960f [M15.1]`, `dae0916 [M18.6] Profile hydration guard`
+> **Latest commits**: `d1d0526 [M04.1]`, `122960f [M15.1]`, `dae0916 [M18.6]`, `e4d6821 [M20.3]` (+M20.1/M20.2/DOC)
 
 ---
 
@@ -83,6 +83,16 @@ Hardcoded JWT, orphaned setInterval, $regex injection, stub 200s, health check o
 
 ## Latest Verification
 
+- **Abuse response (M20.1–M20.3, 2026-09-14)** — bot flood (19 accounts/24h in pairs, zero-cluster
+  fp collisions, 36-second handle squat) met with: simple math challenge + per-IP rate limits on
+  identity creation; middleware read-only on bootstrap paths (it was minting before the route's
+  challenge ran — caught live, fixed, re-verified 400/403/200); cookie-round-trip gate (428) on
+  rename/seed-key/device-link/merge-confirm; SHA-256 client fingerprint hash; fp aliases with
+  rotation of the exposed nabbed identity (seamless via alias); cross-user-only demotion with audit
+  receipts. DB surgery: 20 bot + 11 test accounts removed (zero content each, verified first),
+  3 ghost-authored seed posts re-homed, admin password rotated + sessions killed (old pw 401s).
+  Users: exactly 3 legit remain. Backend typecheck ✅ lint ✅ tests ✅ 674 passed. Frontend
+  typecheck ✅ lint ✅ **build ✅ EXIT 0, zero errors**.
 - **Profile hydration (M18.6)** — `/a/cutie` hydration mismatch traced to a STALE cached app-page
   chunk in the browser (old `md:hidden` mobile-wrapper bundle hydrating fresh server HTML; the served
   chunk and server HTML were verified fresh and matching). Immediate fix for the viewer: hard refresh.
