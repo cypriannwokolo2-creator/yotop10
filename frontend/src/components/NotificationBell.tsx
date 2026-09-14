@@ -27,6 +27,8 @@ const TYPE_ICON: Record<string, string> = {
   post_rejected: 'X',
   revision_requested: 'RefreshCw',
   admin_message: 'Mail',
+  article_approved: 'Check',
+  article_rejected: 'X',
 };
 
 const PRIORITY_CLASSES: Record<string, string> = {

@@ -52,6 +52,7 @@ export default function AdminClientShell({
     <>
       {nav('/admin', 'Dashboard', 'LayoutDashboard')}
       {hasPermission('posts:read') && nav('/admin/posts/pending', 'Pending Posts', 'Clock')}
+      {hasPermission('articles:read') && nav('/admin/articles/pending', 'Pending Articles', 'Newspaper')}
       {hasPermission('posts:read') && nav('/admin/posts', 'All Posts', 'FileText')}
       {hasPermission('comments:read') && nav('/admin/comments', 'Comments', 'MessageCircle')}
       {hasPermission('users:read') && nav('/admin/users', 'Users', 'Users')}
