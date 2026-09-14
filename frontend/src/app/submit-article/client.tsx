@@ -21,6 +21,18 @@ interface FormErrors {
   category?: string;
 }
 
+const DRAFT_KEY = 'yotop10_article_draft';
+const DRAFT_EXPIRY_MS = 3600000;
+
+interface ArticleDraftData {
+  category_slug?: string;
+  title?: string;
+  body?: string;
+  cover_image?: string;
+  sources?: Array<{ title: string; url: string }>;
+  savedAt: number;
+}
+
 export default function SubmitArticleClient() {
   const router = useRouter();
   const idCounter = useRef(0);
@@ -36,6 +48,11 @@ export default function SubmitArticleClient() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
+
+  const formDataRef = useRef({ title, body, categorySlug, coverImage, sources });
+  formDataRef.current = { title, body, categorySlug, coverImage, sources };
+
+  const saveTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const validate = useCallback((): boolean => {
     const next: FormErrors = {};
     if (!title.trim()) {
@@ -58,6 +75,65 @@ export default function SubmitArticleClient() {
         setCategories(cats as never);
       })
       .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    try {
+      const draft = localStorage.getItem(DRAFT_KEY);
+      if (draft) {
+        const data: ArticleDraftData = JSON.parse(draft);
+        if (Date.now() - data.savedAt < DRAFT_EXPIRY_MS) {
+          if (data.category_slug) setCategorySlug(data.category_slug);
+          if (data.title) setTitle(data.title);
+          if (data.body) setBody(data.body);
+          if (data.cover_image) setCoverImage(data.cover_image);
+          if (data.sources && data.sources.length > 0) {
+            setSources(data.sources.map((s) => ({ id: generateId(), title: s.title || '', url: s.url || '' })));
+          }
+        } else {
+          localStorage.removeItem(DRAFT_KEY);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to restore article draft:', e);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const saveDraft = useCallback(() => {
+    clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(() => {
+      const { title: t, body: b, categorySlug: cat, coverImage: cover, sources: src } = formDataRef.current;
+      if (!t && !b && !cat && !cover && !src.some((s) => s.title || s.url)) return;
+      const draft: ArticleDraftData = {
+        category_slug: cat || undefined, title: t || undefined, body: b || undefined,
+        cover_image: cover || undefined,
+        sources: src.map(({ title, url }) => ({ title, url })),
+        savedAt: Date.now(),
+      };
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+      } catch { /* private browsing — draft simply won't persist */ }
+    }, 1000);
+  }, []);
+
+  useEffect(() => { saveDraft(); }, [title, body, categorySlug, coverImage, sources, saveDraft]);
+
+  useEffect(() => {
+    const flush = () => {
+      const { title: t, body: b, categorySlug: cat, coverImage: cover, sources: src } = formDataRef.current;
+      if (!t && !b && !cat && !cover && !src.some((s) => s.title || s.url)) return;
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({
+          category_slug: cat || undefined, title: t || undefined, body: b || undefined,
+          cover_image: cover || undefined,
+          sources: src.map(({ title, url }) => ({ title, url })),
+          savedAt: Date.now(),
+        }));
+      } catch { /* private browsing */ }
+    };
+    window.addEventListener('beforeunload', flush);
+    return () => window.removeEventListener('beforeunload', flush);
   }, []);
 
   const addSource = () => {
@@ -101,6 +177,9 @@ export default function SubmitArticleClient() {
 
     try {
       await API.submitArticle(payload);
+      try {
+        localStorage.removeItem(DRAFT_KEY);
+      } catch { /* private browsing */ }
       const params = new URLSearchParams({ title: title.trim(), type: 'article' });
       router.push(`/pending?${params.toString()}`);
     } catch (e) {
