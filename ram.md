@@ -103,7 +103,12 @@ Hardcoded JWT, orphaned setInterval, $regex injection, stub 200s, health check o
   seed keys frozen for young untrusted accounts (7 days or trust ≥ 1.0). Live verified end to
   end, test accounts removed (3 legit users remain). Backend ✅ 678 tests pass. Frontend
   typecheck ✅ lint ✅ **build ✅ EXIT 0, zero errors** (1 pre-existing hall-of-fame test fail,
-  untouched). Frontend PoW solver + stale share-button tests fixed alongside. Frontend typecheck ✅ lint ✅ **build ✅ EXIT 0, zero errors**.
+  untouched). Frontend PoW solver + stale share-button tests fixed alongside.
+- **Re-link (2026-09-14)** — the "new user every visit" loop was the owner's own browser: its
+  stable cookie survived each cleanup, so the 425 auto-mint silently re-minted after every
+  deletion (same cookie behind a_222a and a_eadd). Deleted a_eadd (zero content), aliased the
+  owner's cookie to cutie, verified live that the cookie now resolves to cutie (user_id
+  54f39ac86e1f07ab, bio + posts intact). No bot-farm activity in logs — flood is over. Frontend typecheck ✅ lint ✅ **build ✅ EXIT 0, zero errors**.
 - **Profile hydration (M18.6)** — `/a/cutie` hydration mismatch traced to a STALE cached app-page
   chunk in the browser (old `md:hidden` mobile-wrapper bundle hydrating fresh server HTML; the served
   chunk and server HTML were verified fresh and matching). Immediate fix for the viewer: hard refresh.
