@@ -13,6 +13,9 @@ RUN pnpm install --frozen-lockfile
 # Build stage
 FROM base AS builder
 WORKDIR /app
+# pnpm workspaces symlink sub-package deps into the ROOT store — the root
+# node_modules MUST travel with the subdir ones or every binary dangles.
+COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/frontend/node_modules ./frontend/node_modules
 COPY --from=deps /app/backend/node_modules ./backend/node_modules
 COPY . .
@@ -27,13 +30,10 @@ WORKDIR /app
 # Install pnpm, pm2, and tsx for running seed scripts
 RUN npm install -g pnpm@10 pm2 tsx
 
-# Copy built artifacts and config
-COPY --from=builder /app/frontend/.next/standalone ./frontend
-COPY --from=builder /app/frontend/.next/static ./frontend/.next/static
-COPY --from=builder /app/frontend/public ./frontend/public
-COPY --from=builder /app/frontend/.next/BUILD_ID ./frontend/.next/BUILD_ID
-COPY --from=builder /app/frontend/next.config.ts ./frontend/
+# Copy built artifacts and config (non-standalone Next: whole frontend dir)
+COPY --from=builder /app/frontend ./frontend
 COPY --from=builder /app/backend/dist ./backend/dist
+COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/backend/node_modules ./backend/node_modules
 COPY --from=builder /app/backend/package.json ./backend/
 COPY --from=builder /app/backend/src/scripts ./backend/src/scripts
