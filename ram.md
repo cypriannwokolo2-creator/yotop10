@@ -3,7 +3,7 @@
 > **Last updated**: 2026-09-14
 > **Working tree**: Clean — committed and pushed
 > **Branch**: main → up to date with origin/main
-> **Latest commits**: `d1d0526 [M04.1]`, `122960f [M15.1] One-brain identity + real view counting`
+> **Latest commits**: `d1d0526 [M04.1]`, `122960f [M15.1]`, `dae0916 [M18.6] Profile hydration guard`
 
 ---
 
@@ -83,6 +83,11 @@ Hardcoded JWT, orphaned setInterval, $regex injection, stub 200s, health check o
 
 ## Latest Verification
 
+- **Profile hydration (M18.6)** — `/a/cutie` hydration mismatch traced to a STALE cached app-page
+  chunk in the browser (old `md:hidden` mobile-wrapper bundle hydrating fresh server HTML; the served
+  chunk and server HTML were verified fresh and matching). Immediate fix for the viewer: hard refresh.
+  Hardening committed: owner-only upgrade (`isOwn`, auth `trustScore`) applies after mount, so SSR HTML
+  and first client render always agree. Frontend typecheck ✅ lint ✅ build ✅.
 - **One-brain identity (M15.1)** — `backend/src/middleware/fingerprint.ts` rewritten: cookie is the
   single authoritative identity, `X-Device-Fingerprint` header is a recovery hint only (adopted when
   the cookie names nobody but the header names a known user). Reads NEVER mint users — anonymous
