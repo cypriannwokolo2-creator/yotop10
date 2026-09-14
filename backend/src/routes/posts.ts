@@ -10,6 +10,8 @@ import { Category } from '../models/Category';
 import { getCategoryNameMap } from '../lib/categoryCache';
 import { Comment } from '../models/Comment';
 import { atomicCheckRateLimit, redis } from '../lib/redis';
+import { getFingerprintIdentity } from '../middleware/fingerprint';
+import { shouldCountView } from '../lib/viewCounting';
 import { calculateEffectivePostLimit, getRateLimitKey } from '../lib/rateLimit';
 import { getActiveBoost, grantBoost, BoostType } from '../lib/ladderSystem';
 import { checkTitleMatch } from '../lib/titleSimilarity';
@@ -419,12 +421,16 @@ router.get('/:idOrSlug', async (req, res) => {
       return res.status(404).json({ error: 'Post not found' });
     }
 
-    // Unique view counting: same fingerprint + same post = 1 view per 30 min
+    // Unique view counting: same fingerprint + same post = 1 view per 30 min.
+    // Only real human opens count — metadata/OG/prefetch/bot fetches and the
+    // author's own opens are served the stored count without incrementing.
     const viewerFp = req.user?.device_fingerprint || req.headers['x-device-fingerprint'] as string || req.ip || 'unknown';
+    const viewerIdentity = getFingerprintIdentity(req);
+    const isAuthorView = !!viewerIdentity?.user_id && (post as { author_id?: string }).author_id === viewerIdentity.user_id;
     const viewKey = `post_view:${post._id}:${viewerFp}`;
     const alreadyViewed = await redis.get(viewKey);
     let liveViewCount = post.view_count as number;
-    if (!alreadyViewed) {
+    if (!alreadyViewed && shouldCountView(req) && !isAuthorView) {
       const updated = await Post.findByIdAndUpdate(post._id, { $inc: { view_count: 1 } }, { new: true }).select('view_count').lean();
       if (updated) liveViewCount = updated.view_count as number;
       await redis.set(viewKey, '1', { EX: 1800 });

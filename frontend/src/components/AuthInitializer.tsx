@@ -9,52 +9,25 @@ export default function AuthInitializer() {
   const initialized = useAuthStore((s) => s.initialized);
 
   useEffect(() => {
-    const state = useAuthStore.getState();
-    if (state.initialized && state.user) return;
+    // Single-flight boot: exactly one identity resolution per mount.
+    // fetchUser is single-flight in the store — concurrent calls share it.
+    // No polling: recovery happens explicitly (init-on-425) or on focus.
+    fetchUser().catch(() => {});
 
-    // Option A: backend now creates user even without fingerprint, so fetch immediately
-    // Do not gate on fingerprint — run in parallel and ensure fetchUser always runs even if fingerprint fails
-    if (!state.initialized) {
-      fetchUser().catch(() => {});
-    } else if (!state.user) {
-      // Already initialized but still no user (previous 425/500) — retry immediately
-      fetchUser().catch(() => {});
-    }
+    // Warm the header fingerprint in the background (recovery hint only —
+    // the cookie is the authoritative identity).
+    getFingerprint().catch(() => {});
 
-    const initFingerprint = () => {
-      getFingerprint()
-        .then(() => {
-          const s = useAuthStore.getState();
-          if (!s.user) fetchUser().catch(() => {});
-        })
-        .catch(() => {
-          const s = useAuthStore.getState();
-          if (!s.user) fetchUser().catch(() => {});
-        });
-    };
-
-    if (typeof requestIdleCallback !== 'undefined') {
-      requestIdleCallback(initFingerprint, { timeout: 2000 });
-    } else {
-      setTimeout(initFingerprint, 300);
-    }
-
-    // Poll while still guest: retry on focus/visibility and every 4s (covers grace 425 race)
+    // Retry only when the user returns to a still-guest tab.
     const onFocus = () => {
       const s = useAuthStore.getState();
       if (!s.user) fetchUser().catch(() => {});
     };
-    const interval = setInterval(() => {
-      const s = useAuthStore.getState();
-      if (!s.user) fetchUser().catch(() => {});
-      else clearInterval(interval);
-    }, 4000);
     window.addEventListener('focus', onFocus);
     document.addEventListener('visibilitychange', onFocus);
     return () => {
       window.removeEventListener('focus', onFocus);
       document.removeEventListener('visibilitychange', onFocus);
-      clearInterval(interval);
     };
   }, [initialized, fetchUser]);
 

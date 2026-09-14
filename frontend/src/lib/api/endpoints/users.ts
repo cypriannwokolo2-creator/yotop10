@@ -3,6 +3,11 @@ import { apiFetch } from '../client';
 export const usersApi = {
   getCurrentUser: () => apiFetch('/users/me'),
 
+  initIdentity: () =>
+    apiFetch<{ user_id: string; username: string; custom_display_name: string | null; trust_score: number; created_at?: string }>('/users/init', {
+      method: 'POST',
+    }),
+
   updateDisplayName: (display_name: string) =>
     apiFetch('/users/me', {
       method: 'PATCH',

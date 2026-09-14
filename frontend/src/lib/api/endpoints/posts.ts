@@ -13,8 +13,10 @@ export const postsApi = {
     return apiFetch(`/posts?page=${page || 1}`);
   },
 
-  getPost: (slug: string) =>
-    apiFetch<{ post: Post; items: Array<{ id: string; rank: number; title: string; justification: string; image_url?: string; source_url?: string }> }>(`/posts/${slug}`),
+  getPost: (slug: string, opts?: { noCount?: boolean }) =>
+    apiFetch<{ post: Post; items: Array<{ id: string; rank: number; title: string; justification: string; image_url?: string; source_url?: string }> }>(`/posts/${slug}`, {
+      headers: opts?.noCount ? { 'X-No-Count': '1' } : {},
+    }),
 
   getPostHistory: (slug: string): Promise<PostHistoryResponse> =>
     apiFetch(`/posts/${slug}/history`),

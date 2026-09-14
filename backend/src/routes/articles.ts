@@ -5,7 +5,8 @@ import crypto from 'crypto';
 import { Article } from '../models/Article';
 import { redis } from '../lib/redis';
 import { logAudit } from '../lib/auditWriter';
-import { getClientIp } from '../middleware/fingerprint';
+import { getClientIp, getFingerprintIdentity } from '../middleware/fingerprint';
+import { shouldCountView } from '../lib/viewCounting';
 
 const router: Router = Router();
 
@@ -140,16 +141,20 @@ router.get('/:slug', async (req, res) => {
       return res.status(404).json({ error: 'Article not found' });
     }
 
-    // Unique view counting: same fingerprint + same article = 1 view per 30 min
+    // Unique view counting: same fingerprint + same article = 1 view per 30 min.
+    // Only real human opens count — metadata/OG/prefetch/bot fetches and the
+    // author's own opens are served the stored count without incrementing.
     const viewerFp =
       req.user?.device_fingerprint ||
       (req.headers['x-device-fingerprint'] as string) ||
       req.ip ||
       'unknown';
+    const viewerIdentity = getFingerprintIdentity(req);
+    const isAuthorView = !!viewerIdentity?.user_id && article.author_id === viewerIdentity.user_id;
     const viewKey = `article_view:${article._id}:${viewerFp}`;
     const alreadyViewed = await redis.get(viewKey);
     let liveViewCount = article.view_count as number;
-    if (!alreadyViewed) {
+    if (!alreadyViewed && shouldCountView(req) && !isAuthorView) {
       const updated = await Article.findByIdAndUpdate(article._id, { $inc: { view_count: 1 } }, { new: true }).select('view_count').lean();
       if (updated) liveViewCount = updated.view_count as number;
       await redis.set(viewKey, '1', { EX: 1800 });

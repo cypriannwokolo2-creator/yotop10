@@ -13,7 +13,7 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
   const slug = String(resolvedParams.slug);
 
   try {
-    const data = await API.getArticle(slug);
+    const data = await API.getArticle(slug, { noCount: true });
     const article = data.article;
 
     const ageHours = (Date.now() - new Date(article.created_at).getTime()) / 3600000;

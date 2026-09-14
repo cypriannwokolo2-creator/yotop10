@@ -32,42 +32,66 @@ const CLEAR_KEYS = [
   'yotop10_submit_draft',
 ];
 
-export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
-  loading: true,
-  initialized: false,
+export const useAuthStore = create<AuthState>((set) => {
+  // Single-flight: every caller shares one in-flight identity resolution.
+  // No polling, no parallel /me storms — one brain.
+  let inFlight: Promise<void> | null = null;
 
-  fetchUser: async () => {
+  const resolveUser = async () => {
     try {
       const data = await API.getCurrentUser() as AuthUser;
       set({ user: data, loading: false, initialized: true });
-    } catch {
+    } catch (err) {
+      // 425 = cookie exists but no identity yet — claim it explicitly once,
+      // then load. Identity is minted only here, never on reads.
+      if (err instanceof Error && err.message.includes('425')) {
+        try {
+          await API.initIdentity();
+          const data = await API.getCurrentUser() as AuthUser;
+          set({ user: data, loading: false, initialized: true });
+          return;
+        } catch { /* fall through to guest */ }
+      }
       set({ user: null, loading: false, initialized: true });
     }
-  },
+  };
 
-  logout: async () => {
-    for (const key of CLEAR_KEYS) {
-      try { localStorage.removeItem(key); } catch { /* ignore */ }
-    }
+  return {
+    user: null,
+    loading: true,
+    initialized: false,
 
-    // Generate a new fingerprint with random suffix so backend treats it as new device
-    try {
-      const { getFingerprint } = await import('@/lib/fingerprint');
-      const fpHash = await getFingerprint();
-      const uniqueFp = fpHash + '-' + Math.random().toString(36).slice(2, 8);
-      localStorage.setItem('yotop10_fp', uniqueFp);
-    } catch { /* fingerprint failed — try without it */ }
+    fetchUser: () => {
+      if (!inFlight) {
+        inFlight = resolveUser().finally(() => { inFlight = null; });
+      }
+      return inFlight;
+    },
 
-    // Fetch new identity with the fresh fingerprint
-    set({ user: null, loading: false, initialized: false });
-    try {
-      const data = await API.getCurrentUser() as AuthUser;
-      set({ user: data, initialized: true });
-      const { toast } = await import('@/lib/toast');
-      toast.success('Logged out. New anonymous identity created.');
-    } catch {
-      // stay logged out — AuthInitializer will retry on next page load
-    }
-  },
-}));
+    logout: async () => {
+      for (const key of CLEAR_KEYS) {
+        try { localStorage.removeItem(key); } catch { /* ignore */ }
+      }
+
+      // Generate a new fingerprint with random suffix so backend treats it as new device
+      try {
+        const { getFingerprint } = await import('@/lib/fingerprint');
+        const fpHash = await getFingerprint();
+        const uniqueFp = fpHash + '-' + Math.random().toString(36).slice(2, 8);
+        localStorage.setItem('yotop10_fp', uniqueFp);
+      } catch { /* fingerprint failed — try without it */ }
+
+      // Claim the fresh identity explicitly, then load it
+      set({ user: null, loading: false, initialized: false });
+      try {
+        await API.initIdentity();
+        const data = await API.getCurrentUser() as AuthUser;
+        set({ user: data, initialized: true });
+        const { toast } = await import('@/lib/toast');
+        toast.success('Logged out. New anonymous identity created.');
+      } catch {
+        // stay logged out — AuthInitializer will retry on next page load
+      }
+    },
+  };
+});

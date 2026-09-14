@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
   
   try {
-    const data = await API.getPost(slug);
+    const data = await API.getPost(slug, { noCount: true });
     const post = data.post;
     const description = post.intro?.substring(0, 160) ?? '';
     const ogDescription = post.intro?.substring(0, 200) ?? '';

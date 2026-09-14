@@ -13,7 +13,7 @@ export default async function Image({ params }: { params: { slug: string } }) {
   let postType = '';
 
   try {
-    const data = await API.getPost(slug);
+    const data = await API.getPost(slug, { noCount: true });
     title = data.post.title;
     topItems = (data.items || []).slice(0, 3);
     category = data.post.category_name || data.post.category_slug;

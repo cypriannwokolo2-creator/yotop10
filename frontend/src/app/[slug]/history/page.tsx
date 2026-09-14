@@ -9,7 +9,7 @@ type PageProps = {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const resolvedParams = await params;
   try {
-    const data = await API.getPost(resolvedParams.slug);
+    const data = await API.getPost(resolvedParams.slug, { noCount: true });
     return {
       title: `History: ${data.post.title}`,
     };

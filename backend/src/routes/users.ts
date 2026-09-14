@@ -12,6 +12,7 @@ import { calculateEffectivePostLimit, calculateEffectiveCommentLimit, RateLimitS
 import { getCategoryNameMap } from '../lib/categoryCache';
 import { checkAndPromoteUser } from '../lib/trustScore';
 import { redis } from '../lib/redis';
+import { findUserByFingerprint, createUserForFingerprint } from '../middleware/fingerprint';
 import { toShortUsername, toCustomShort, toDefaultShort, isDefaultFormat } from '../lib/username';
 
 const router: Router = Router();
@@ -102,6 +103,51 @@ router.get('/me', async (req, res) => {
   } catch (error) {
     console.error('GET /users/me error:', error);
     res.status(500).json({ error: 'Failed to fetch user data' });
+  }
+});
+
+/**
+ * M11.A2: POST /api/users/init
+ * Explicit identity bootstrap — the ONLY read-safe way to mint an identity.
+ * The middleware never creates users on reads, so fresh visitors call this
+ * once (single-flight from AuthInitializer) to claim their cookie identity.
+ * Public. Body: none. Returns the user summary, same shape as GET /me core fields.
+ */
+router.post('/init', async (req, res) => {
+  try {
+    // Only a client-presented fingerprint (cookie or header) may mint an
+    // identity. req.fingerprint is ignored here on purpose: when the request
+    // carries no identity the middleware fills it with a fresh grace value,
+    // and that must NEVER be minted — otherwise any anonymous hit could
+    // create junk users.
+    const fingerprint =
+      (req.cookies?.device_fingerprint as string | undefined) ||
+      (req.headers['x-device-fingerprint'] as string | undefined);
+    if (!fingerprint) {
+      return res.status(425).json({ error: 'Fingerprint not initialized. Please retry.', retry_after: 1 });
+    }
+    let user = await findUserByFingerprint(fingerprint);
+    if (!user) {
+      user = await createUserForFingerprint(req, res, fingerprint);
+    }
+    if (!req.cookies?.device_fingerprint) {
+      res.cookie('device_fingerprint', fingerprint, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 365 * 24 * 60 * 60 * 1000,
+      });
+    }
+    return res.json({
+      user_id: user.user_id,
+      username: user.custom_display_name || user.username,
+      custom_display_name: user.custom_display_name || null,
+      trust_score: user.trust_score,
+      created_at: user.created_at,
+    });
+  } catch (error) {
+    console.error('POST /users/init error:', error);
+    return res.status(500).json({ error: 'Failed to initialize identity' });
   }
 });
 
@@ -208,7 +254,6 @@ router.patch('/me', ...validateDisplayName as any[], async (req, res) => {
 
     const isCustom = !isDefaultFormat(displayName);
     const shortForNew = isCustom ? toCustomShort(displayName) : toDefaultShort(displayName);
-    const customShortForNew = isCustom ? shortForNew : null;
     // For custom (flexible 3-32), check full custom_short uniqueness, not 4-char prefix
     // For default (a_xxxx_xxxx), check default_short 4-char uniqueness
     if (isCustom) {

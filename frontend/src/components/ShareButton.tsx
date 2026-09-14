@@ -3,7 +3,6 @@
 import { useState, useCallback } from 'react';
 import { Icon } from './icons/Icon';
 import { ShareModal } from './ShareModal';
-import { API } from '@/lib/api';
 
 interface ShareButtonProps {
   slug: string;
@@ -18,20 +17,14 @@ export function buildShareUrl(slug: string, postId: string): string {
 
 export function ShareButton({ slug, title, postId }: ShareButtonProps) {
   const [modalOpen, setModalOpen] = useState(false);
-  const [pending, setPending] = useState(false);
 
-  const handleClick = useCallback(
-    async (e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (pending) return;
-      setPending(true);
-      setModalOpen(true);
-      try { await API.trackShare(slug); } catch { /* non-critical */ }
-      setPending(false);
-    },
-    [slug, pending]
-  );
+  const handleClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Opening the modal is not a share — only an actual copy counts
+    // (tracked in ShareModal). No prefetch, no phantom engagement.
+    setModalOpen(true);
+  }, []);
 
   const url = buildShareUrl(slug, postId);
 
@@ -40,7 +33,6 @@ export function ShareButton({ slug, title, postId }: ShareButtonProps) {
       <button
         type="button"
         onClick={handleClick}
-        disabled={pending}
         className="inline-flex items-center justify-center rounded-lg transition-all duration-200 min-w-11 min-h-11 text-zinc-500 hover:text-zinc-300"
         aria-label={`Share ${title}`}
       >

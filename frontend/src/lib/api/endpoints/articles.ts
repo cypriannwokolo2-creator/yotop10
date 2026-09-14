@@ -9,8 +9,10 @@ export const articlesApi = {
     return apiFetch(`/articles?page=${p}&limit=${l}${cat}`);
   },
 
-  getArticle: (slug: string): Promise<{ article: Article }> =>
-    apiFetch(`/articles/${slug}`),
+  getArticle: (slug: string, opts?: { noCount?: boolean }): Promise<{ article: Article }> =>
+    apiFetch(`/articles/${slug}`, {
+      headers: opts?.noCount ? { 'X-No-Count': '1' } : {},
+    }),
 
   submitArticle: (data: ArticleSubmission) =>
     apiFetch<{ success: boolean; article: { id: string; slug: string; title: string } }>(

@@ -6,6 +6,9 @@ import { User } from '../models/User';
 import { ListItem } from '../models/ListItem';
 import { computeExploreScore, trackExploreView, type ExploreSignals } from '../lib/exploreScore';
 import { getCategoryNameMap } from '../lib/categoryCache';
+import { redis } from '../lib/redis';
+import { getFingerprintIdentity } from '../middleware/fingerprint';
+import { shouldCountView } from '../lib/viewCounting';
 
 const router: Router = Router();
 
@@ -259,11 +262,36 @@ router.get('/', async (req: any, res: any) => {
 
 router.post('/view', async (req: any, res: any) => {
   try {
-    const { post_id } = req.body;
-    if (post_id) {
-      await trackExploreView(post_id);
+    const { post_id } = req.body || {};
+    if (typeof post_id !== 'string' || !post_id.trim()) {
+      return res.status(400).json({ error: 'post_id is required' });
     }
-    res.json({ success: true });
+    // Locked down: only a real browser open with a known identity counts.
+    if (!shouldCountView(req)) {
+      return res.json({ success: true, counted: false });
+    }
+    const identity = getFingerprintIdentity(req);
+    if (!identity?.user_id) {
+      return res.status(401).json({ error: 'Identity required' });
+    }
+    const targetId = post_id.trim();
+    const target =
+      (/^[a-f0-9]{24}$/i.test(targetId) && (
+        (await Post.findOne({ _id: targetId }).select('_id').lean()) ||
+        (await Article.findOne({ _id: targetId }).select('_id').lean())
+      )) || null;
+    if (!target) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+    // One exploration credit per identity per post per hour.
+    const fpKey = `explore_view:${targetId}:${identity.user_id}`;
+    const seen = await redis.get(fpKey);
+    if (!seen) {
+      await trackExploreView(targetId);
+      await redis.set(fpKey, '1', { EX: 3600 });
+      return res.json({ success: true, counted: true });
+    }
+    return res.json({ success: true, counted: false });
   } catch {
     res.status(500).json({ error: 'Failed' });
   }

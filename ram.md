@@ -1,9 +1,9 @@
 # RAM.md — Random Access Memory: Current Task State
 
-> **Last updated**: 2026-06-06
-> **Working tree**: Clean — changes committed and pushed
-> **Branch**: main → up to date with origin/main
-> **Latest commit**: `[DPLOY] Remove preloaders, style admin setup page, production deployment`
+> **Last updated**: 2026-09-14
+> **Working tree**: One-brain identity + real views — implemented, verified, see commit below
+> **Branch**: main → push after commit
+> **Latest commit**: `[M15.1] One-brain identity + real view counting` (pending push at time of writing)
 
 ---
 
@@ -82,6 +82,27 @@ Hardcoded JWT, orphaned setInterval, $regex injection, stub 200s, health check o
 ---
 
 ## Latest Verification
+
+- **One-brain identity (M15.1)** — `backend/src/middleware/fingerprint.ts` rewritten: cookie is the
+  single authoritative identity, `X-Device-Fingerprint` header is a recovery hint only (adopted when
+  the cookie names nobody but the header names a known user). Reads NEVER mint users — anonymous
+  requests flow through without `req.user`. Single creation site `createUserForFingerprint()` used by
+  write paths + new `POST /api/users/init` (explicit bootstrap; ignores grace-fresh fingerprints,
+  425s without client identity). Duplicate `declare module 'express'` block removed — sole `Request`
+  extension is `backend/src/types/express.d.ts`. Fixed pre-existing unused `customShortForNew` in users.ts.
+- **Real views (M5.7)** — new `backend/src/lib/viewCounting.ts` (`shouldCountView`: skips `X-No-Count`,
+  prefetch/prerender, bots/crawlers/scrapers incl. curl/undici/empty-UA). Post + article detail skip
+  increment for non-real fetches and author self-views. `POST /api/explore/view` locked: 400/401/404 +
+  per-identity hourly dedup, returns `{counted}`. Frontend: `getPost/getArticle(..., {noCount})` used by
+  all metadata/OG/history server fetches; ShareButton no longer tracks modal-open (copy-only in ShareModal).
+- **Single-flight frontend** — `AuthInitializer` (no more 4s poll) + `useAuthStore.fetchUser` share one
+  in-flight resolution; 425 triggers one explicit `POST /init`, then load. Logout claims via `/init`.
+- **Live verified on yotop10.com (dev stack)**: post detail 200, curl views frozen (2→2), `/init` 425
+  without identity / 200 with header, `/explore/view` 400 on empty body. Smoke-test users removed from DB.
+- Backend typecheck ✅, frontend typecheck ✅, backend lint ✅ 0/0, frontend lint ✅,
+  backend build ✅, frontend build ✅ EXIT=0, backend tests ✅ 671 passed (667 + 4 new viewCounting)
+
+### Previous verification notes (kept for history)
 
 - **Removed** faulty service worker entirely (13 files deleted) — SW was serving stale cached HTML, no CSS fix could overcome it
 - **Replaced** all Tailwind responsive display utilities with plain CSS classes (`.hide-desktop`, `.show-desktop`, `.show-from-sm`, `.show-from-sm-block`) outside Tailwind's `@layer` to guarantee cascade wins

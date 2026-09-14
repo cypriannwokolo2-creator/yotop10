@@ -12,7 +12,7 @@ export default async function Image({ params }: { params: { slug: string } }) {
   let category = '';
 
   try {
-    const data = await API.getArticle(slug);
+    const data = await API.getArticle(slug, { noCount: true });
     title = data.article.title;
     author = data.article.author_display_name || data.article.author_username;
     category = data.article.category_name || data.article.category_slug;
