@@ -118,7 +118,12 @@ Hardcoded JWT, orphaned setInterval, $regex injection, stub 200s, health check o
   generated covers removed — no fake art). Bot still trickling (~1/min, PoW-bound): 3 more
   removed, mint limits tightened to 5/hr/IP, their rename attempts blocked by the maturity lock
   (the 403s in logs are the bot's, not the owner's — cutie is mature and exempt). Rename form
-  now surfaces validation messages too. Frontend typecheck ✅ lint ✅ **build ✅ EXIT 0, zero errors**.
+  now surfaces validation messages too.
+- **M22.2 (2026-09-14)** — article/list-image validators demanded absolute URLs while the
+  uploader returns site-relative paths (every uploaded cover 400'd). Shared `uploadUrl`
+  validator + tests, used by both routes; verified live with the reporter's exact file
+  (400 → 401 fail-closed on auth, validation clean; file itself serves 200). Note: dev
+  backend needed a manual pm2 restart — tsx watch did not pick up the change. Frontend typecheck ✅ lint ✅ **build ✅ EXIT 0, zero errors**.
 - **Profile hydration (M18.6)** — `/a/cutie` hydration mismatch traced to a STALE cached app-page
   chunk in the browser (old `md:hidden` mobile-wrapper bundle hydrating fresh server HTML; the served
   chunk and server HTML were verified fresh and matching). Immediate fix for the viewer: hard refresh.
