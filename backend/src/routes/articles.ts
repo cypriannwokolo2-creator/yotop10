@@ -7,6 +7,7 @@ import { redis } from '../lib/redis';
 import { logAudit } from '../lib/auditWriter';
 import { getClientIp, getFingerprintIdentity } from '../middleware/fingerprint';
 import { shouldCountView } from '../lib/viewCounting';
+import { isAcceptedImageUrl } from '../lib/uploadUrl';
 
 const router: Router = Router();
 
@@ -46,7 +47,7 @@ const validateArticleSubmission = [
     .withMessage('Category is required'),
   body('cover_image')
     .optional()
-    .isURL()
+    .custom(isAcceptedImageUrl)
     .withMessage('Invalid cover image URL'),
   body('sources')
     .optional()

@@ -12,6 +12,7 @@ import { Comment } from '../models/Comment';
 import { atomicCheckRateLimit, redis } from '../lib/redis';
 import { getFingerprintIdentity } from '../middleware/fingerprint';
 import { shouldCountView } from '../lib/viewCounting';
+import { isAcceptedImageUrl } from '../lib/uploadUrl';
 import { calculateEffectivePostLimit, getRateLimitKey } from '../lib/rateLimit';
 import { getActiveBoost, grantBoost, BoostType } from '../lib/ladderSystem';
 import { checkTitleMatch } from '../lib/titleSimilarity';
@@ -106,7 +107,7 @@ const validatePostSubmission = [
     .withMessage('Item justification must be less than 2000 characters'),
   body('items.*.image_url')
     .optional({ values: 'falsy' })
-    .isURL()
+    .custom(isAcceptedImageUrl)
     .withMessage('Invalid image URL'),
   body('items.*.source_url')
     .optional({ values: 'falsy' })
