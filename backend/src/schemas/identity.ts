@@ -21,6 +21,6 @@ export const linkDeviceSchema = z.object({
 });
 
 export const initIdentitySchema = z.object({
-  challenge_id: z.string().min(8).max(128),
-  answer: z.number().int(),
+  challenge_id: z.string().length(32).regex(/^[0-9a-f]+$/),
+  nonce: z.string().regex(/^\d{1,20}$/),
 });
