@@ -12,6 +12,8 @@ interface PendingPost {
   author_username: string;
   post_type: string;
   intro: string;
+  slug?: string;
+  status?: string;
   items: Array<{
     id: string;
     rank: number;
@@ -28,6 +30,8 @@ export default function PendingPostDetailClient() {
 
   const [post, setPost] = useState<PendingPost | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [isNonPending, setIsNonPending] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectModal, setShowRejectModal] = useState(false);
@@ -43,9 +47,37 @@ export default function PendingPostDetailClient() {
         const data = await apiFetch<{ post: PendingPost }>(`/admin/posts/pending/${postId}`);
         if (!cancelled) {
           setPost(data.post);
+          setLoadError(null);
+          setIsNonPending(false);
         }
-      } catch {
-        if (!cancelled) console.error('Failed to fetch pending post');
+      } catch (err) {
+        if (cancelled) return;
+        const msg = err instanceof Error ? err.message : '';
+        const status = parseInt(msg.match(/API Error: (\d+)/)?.[1] || '0', 10);
+        let body: { code?: string; error?: string } | null = null;
+        try { const j = msg.lastIndexOf('{'); if (j !== -1) body = JSON.parse(msg.slice(j)); } catch { /* not json */ }
+        if (status === 400 && body?.code === 'INVALID_STATUS') {
+          // Expected when opening an approved/rejected post via a stale
+          // pending URL (history, bookmark, or pre-fix View button).
+          // Fall back to the status-agnostic admin endpoint instead of erroring.
+          try {
+            const fallback = await apiFetch<{ post: PendingPost }>(`/admin/posts/${postId}`);
+            if (cancelled) return;
+            setPost(fallback.post);
+            setIsNonPending(true);
+            setLoadError(null);
+          } catch (fallbackErr) {
+            if (cancelled) return;
+            setLoadError('This post is no longer pending review. Open it from All Posts → View to see the live post.');
+            console.warn('Pending fallback fetch failed:', fallbackErr);
+          }
+        } else if (status === 404) {
+          setLoadError('Post not found. It may have been permanently deleted.');
+          console.warn('Pending post not found:', postId);
+        } else {
+          setLoadError('Failed to load post. Please retry.');
+          console.warn('Pending post load failed:', status, body?.code || msg.slice(0, 120));
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -111,7 +143,7 @@ export default function PendingPostDetailClient() {
 
   if (loading) return <div className="p-5 text-white/40">Loading post...</div>;
   if (!postId) return <div className="p-5 text-white/40">Invalid post ID</div>;
-  if (!post) return <div className="p-5 text-white/40">Post not found</div>;
+  if (!post) return <div className="p-5 text-white/40">{loadError || 'Post not found'}</div>;
 
   return (
     <div className="space-y-3 sm:space-y-4">
@@ -119,9 +151,20 @@ export default function PendingPostDetailClient() {
         Back to pending posts
       </button>
 
-      <div className="text-2xs font-mono text-zinc-600">
-        DOUBLE-BLIND REVIEW — Decisions based on content, not author reputation
-      </div>
+      {isNonPending && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-200">
+          This post is {post.status || 'no longer pending review'} — showing a read-only preview.
+          {post.slug && (
+            <> Open the <button onClick={() => window.open(`/${post.slug}`, '_blank')} className="underline hover:text-amber-100">live post</button> or use All Posts → View.</>
+          )}
+        </div>
+      )}
+
+      {!isNonPending && (
+        <div className="text-2xs font-mono text-zinc-600">
+          DOUBLE-BLIND REVIEW — Decisions based on content, not author reputation
+        </div>
+      )}
 
       <div className="space-y-4 sm:space-y-6 mt-5">
         <div>
@@ -146,17 +189,30 @@ export default function PendingPostDetailClient() {
           ))}
         </div>
 
-        <div className="flex gap-3 flex-wrap mt-8">
-          <button onClick={handleApprove} disabled={actionLoading} className={btnPrimaryClass}>
-            <Icon name="Check" size={16} color="#fff" /> Approve Post
-          </button>
-          <button onClick={() => setShowRetryModal(true)} disabled={actionLoading} className="inline-flex items-center gap-1.5 px-4 sm:px-5 py-2.5 sm:py-3 text-sm font-bold text-white rounded-xl bg-orange-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed min-h-11 hover:bg-orange-500">
-            <Icon name="RefreshCw" size={16} color="#fff" /> Request Revision
-          </button>
-          <button onClick={() => setShowRejectModal(true)} disabled={actionLoading} className={btnSecondaryClass}>
-            <Icon name="X" size={16} color="#ef4444" /> Reject Post
-          </button>
-        </div>
+        {!isNonPending ? (
+          <div className="flex gap-3 flex-wrap mt-8">
+            <button onClick={handleApprove} disabled={actionLoading} className={btnPrimaryClass}>
+              <Icon name="Check" size={16} color="#fff" /> Approve Post
+            </button>
+            <button onClick={() => setShowRetryModal(true)} disabled={actionLoading} className="inline-flex items-center gap-1.5 px-4 sm:px-5 py-2.5 sm:py-3 text-sm font-bold text-white rounded-xl bg-orange-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed min-h-11 hover:bg-orange-500">
+              <Icon name="RefreshCw" size={16} color="#fff" /> Request Revision
+            </button>
+            <button onClick={() => setShowRejectModal(true)} disabled={actionLoading} className={btnSecondaryClass}>
+              <Icon name="X" size={16} color="#ef4444" /> Reject Post
+            </button>
+          </div>
+        ) : (
+          <div className="flex gap-3 flex-wrap mt-8">
+            {post.slug && (
+              <button onClick={() => window.open(`/${post.slug}`, '_blank')} className={btnPrimaryClass}>
+                <Icon name="ExternalLink" size={16} color="#fff" /> Open live post
+              </button>
+            )}
+            <button onClick={() => router.push('/admin/posts')} className={btnSecondaryClass}>
+              Back to All Posts
+            </button>
+          </div>
+        )}
 
         {/* Retry Modal */}
         {showRetryModal && (
