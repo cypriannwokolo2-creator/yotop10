@@ -108,7 +108,12 @@ Hardcoded JWT, orphaned setInterval, $regex injection, stub 200s, health check o
   stable cookie survived each cleanup, so the 425 auto-mint silently re-minted after every
   deletion (same cookie behind a_222a and a_eadd). Deleted a_eadd (zero content), aliased the
   owner's cookie to cutie, verified live that the cookie now resolves to cutie (user_id
-  54f39ac86e1f07ab, bio + posts intact). No bot-farm activity in logs — flood is over. Frontend typecheck ✅ lint ✅ **build ✅ EXIT 0, zero errors**.
+  54f39ac86e1f07ab, bio + posts intact). No bot-farm activity in logs — flood is over.
+- **M22 fixes (2026-09-14)** — rename 403 was the maturity lock firing on the stranger account
+  (young + untrusted), correct behavior; rename form now shows the server's real reason instead
+  of a generic failure. Missing seed images regenerated locally (gradient covers, exact
+  filenames) — all 4 serve 200. Bio placeholder rewritten to invite a real bio. Frontend
+  typecheck ✅ lint ✅ build ✅ EXIT 0. Frontend typecheck ✅ lint ✅ **build ✅ EXIT 0, zero errors**.
 - **Profile hydration (M18.6)** — `/a/cutie` hydration mismatch traced to a STALE cached app-page
   chunk in the browser (old `md:hidden` mobile-wrapper bundle hydrating fresh server HTML; the served
   chunk and server HTML were verified fresh and matching). Immediate fix for the viewer: hard refresh.
