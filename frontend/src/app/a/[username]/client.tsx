@@ -59,6 +59,12 @@ export default function UserProfileClient({ initialProfile }: { initialProfile: 
   const [postFilter, setPostFilter] = useState<'all' | 'approved' | 'pending' | 'rejected'>('all');
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
+  // Hydration guard: client-store identity (zustand) may disagree with the SSR
+  // HTML on first render (populated store from an earlier page + anonymous SSR,
+  // or vice versa). Owner-only upgrades apply AFTER mount so server HTML and
+  // the first client render always agree — no hydration mismatch, ever.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   const authUser = useAuthStore((s) => s.user);
   const fetchAuthUser = useAuthStore((s) => s.fetchUser);
@@ -69,13 +75,16 @@ export default function UserProfileClient({ initialProfile }: { initialProfile: 
   const rateLimitErrorCount = useRateLimitStore((s) => s.errorCount);
   const retryTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
-  // Compute is_own_profile locally — server-side fetch can't determine identity
+  // Compute is_own_profile locally — server-side fetch can't always determine identity
+  // (no cookie on the SSR fetch). Server truth (profile.is_own_profile) wins on
+  // first render; the client-store match only upgrades after hydration (see above).
   const profileUsername = profile.username;
-  const isOwn = profile.is_own_profile ||
-    (authUser?.username === profileUsername) ||
-    (authUser?.custom_display_name === profileUsername);
+  const authMatch =
+    authUser?.username === profileUsername ||
+    authUser?.custom_display_name === profileUsername;
+  const isOwn = profile.is_own_profile || (mounted && !!authMatch);
 
-  const trustScore = isOwn && authUser ? authUser.trust_score : profile.trust_score ?? 0;
+  const trustScore = mounted && isOwn && authUser ? authUser.trust_score : profile.trust_score ?? 0;
   const tier = TIER_STYLES[profile.trust_level] || TIER_STYLES.neutral;
 
   useEffect(() => {
