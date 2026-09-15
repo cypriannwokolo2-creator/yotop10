@@ -1,8 +1,12 @@
 import { ImageResponse } from 'next/og';
 import { ogSansFonts } from '@/lib/seo/ogFonts';
-import { OGFrame, OGHeader, OGTitle, OGSubtitle, OGRankList, OGFooter, titleSize, truncate } from '@/lib/seo/ogImageLayout';
+import { LightFrame, LogoMark, TrustBadge, LightHeadline, LightSubtext, RankRow, titleSize, truncate } from '@/lib/seo/ogImageLayout';
 
 export const runtime = 'nodejs';
+export const alt = 'Browse category lists and debates on YoTop10';
+export const size = { width: 1200, height: 630 };
+export const contentType = 'image/png';
+export const revalidate = 3600;
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -39,15 +43,23 @@ export async function GET(req: Request) {
 
   return new ImageResponse(
     (
-      <OGFrame accent="blue">
-        <OGHeader badge="Category" badgeAccent="blue" right={count > 0 ? `${count} lists` : undefined} />
-        <OGTitle size={titleSize(name)} clamp={2}>
-          {name}
-        </OGTitle>
-        {description ? <OGSubtitle>{description}</OGSubtitle> : null}
-        {topTitles.length > 0 ? <OGRankList items={topTitles} accent="blue" /> : null}
-        <OGFooter />
-      </OGFrame>
+      <LightFrame>
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', flex: 1, padding: '50px 60px', gap: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <LogoMark />
+            <TrustBadge level="ghost" label={count > 0 ? `${count} lists` : 'Category'} />
+          </div>
+          <LightHeadline size={titleSize(name)}>{name}</LightHeadline>
+          {description ? <LightSubtext>{description}</LightSubtext> : null}
+          {topTitles.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {topTitles.map((t, i) => (
+                <RankRow key={i} rank={t.rank} title={t.title} accent="#1d4ed8" />
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </LightFrame>
     ),
     {
       width: 1200,

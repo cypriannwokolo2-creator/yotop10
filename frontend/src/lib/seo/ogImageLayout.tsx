@@ -162,3 +162,156 @@ export function titleSize(title: string): number {
   if (title.length > 70) return 44;
   return 52;
 }
+
+/* ─── Light brand system (matches YoTop10 OG mockups) ─── */
+
+export const LIGHT = {
+  bg: '#ffffff',
+  ink: '#111111',
+  sub: '#6b7280',
+  faint: '#f0f0f2',
+  bar: '#e8492b',
+  ctaBlack: '#111111',
+  ctaRed: '#d92d20',
+} as const;
+
+export const TRUST_PILL: Record<string, { bg: string; text: string }> = {
+  scholar: { bg: '#dbeafe', text: '#1d4ed8' },
+  neutral: { bg: '#d9f5e8', text: '#0ca678' },
+  newbie: { bg: '#fef3c7', text: '#b45309' },
+  ghost: { bg: '#f0f0f2', text: '#6b7280' },
+  troll: { bg: '#fee2e2', text: '#b91c1c' },
+};
+
+export function trustPillStyle(level?: string): { bg: string; text: string } {
+  return TRUST_PILL[(level || 'neutral').toLowerCase()] || TRUST_PILL.neutral;
+}
+
+export function LightFrame({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        width: 1200,
+        height: 630,
+        display: 'flex',
+        flexDirection: 'row',
+        background: LIGHT.bg,
+        color: LIGHT.ink,
+        fontFamily: 'Geist Sans, sans-serif',
+        overflow: 'hidden',
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+export function LogoMark() {
+  const bars = [46, 64, 30];
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        {bars.map((w, i) => (
+          <div key={i} style={{ width: w, height: 9, borderRadius: 5, background: LIGHT.bar }} />
+        ))}
+      </div>
+      <span style={{ fontSize: 28, fontWeight: 700, color: LIGHT.ink }}>YoTop10</span>
+    </div>
+  );
+}
+
+export function DomainPill({ domain = 'yotop10.com' }: { domain?: string }) {
+  return (
+    <span
+      style={{
+        fontSize: 20,
+        fontWeight: 400,
+        color: '#374151',
+        background: LIGHT.faint,
+        borderRadius: 999,
+        padding: '8px 20px',
+      }}
+    >
+      {domain}
+    </span>
+  );
+}
+
+export function TrustBadge({ level, label }: { level?: string; label: string }) {
+  const c = trustPillStyle(level);
+  return (
+    <span
+      style={{
+        fontSize: 20,
+        fontWeight: 700,
+        color: c.text,
+        background: c.bg,
+        borderRadius: 999,
+        padding: '8px 20px',
+        textTransform: 'capitalize',
+      }}
+    >
+      {label}
+    </span>
+  );
+}
+
+export function LightHeadline({ children, size = 64 }: { children: React.ReactNode; size?: number }) {
+  return (
+    <div style={{ fontSize: size, fontWeight: 700, color: LIGHT.ink, lineHeight: 1.12, overflow: 'hidden', lineClamp: 3 }}>
+      {children}
+    </div>
+  );
+}
+
+export function LightSubtext({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ fontSize: 24, fontWeight: 400, color: LIGHT.sub, lineHeight: 1.4, overflow: 'hidden', lineClamp: 2 }}>
+      {children}
+    </div>
+  );
+}
+
+export function CtaPill({ children, tone = 'black' }: { children: React.ReactNode; tone?: 'black' | 'red' }) {
+  return (
+    <span
+      style={{
+        fontSize: 22,
+        fontWeight: 700,
+        color: '#ffffff',
+        background: tone === 'red' ? LIGHT.ctaRed : LIGHT.ctaBlack,
+        borderRadius: 999,
+        padding: '14px 30px',
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
+export function RankRow({ rank, title, accent = LIGHT.bar }: { rank: number | string; title: string; accent?: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+      <span
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: 12,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 18,
+          fontWeight: 700,
+          fontFamily: 'Geist Mono, monospace',
+          background: '#fdeee8',
+          color: accent,
+        }}
+      >
+        {rank}
+      </span>
+      <span style={{ fontSize: 22, color: '#374151', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+        {truncate(title, 48)}
+      </span>
+    </div>
+  );
+}
