@@ -35,6 +35,7 @@ export default function ArgumentsClient({ initialPosts, initialCategories, initi
   const hasMoreRef = useRef(initialHasMore);
   const fetchingRef = useRef(false);
   const pageRef = useRef(1);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   const fetchArguments = useCallback(
     async (pageNum: number, t: string, cat: string) => {
@@ -81,6 +82,7 @@ export default function ArgumentsClient({ initialPosts, initialCategories, initi
 
         const nextPage = pageRef.current + 1;
         fetchingRef.current = true;
+        setLoadingMore(true);
         try {
           const data = await fetchArguments(nextPage, time, category);
           setPosts((prev) => [...prev, ...(data.arguments || [])]);
@@ -90,6 +92,7 @@ export default function ArgumentsClient({ initialPosts, initialCategories, initi
           hasMoreRef.current = false;
         } finally {
           fetchingRef.current = false;
+          setLoadingMore(false);
         }
       },
       { rootMargin: '400px' }
@@ -162,6 +165,16 @@ export default function ArgumentsClient({ initialPosts, initialCategories, initi
               ))}
             </div>
             <div ref={sentinelRef} className="h-px" />
+            {loadingMore && (
+              <div className="space-y-3 pb-8 animate-pulse" aria-label="Loading more debates">
+                {Array.from({ length: 2 }).map((_, i) => (
+                  <div key={i} className="rounded-2xl border border-white/5 bg-white/5 p-5">
+                    <div className="h-5 w-3/4 rounded bg-white/5 mb-3" />
+                    <div className="h-10 rounded bg-white/5" />
+                  </div>
+                ))}
+              </div>
+            )}
           </>
         )}
       </div>

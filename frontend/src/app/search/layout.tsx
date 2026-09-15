@@ -1,8 +1,9 @@
 import { Suspense } from 'react';
+import { SearchSkeleton } from '@/components/SearchSkeleton';
 
 export default function SearchLayout({ children }: { children: React.ReactNode }) {
   return (
-    <Suspense fallback={<div className="p-10 text-center text-zinc-500">Loading search...</div>}>
+    <Suspense fallback={<SearchSkeleton />}>
       {children}
     </Suspense>
   );

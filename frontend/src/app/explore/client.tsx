@@ -8,6 +8,7 @@ import { relativeTime, cleanTitle } from '@/lib/dates';
 import { toPublicSlug } from '@/lib/username';
 import type { ExplorePost } from '@/lib/api/types';
 import { API } from '@/lib/api';
+import { ExploreSkeleton } from '@/components/ExploreSkeleton';
 
 type TabValue = 'all' | 'list' | 'vs' | 'article' | 'fact';
 
@@ -348,10 +349,7 @@ export default function ExploreClient({ initialPosts, initialHasMore }: ExploreC
         </div>
 
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-24">
-            <Icon name="Loader" size={24} className="animate-spin text-zinc-600 mb-3" />
-            <p className="text-sm text-zinc-500">Loading...</p>
-          </div>
+          <ExploreSkeleton />
         ) : posts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-white/[0.03] border border-white/[0.08]">
