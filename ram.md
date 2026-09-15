@@ -224,3 +224,9 @@ Hardcoded JWT, orphaned setInterval, $regex injection, stub 200s, health check o
 - **All 5 generators rebuilt light**: homepage = brand bars card (matches mockup 1); profile = logo + tier-colored trust pill + `{name} on YoTop10` + live stats + red CTA + avatar disc with real photo or monogram (matches mockup 2); post/article = logo + type badge + title + top items + **real hero/cover photo side panel when present**; category = light + top-3.
 - **Two runtime bugs found by live logs and fixed**: (1) Satori multi-text-node div (`{category} · yotop10.com`) threw "explicit display:flex" → single template string; (2) Satori cannot decode WebP (`Unsupported image type`) → generators skip `.webp`/unknown extensions, fall back to text/monogram cards.
 - **Gates**: frontend typecheck ✅ lint ✅ (0 errors) build ✅. All 5 routes 200 with valid 1200×630 PNGs; visually inspected home/profile/post renders against the mockups.
+
+### OG corrections: exact homepage bytes, CTAs everywhere, profile 200px fix (2026-09-15, [M30.5]–[M30.6])
+- **Homepage as-sent**: `app/opengraph-image.png` + `app/twitter-image.png` serve the exact uploaded bytes (321,398B verified). Lesson: static file-convention routes keep their extension (`/opengraph-image.png`); the extensionless URL is code-convention-only and was serving homepage HTML. Homepage meta updated accordingly.
+- **CTAs added** (were missing): black "Join the Fun!" on post, article, and category cards.
+- **Profile 200×200 fix**: metadata used to prefer the raw avatar URL (200px upload, falsely labeled 1200×630) → validators failed it on X/LinkedIn/WhatsApp/Slack. Now always the generator route (true 1200×630, avatar composited inside). Verified by resolving the tagged URL and reading PNG dims.
+- **Post card verified visually**: real title, badge, www domain line, ranked items, CTA, external hotlinked photo renders fine.
