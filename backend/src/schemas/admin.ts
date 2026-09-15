@@ -72,6 +72,7 @@ export const configUpdateSchema = z.object({
     })
     .optional(),
   fingerprint_enabled: z.boolean().optional(),
+  list_order: z.enum(['asc', 'desc']).optional(),
 });
 
 export const configImpactQuerySchema = z.object({

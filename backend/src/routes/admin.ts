@@ -3050,6 +3050,14 @@ router.put('/config', async (req, res) => {
       });
     }
 
+    // List display order is site-wide presentation — super admin only
+    if ((body as Record<string, unknown>).list_order !== undefined && req.admin?.role !== 'super_admin') {
+      return res.status(403).json({
+        code: 'FORBIDDEN',
+        error: 'The list_order setting requires super admin access.',
+      });
+    }
+
     const result = await updateConfig(body as Record<string, unknown>, (req.admin?.id as string) || 'unknown');
 
     res.json({ success: true, config: result, version: result.version });

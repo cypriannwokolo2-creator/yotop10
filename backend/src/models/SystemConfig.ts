@@ -32,6 +32,7 @@ export interface ISystemConfig extends Document {
     auto_approve_mode: 'approve_only' | 'approve_reject' | 'approve_revision';
   };
   fingerprint_enabled: boolean;
+  list_order: 'asc' | 'desc';
   version: number;
   updated_at: Date;
   updated_by: string;
@@ -70,6 +71,7 @@ const systemConfigSchema = new Schema<ISystemConfig>({
   },
   ai_moderation: { type: Schema.Types.Mixed },
   fingerprint_enabled: { type: Boolean, default: false },
+  list_order: { type: String, enum: ['asc', 'desc'], default: 'asc' },
   version: { type: Number, default: 1 },
   updated_at: { type: Date, default: Date.now },
   updated_by: { type: String, default: 'system' },

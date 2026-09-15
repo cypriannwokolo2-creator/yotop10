@@ -9,6 +9,7 @@ import { getCategoryNameMap } from '../lib/categoryCache';
 import { redis } from '../lib/redis';
 import { getFingerprintIdentity } from '../middleware/fingerprint';
 import { shouldCountView } from '../lib/viewCounting';
+import { orderItemsForDisplay } from '../lib/listOrder';
 
 const router: Router = Router();
 
@@ -110,10 +111,15 @@ router.get('/', async (req: any, res: any) => {
 
     const allItems = await ListItem.find({ post_id: { $in: posts.map((p) => p._id) } }).sort({ rank: 1 }).select('post_id rank title').lean();
     const itemsByPost: Record<string, Array<{ rank: number; title: string }>> = {};
+    const typeByPost: Record<string, string> = {};
+    for (const p of posts) typeByPost[(p._id as { toString(): string }).toString()] = (p as unknown as { post_type: string }).post_type;
     for (const item of allItems) {
       const pid = (item as any).post_id?.toString() || '';
       if (!itemsByPost[pid]) itemsByPost[pid] = [];
-      if (itemsByPost[pid].length < 3) itemsByPost[pid].push({ rank: item.rank, title: item.title });
+      itemsByPost[pid].push({ rank: item.rank, title: item.title });
+    }
+    for (const pid of Object.keys(itemsByPost)) {
+      itemsByPost[pid] = orderItemsForDisplay(typeByPost[pid], itemsByPost[pid]).slice(0, 3);
     }
 
     for (const s of scores) {

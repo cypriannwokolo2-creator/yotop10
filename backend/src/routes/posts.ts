@@ -20,6 +20,7 @@ import { findSimilarTitles } from '../lib/titleSimilarityV2';
 import { validateListTitle, needsListTitleValidation } from '../lib/listTitleValidation';
 import { updateParentSparkScore } from './comments';
 import { computeSparkScore, getThresholds } from '../lib/sparkScore';
+import { orderItemsForDisplay } from '../lib/listOrder';
 import { indexComment, indexPost } from '../elasticsearch/lib/indexWriter';
 import { queuePostForAiReview } from '../lib/aiModerationWorker';
 
@@ -211,13 +212,16 @@ router.get('/', async (req, res) => {
 
     const itemsByPost: Record<string, Array<{ rank: number; title: string }>> = {};
     const countByPost: Record<string, number> = {};
+    const typeByPost: Record<string, string> = {};
+    for (const post of posts) typeByPost[post._id.toString()] = post.post_type as string;
     for (const item of allItems) {
       const pid = (item as Record<string, unknown>).post_id?.toString() || '';
       countByPost[pid] = (countByPost[pid] || 0) + 1;
       if (!itemsByPost[pid]) itemsByPost[pid] = [];
-      if (itemsByPost[pid].length < 3) {
-        itemsByPost[pid].push({ rank: item.rank, title: item.title });
-      }
+      itemsByPost[pid].push({ rank: item.rank, title: item.title });
+    }
+    for (const pid of Object.keys(itemsByPost)) {
+      itemsByPost[pid] = orderItemsForDisplay(typeByPost[pid], itemsByPost[pid]).slice(0, 3);
     }
 
     const formattedPosts = posts.map((post) => ({
@@ -490,7 +494,7 @@ router.get('/:idOrSlug', async (req, res) => {
         votes_a: (post as any).votes_a || 0,
         votes_b: (post as any).votes_b || 0,
       },
-      items: listItems.map((item) => ({
+      items: orderItemsForDisplay(post.post_type, listItems).map((item) => ({
         id: item._id,
         rank: item.rank,
         title: item.title,

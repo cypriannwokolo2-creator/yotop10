@@ -27,6 +27,7 @@ export const DEFAULT_CONFIG = {
     double_blind: true,
   },
   fingerprint_enabled: false,
+  list_order: 'asc' as 'asc' | 'desc',
   version: 1,
   updated_at: new Date(),
   updated_by: 'system',
@@ -85,6 +86,7 @@ function leanToShape(doc: Record<string, unknown>): ConfigShape {
       double_blind: (tt?.double_blind as boolean) ?? DEFAULT_CONFIG.trust_tiers.double_blind,
     },
     fingerprint_enabled: (doc.fingerprint_enabled as boolean) ?? DEFAULT_CONFIG.fingerprint_enabled,
+    list_order: (doc.list_order as 'asc' | 'desc') === 'desc' ? 'desc' : 'asc',
     version: (doc.version as number) ?? DEFAULT_CONFIG.version,
     updated_at: (doc.updated_at as Date) ?? DEFAULT_CONFIG.updated_at,
     updated_by: (doc.updated_by as string) ?? DEFAULT_CONFIG.updated_by,
@@ -126,6 +128,7 @@ export async function updateConfig(
   changes: Partial<{
     rate_limits: Partial<ConfigShape['rate_limits']>;
     trust_tiers: Partial<ConfigShape['trust_tiers']>;
+    list_order: 'asc' | 'desc';
   }>,
   adminId: string,
 ): Promise<ConfigShape> {
@@ -173,6 +176,13 @@ export async function updateConfig(
     if (tt.double_blind !== undefined) setOps['trust_tiers.double_blind'] = tt.double_blind;
   }
 
+  if (changes.list_order !== undefined) {
+    if (changes.list_order !== 'asc' && changes.list_order !== 'desc') {
+      throw new Error('list_order must be "asc" or "desc"');
+    }
+    setOps['list_order'] = changes.list_order;
+  }
+
   if (Object.keys(setOps).length === 0) {
     return getConfig();
   }
@@ -205,7 +215,9 @@ export async function updateConfig(
     ip: 'system',
     metadata: {
       version: cachedConfig.version,
-      changed_fields: Object.keys(changes.rate_limits ?? {}).concat(Object.keys(changes.trust_tiers ?? {})),
+      changed_fields: Object.keys(changes.rate_limits ?? {})
+        .concat(Object.keys(changes.trust_tiers ?? {}))
+        .concat(changes.list_order !== undefined ? ['list_order'] : []),
     },
   });
 
