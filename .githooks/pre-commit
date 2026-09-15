@@ -44,6 +44,19 @@ if [ -n "$ENV_STAGED" ]; then
   exit 1
 fi
 
+# ─── Author Identity ──────────────────────────────────────────────
+# Commits must carry the owner's identity. Never `-c user.email=...`
+# overrides, never CI/bot addresses. Repo config (user.name/user.email)
+# is the single source of truth.
+EXPECTED_AUTHOR_EMAIL="lindawheek@gmail.com"
+ACTUAL_AUTHOR_EMAIL=$(git config user.email 2>/dev/null || true)
+if [ "$ACTUAL_AUTHOR_EMAIL" != "$EXPECTED_AUTHOR_EMAIL" ]; then
+  echo "❌ BLOCKED: git user.email is '$ACTUAL_AUTHOR_EMAIL', expected '$EXPECTED_AUTHOR_EMAIL'."
+  echo "   Fix with: git config user.email \"$EXPECTED_AUTHOR_EMAIL\""
+  echo "   Do NOT use -c user.email=... overrides."
+  exit 1
+fi
+
 STAGED_TS=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx)$' | grep -v '\.test\.' | grep -v 'node_modules' | grep -v 'types/' || true)
 
 if [ -z "$STAGED_TS" ]; then
