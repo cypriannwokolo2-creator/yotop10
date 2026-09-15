@@ -80,7 +80,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: '/opengraph-image',
+        url: '/opengraph-image.png',
         width: 1200,
         height: 630,
         alt: 'YoTop10 — Fact Mine. Debate Ground.',
@@ -96,7 +96,7 @@ export const metadata: Metadata = {
     description: 'The open catalog of ranked lists. Submit your list. Defend your rankings.',
     images: [
       {
-        url: '/opengraph-image',
+        url: '/twitter-image.png',
         alt: 'YoTop10 — Fact Mine. Debate Ground.',
       },
     ],
