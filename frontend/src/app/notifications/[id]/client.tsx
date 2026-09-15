@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
 import { Icon } from '@/components/icons/Icon';
 import { NotificationDetailSkeleton } from '@/components/NotificationDetailSkeleton';
@@ -123,22 +124,26 @@ export default function NotificationDetailClient() {
         ) : (
           <>
             <div className="mb-2">
-              {n.type === 'post_approved' ? <Icon name="Check" size={24} color="#2e7d32" /> : n.type === 'post_rejected' ? <Icon name="X" size={24} color="#c62828" /> : <Icon name="RefreshCw" size={24} color="#f57c00" />}
+              {n.type === 'post_approved' || n.type === 'article_approved' ? <Icon name="Check" size={24} color="#2e7d32" /> : n.type === 'post_rejected' || n.type === 'article_rejected' ? <Icon name="X" size={24} color="#c62828" /> : n.type === 'post_edited' || n.type === 'article_edited' ? <Icon name="Pencil" size={24} color="#f57c00" /> : <Icon name="RefreshCw" size={24} color="#f57c00" />}
             </div>
             <h1 className="text-lg font-bold text-white mb-1">
               {n.post_title}
             </h1>
             <div className="text-sm2 text-white/40 mb-4">
-              {n.type === 'post_approved' ? 'Your post was approved' : n.type === 'post_rejected' ? 'Your post was rejected' : 'Revision requested'}
+              {n.type === 'post_approved' ? 'Your post was approved' : n.type === 'post_rejected' ? 'Your post was rejected' : n.type === 'article_approved' ? 'Your article was approved' : n.type === 'article_rejected' ? 'Your article was rejected' : n.type === 'post_edited' ? 'An admin edited your post' : n.type === 'article_edited' ? 'An admin edited your article' : 'Revision requested'}
             </div>
             <p className="text-base2 text-white/70 leading-relaxed">{n.message}</p>
             <div className="mt-5 pt-4 border-t border-white/10 flex justify-between items-center">
               <span className="text-xs text-white/30" suppressHydrationWarning>{formatDate(n.created_at)} {formatTime(n.created_at)}</span>
-              {n.post_id && (
+              {n.post_id ? (n.type === 'article_approved' || n.type === 'article_rejected' || n.type === 'article_edited' ? (
+                <Link href="/articles" className="text-orange-400 text-sm2 no-underline hover:text-orange-300">
+                  View articles <Icon name="ArrowRight" size={14} className="inline" />
+                </Link>
+              ) : (
                 <a href={`/${n.post_id}`} className="text-orange-400 text-sm2 no-underline hover:text-orange-300">
                   View post <Icon name="ArrowRight" size={14} className="inline" />
                 </a>
-              )}
+              )) : null}
             </div>
           </>
         )}

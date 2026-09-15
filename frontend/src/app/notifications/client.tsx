@@ -24,6 +24,7 @@ interface NotifItem {
 const TYPE_ICON: Record<string, string> = {
   post_approved: 'Check', post_rejected: 'X', revision_requested: 'RefreshCw', admin_message: 'Mail',
   article_approved: 'Check', article_rejected: 'X',
+  post_edited: 'Pencil', article_edited: 'Pencil',
 };
 
 const PRIORITY_CLASSES: Record<string, string> = {

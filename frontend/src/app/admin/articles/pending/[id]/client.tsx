@@ -183,6 +183,9 @@ export default function PendingArticleDetailClient() {
           <button onClick={() => setShowRejectModal(true)} disabled={actionLoading} className={btnSecondaryClass}>
             <Icon name="X" size={16} color="#ef4444" /> Reject Article
           </button>
+          <button onClick={() => router.push(`/admin/articles/${articleId}/edit`)} disabled={actionLoading} className={btnSecondaryClass}>
+            <Icon name="Pencil" size={16} /> Edit Article
+          </button>
         </div>
 
         {/* Reject Modal */}
