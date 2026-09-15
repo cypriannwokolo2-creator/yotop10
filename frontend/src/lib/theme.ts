@@ -20,7 +20,7 @@ export function getStoredTheme(): ThemeName | null {
 }
 
 export function getPreferredTheme(): ThemeName {
-  return getStoredTheme() ?? (isDesktopWidth() ? 'light' : 'dark');
+  return getStoredTheme() ?? 'light';
 }
 
 export function applyTheme(theme: ThemeName): void {
@@ -38,4 +38,4 @@ export function persistTheme(theme: ThemeName): void {
   }
 }
 
-export const THEME_INIT_SCRIPT = `(function(){try{var s=null;try{s=localStorage.getItem('${THEME_STORAGE_KEY}');}catch(e){}var t=(s==='light'||s==='dark')?s:(window.matchMedia('(min-width: ${DESKTOP_MIN_WIDTH}px)').matches?'light':'dark');if(t==='light'){document.documentElement.classList.add('${LIGHT_CLASS}');}var m=document.querySelector('meta[name="theme-color"]');if(m){m.setAttribute('content',t==='light'?'#f8f8fa':'#05050f');}}catch(e){}})();`;
+export const THEME_INIT_SCRIPT = `(function(){try{var s=null;try{s=localStorage.getItem('${THEME_STORAGE_KEY}');}catch(e){}var t=(s==='light'||s==='dark')?s:'light';if(t==='light'){document.documentElement.classList.add('${LIGHT_CLASS}');}var m=document.querySelector('meta[name="theme-color"]');if(m){m.setAttribute('content',t==='light'?'#f8f8fa':'#05050f');}}catch(e){}})();`;

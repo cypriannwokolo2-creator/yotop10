@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/api';
 import { Icon } from '@/components/icons/Icon';
+import { NotificationDetailSkeleton } from '@/components/NotificationDetailSkeleton';
 import { formatDate, formatTime } from '@/lib/dates';
 
 interface NotifDetail {
@@ -63,7 +64,7 @@ export default function NotificationDetailClient() {
   const PRIORITY_COLORS: Record<string, string> = { info: 'text-blue-400', important: 'text-orange-400', urgent: 'text-red-400' };
   const PRIORITY_BG: Record<string, string> = { info: 'bg-blue-500/20', important: 'bg-orange-500/20', urgent: 'bg-red-500/20' };
 
-  if (loading) return <div className="p-5 text-white/40">Loading...</div>;
+  if (loading) return <NotificationDetailSkeleton />;
   if (!n) return (
     <div className="max-w-[700px] mx-auto px-3 sm:px-5 py-10 text-center">
       <h2 className="text-white/40 text-lg">Notification not found</h2>

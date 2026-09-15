@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { API } from '@/lib/api';
+import { HistorySkeleton } from '@/components/HistorySkeleton';
 
 interface HistoryEntry {
   id: string;
@@ -30,7 +31,7 @@ export default function UsernameHistoryClient() {
     fetchHistory();
   }, []);
 
-  if (loading) return <div className="min-h-screen bg-[var(--color-bg)] flex items-center justify-center text-sm text-zinc-500">Loading...</div>;
+  if (loading) return <HistorySkeleton />;
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)] mx-auto max-w-2xl px-4 py-8 sm:px-6 sm:py-12">

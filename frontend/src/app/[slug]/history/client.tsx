@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { API, PostHistoryResponse } from '@/lib/api';
+import { HistorySkeleton } from '@/components/HistorySkeleton';
 import { formatDate } from '@/lib/dates';
 import { RESERVED_ROUTES } from '@/lib/reservedRoutes';
 
@@ -38,7 +39,7 @@ export default function PostHistoryClient({ slug }: { slug: string }) {
       .finally(() => setLoading(false));
   }, [postId]);
 
-  if (loading) return <div className="min-h-screen bg-[var(--color-bg)] flex items-center justify-center text-sm text-zinc-500">Loading history...</div>;
+  if (loading) return <HistorySkeleton />;
   if (error) return <div className="min-h-screen bg-[var(--color-bg)] flex items-center justify-center text-sm text-red-400">{error}</div>;
 
   return (

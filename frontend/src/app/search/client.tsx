@@ -7,6 +7,7 @@ import { Icon } from '@/components/icons/Icon';
 import { CustomDropdown } from '@/components/CustomDropdown';
 import { formatDate } from '@/lib/dates';
 import { SafeHTML } from '@/components/SafeHTML';
+import { SearchSkeleton } from '@/components/SearchSkeleton';
 import { API } from '@/lib/api';
 import { toPublicSlug } from '@/lib/username';
 interface SearchResult {
@@ -417,6 +418,8 @@ export default function SearchClient() {
             )}
 
             {error && <p className="py-8 text-center text-sm text-red-400">{error}</p>}
+
+            {loading && !results && <SearchSkeleton />}
 
             {!loading && results && activeResults.length === 0 && (
               <div className="py-16 text-center">
