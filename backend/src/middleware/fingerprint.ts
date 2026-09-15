@@ -48,6 +48,7 @@ export const isLowEntropyFingerprint = (fp: string): boolean => /^0{6,}[0-9a-f]*
  */
 const DENIED_FINGERPRINTS = new Set([
   '000000000f6f92bf', // bot script static value, loop-minted 2026-09-14
+  '00000000695088c4', // low-entropy (16 chars, 6 leading zeros), same family as 000000000f6f92bf; cutiee relink attempt on /a/40b0 2026-09-15 — refused, deleted account, denied the value instead
 ]);
 
 export const isDeniedFingerprint = (fp: string | undefined): boolean =>
@@ -184,8 +185,11 @@ export const fingerprintMiddleware = async (req: Request, res: Response, next: N
   const rawHeader = req.headers['x-device-fingerprint'] as string | undefined;
   const rawCookie = req.cookies?.device_fingerprint as string | undefined;
   // Denied values are dropped before anything else: neither resolved nor minted.
-  const headerFingerprint = isDeniedFingerprint(rawHeader) ? undefined : rawHeader;
-  const cookieFingerprint = isDeniedFingerprint(rawCookie) ? undefined : rawCookie;
+  // Low-entropy values (6+ leading zeros) are treated the same: they can't have
+  // come from the grace generator (randomBytes(16).toString('hex'), ~1 in 16M
+  // for 6 zeros), so any such value is hand-set by a script and unsafe to trust.
+  const headerFingerprint = (isDeniedFingerprint(rawHeader) || isLowEntropyFingerprint(rawHeader || '')) ? undefined : rawHeader;
+  const cookieFingerprint = (isDeniedFingerprint(rawCookie) || isLowEntropyFingerprint(rawCookie || '')) ? undefined : rawCookie;
 
   // Bootstrap endpoints own their minting (bot challenge lives in the route).
   // The middleware MUST stay read-only here, or it would mint before the
