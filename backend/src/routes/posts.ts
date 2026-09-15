@@ -468,6 +468,7 @@ router.get('/:idOrSlug', async (req, res) => {
     res.json({
       post: {
         id: post._id,
+        slug: (post as Record<string, unknown>).slug as string,
         title: post.title,
         post_type: post.post_type,
         intro: post.intro,
