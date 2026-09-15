@@ -209,3 +209,12 @@ Hardcoded JWT, orphaned setInterval, $regex injection, stub 200s, health check o
 - **Backend**: `lib/editReasons.ts` (presets + normalize/validate, tested), items image/source persisted incl. journal rollback path, audit `edit_post`/`edit_article` now carry `edit_reason`.
 - **Live verified with temp super_admin (deleted after)**: PATCH without reason → 400 on both; PATCH with reason → 200 + correct notifications in DB. Test wiped one post's items — reconstructed 10 items + neutral intro via a second PATCH (disclosed).
 - **Gates**: backend typecheck ✅ lint ✅ build ✅ tests ✅ 697 passed; frontend typecheck ✅ lint ✅ build ✅.
+
+### Ranking order setting + mobile bell dot (2026-09-15, [M29.1]–[M29.2])
+- **Mobile bell**: `DynamicIsland` had its own number badge (the one seen on mobile) → dot, matching the desktop bell fix.
+- **`list_order: 'asc'|'desc'`** in `SystemConfig` (default `asc` = today's behavior), plumbed through `DEFAULT_CONFIG`/`leanToShape`/`updateConfig` (+audit) and `configUpdateSchema`; `PUT /admin/config` rejects non-super-admin with 403 (mirrors `double_blind` precedent).
+- **Ordering helper** (`lib/listOrder.ts`, tested): `RANKED_LIST_TYPES` = top_list/best_of/worst_of/hidden_gems/counter_list; `orderItemsForDisplay` reverses per post type, no-ops otherwise. Rank numbers stay attached (no renumbering).
+- **Public read paths**: posts list top-3 (now top-3 *of display order*), post detail, explore top-3. Untouched: revision history, admin/pending/edit/review paths (canonical ascending), compare diff engine (rank-keyed, order-independent).
+- **`/admin/config` page** (super_admin, desktop nav entry): asc/desc radio cards + save; explains scope and countdown semantics.
+- **Live verified**: desc → detail 10→1 numbers intact, list/explore show highest ranks first, this_vs_that unchanged [1,2]; invalid value → 400; mod+config:write → 403; reverted to asc → [1..10] restored. Temp verification admins deleted.
+- **Gates**: backend typecheck ✅ lint ✅ build ✅ tests ✅ 700 passed; frontend typecheck ✅ lint ✅ (build in deploy step).
