@@ -71,7 +71,7 @@ export default async function Image({ params }: { params: { username: string } }
             <div style={{ display: 'flex', position: 'absolute', top: 110, left: 60, width: 240, height: 240, borderRadius: 120, background: '#fde8d3' }} />
             <div style={{ display: 'flex', position: 'relative', width: 300, height: 300, borderRadius: 150, background: '#eef1f7', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
               {photo ? (
-                <img src={photo} width={300} height={300} style={{ objectFit: 'cover' }} />
+                <img src={photo} width={300} height={300} alt="" style={{ objectFit: 'cover' }} />
               ) : (
                 <span style={{ fontSize: 130, fontWeight: 700, color: '#111111' }}>{initial}</span>
               )}
