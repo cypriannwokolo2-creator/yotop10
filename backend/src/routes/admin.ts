@@ -904,6 +904,45 @@ router.post('/articles/bulk/approve', async (req, res) => {
 });
 
 /**
+ * GET /api/admin/articles — List all articles (any status)
+ * Protected — backs the /admin/articles management page
+ */
+router.get('/articles', async (req, res) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
+    const skip = (page - 1) * limit;
+
+    const query: Record<string, unknown> = {};
+    if (req.query.status) query.status = req.query.status;
+    if (req.query.category_slug) query.category_slug = req.query.category_slug;
+    if (req.query.search) {
+      const escaped = (req.query.search as string).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      query.$or = [{ title: { $regex: escaped, $options: 'i' } }, { body: { $regex: escaped, $options: 'i' } }];
+    }
+
+    const sortDir = (req.query.sort as string) === 'oldest' ? 1 : -1;
+
+    const [articles, total] = await Promise.all([
+      Article.find(query).sort({ created_at: sortDir as 1 | -1 }).skip(skip).limit(limit).select('-__v -body').lean(),
+      Article.countDocuments(query),
+    ]);
+
+    const result: Record<string, unknown> = { articles, pagination: { page, limit, total, pages: Math.ceil(total / limit) } };
+    if (req.query.stats === 'true') {
+      const [pending, approved, rejected] = await Promise.all([
+        Article.countDocuments({ status: 'pending_review' }),
+        Article.countDocuments({ status: 'approved' }),
+        Article.countDocuments({ status: 'rejected' }),
+      ]);
+      result.stats = { total, pending, approved, rejected };
+    }
+
+    res.json(result);
+  } catch (error) { res.status(500).json({ code: 'SERVER_ERROR', error: 'Failed to fetch articles' }); }
+});
+
+/**
  * POST /api/admin/articles/bulk/reject — Bulk reject multiple articles
  */
 router.post('/articles/bulk/reject', async (req, res) => {
@@ -3827,7 +3866,7 @@ router.get('/posts/:id', async (req, res) => {
 
     const rawItems = await ListItem.find({ post_id: post._id })
       .sort({ rank: 1 })
-      .select('rank title justification')
+      .select('rank title justification image_url source_url')
       .lean();
 
     const items = rawItems.map((item: Record<string, unknown>) => ({
@@ -3835,6 +3874,8 @@ router.get('/posts/:id', async (req, res) => {
       rank: item.rank,
       title: item.title,
       justification: item.justification,
+      image_url: item.image_url || null,
+      source_url: item.source_url || null,
     }));
 
     res.json({ post: { ...post, items } });
