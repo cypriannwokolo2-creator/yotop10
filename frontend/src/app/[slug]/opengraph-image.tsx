@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og';
 import { API } from '@/lib/api';
 import { ogFonts } from '@/lib/seo/ogFonts';
-import { LightFrame, LogoMark, TrustBadge, LightHeadline, RankRow, titleSize, truncate } from '@/lib/seo/ogImageLayout';
+import { LightFrame, LogoMark, TrustBadge, LightHeadline, RankRow, CtaPill, titleSize, truncate } from '@/lib/seo/ogImageLayout';
 
 export const runtime = 'nodejs';
 export const alt = 'Ranked list, debate, or fact drop on YoTop10';
@@ -69,10 +69,13 @@ export default async function Image({ params }: { params: { slug: string } }) {
               ))}
             </div>
           ) : null}
+          <div style={{ display: 'flex', marginTop: topItems.length > 0 ? 6 : 'auto' }}>
+            <CtaPill tone="black">Join the Fun!</CtaPill>
+          </div>
         </div>
         {hero ? (
           <div style={{ display: 'flex', width: 440, height: 630, padding: 36, alignItems: 'center', justifyContent: 'center' }}>
-            <img src={hero} width={368} height={558} style={{ objectFit: 'cover', borderRadius: 24 }} />
+            <img src={hero} width={368} height={558} alt="" style={{ objectFit: 'cover', borderRadius: 24 }} />
           </div>
         ) : null}
       </LightFrame>

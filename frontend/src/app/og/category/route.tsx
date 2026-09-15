@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og';
 import { ogSansFonts } from '@/lib/seo/ogFonts';
-import { LightFrame, LogoMark, TrustBadge, LightHeadline, LightSubtext, RankRow, titleSize, truncate } from '@/lib/seo/ogImageLayout';
+import { LightFrame, LogoMark, TrustBadge, LightHeadline, LightSubtext, RankRow, CtaPill, titleSize, truncate } from '@/lib/seo/ogImageLayout';
 
 export const runtime = 'nodejs';
 export const alt = 'Browse category lists and debates on YoTop10';
@@ -58,6 +58,9 @@ export async function GET(req: Request) {
               ))}
             </div>
           ) : null}
+          <div style={{ display: 'flex', marginTop: topTitles.length > 0 ? 6 : 'auto' }}>
+            <CtaPill tone="black">Join the Fun!</CtaPill>
+          </div>
         </div>
       </LightFrame>
     ),

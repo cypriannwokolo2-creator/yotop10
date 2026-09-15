@@ -4,7 +4,7 @@ import type { Metadata } from 'next';
 import UserProfileClient from './client';
 import { toPublicSlug } from '@/lib/username';
 import { absoluteUrl } from '@/lib/urls';
-import { buildProfileMetadata, OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH, SITE } from '@/lib/seo/metadata';
+import { buildProfileMetadata, OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/lib/seo/metadata';
 
 export const runtime = 'nodejs';
 
@@ -62,9 +62,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const publicSlug = toPublicSlug(u.username);
     const description = bio ? bio.slice(0, 160) : `Posts and debates by ${u.username} — ${u.stats.total_posts} lists, ${u.stats.total_comments} comments.`;
     const dynamicOgImageUrl = absoluteUrl(`/a/${publicSlug}/opengraph-image`);
-    const image = u.profile_image_url
-      ? { url: u.profile_image_url.startsWith('http') ? u.profile_image_url : `${SITE.URL}${u.profile_image_url.startsWith('/') ? '' : '/'}${u.profile_image_url}`, width: OG_IMAGE_WIDTH, height: OG_IMAGE_HEIGHT, alt: `${u.username} on YoTop10`, type: 'image/jpeg' }
-      : { url: dynamicOgImageUrl, width: OG_IMAGE_WIDTH, height: OG_IMAGE_HEIGHT, alt: `${u.username} on YoTop10`, type: 'image/png' };
+    const image = { url: dynamicOgImageUrl, width: OG_IMAGE_WIDTH, height: OG_IMAGE_HEIGHT, alt: `${u.username} on YoTop10`, type: 'image/png' };
 
     return buildProfileMetadata({
       username: u.username,
