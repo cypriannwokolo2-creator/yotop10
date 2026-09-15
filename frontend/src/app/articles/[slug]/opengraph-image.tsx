@@ -11,7 +11,8 @@ export const revalidate = 3600;
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.yotop10.com';
 
-function absoluteImage(url: string): string {
+function absoluteImage(url: string): string | null {
+  if (!/\.(jpe?g|png|gif)(\?|#|$)/i.test(url)) return null;
   if (/^https?:\/\//i.test(url)) return url;
   return `${SITE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
 }
