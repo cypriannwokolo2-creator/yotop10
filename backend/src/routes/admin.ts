@@ -37,6 +37,7 @@ import { getConfig, updateConfig, getConfigVersions } from '../lib/systemConfig'
 import { redis } from '../lib/redis';
 import { trustScoreWorker } from '../lib/trustScoreWorker';
 import { indexPost, removePost, indexComment, removeComment } from '../elasticsearch/lib/indexWriter';
+import { submitUrlToIndexNow, submitUrlsToIndexNow, postUrlForSlug, articleUrlForSlug } from '../lib/indexnow';
 
 const router: Router = Router();
 
@@ -426,6 +427,10 @@ router.patch('/posts/:id/approve', async (req, res) => {
 
     indexPost(post as unknown as Record<string, unknown>);
 
+    if (typeof post.slug === 'string' && post.slug.length > 0) {
+      submitUrlToIndexNow(postUrlForSlug(post.slug));
+    }
+
     res.json({ success: true, post });
   } catch (error) {
     console.error('Error approving post:', error);
@@ -574,6 +579,7 @@ router.post('/posts/bulk/approve', async (req, res) => {
 
     const { processBatch } = await import('../lib/batchProcessor');
     let skipped = 0;
+    const approvedSlugs: string[] = [];
     const result = await processBatch(ids, async (id) => {
       const post = await Post.findById(id);
       if (!post) { skipped++; return; }
@@ -585,7 +591,12 @@ router.post('/posts/bulk/approve', async (req, res) => {
       await grantBoost(post.author_id.toString(), BoostType.POST_APPROVED);
       await createNotification({ user_id: post.author_id, type: 'post_approved', post_id: (post._id as { toString(): string }).toString(), post_title: post.title, message: `Your list "${post.title}" was approved.` });
       indexPost(post as unknown as Record<string, unknown>);
+      if (typeof post.slug === 'string' && post.slug.length > 0) approvedSlugs.push(post.slug);
     });
+
+    if (approvedSlugs.length > 0) {
+      void submitUrlsToIndexNow(approvedSlugs.map((s) => postUrlForSlug(s)));
+    }
 
     res.json({ success: true, approved: result.succeeded, skipped, errors: result.errors.slice(0, 5) });
   } catch (error) { res.status(500).json({ code: 'SERVER_ERROR', error: 'Bulk approve failed' }); }
@@ -727,6 +738,10 @@ router.patch('/articles/:id/approve', async (req, res) => {
       message: `Your article "${article.title}" was approved and is now live.`,
     });
 
+    if (typeof article.slug === 'string' && article.slug.length > 0) {
+      submitUrlToIndexNow(articleUrlForSlug(article.slug));
+    }
+
     res.json({ success: true, article });
   } catch (error) {
     console.error('Error approving article:', error);
@@ -819,6 +834,7 @@ router.post('/articles/bulk/approve', async (req, res) => {
 
     const { processBatch } = await import('../lib/batchProcessor');
     let skipped = 0;
+    const approvedArticleSlugs: string[] = [];
     const result = await processBatch(ids, async (id) => {
       const article = await Article.findById(id);
       if (!article) { skipped++; return; }
@@ -829,7 +845,12 @@ router.post('/articles/bulk/approve', async (req, res) => {
       const { grantBoost, BoostType } = await import('../lib/ladderSystem');
       await grantBoost(article.author_id.toString(), BoostType.POST_APPROVED);
       await createNotification({ user_id: article.author_id, type: 'article_approved', post_id: (article._id as { toString(): string }).toString(), post_title: article.title, message: `Your article "${article.title}" was approved.` });
+      if (typeof article.slug === 'string' && article.slug.length > 0) approvedArticleSlugs.push(article.slug);
     });
+
+    if (approvedArticleSlugs.length > 0) {
+      void submitUrlsToIndexNow(approvedArticleSlugs.map((s) => articleUrlForSlug(s)));
+    }
 
     res.json({ success: true, approved: result.succeeded, skipped, errors: result.errors.slice(0, 5) });
   } catch (error) { res.status(500).json({ code: 'SERVER_ERROR', error: 'Bulk approve failed' }); }

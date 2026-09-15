@@ -4,7 +4,7 @@ function escapeXml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-export const revalidate = 3600;
+export const revalidate = 300;
 
 export async function GET() {
   const apiBase = process.env.INTERNAL_API_URL || 'http://backend:8000/api';
