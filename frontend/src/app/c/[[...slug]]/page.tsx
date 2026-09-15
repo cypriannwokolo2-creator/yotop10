@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title: cat.name,
       description,
       image: {
-        url: absoluteUrl(`/c/${slug}/opengraph-image`),
+        url: absoluteUrl(`/og/category?slug=${encodeURIComponent(slug)}`),
         width: OG_IMAGE_WIDTH,
         height: OG_IMAGE_HEIGHT,
         alt: `${cat.name} — YoTop10`,
