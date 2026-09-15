@@ -805,6 +805,21 @@ router.patch('/articles/:id/reject', async (req, res) => {
 });
 
 /**
+ * GET /api/admin/articles/:id — Full article for editing (any status)
+ * Protected
+ */
+router.get('/articles/:id', async (req, res) => {
+  try {
+    const article = await Article.findById(req.params.id).select('-__v').lean();
+    if (!article) return res.status(404).json({ code: 'NOT_FOUND', error: 'Article not found' });
+    res.json({ article });
+  } catch (error) {
+    console.error('Error fetching article:', error);
+    res.status(500).json({ code: 'SERVER_ERROR', error: 'Failed to fetch article' });
+  }
+});
+
+/**
  * PATCH /api/admin/articles/:id — Edit article (title, body, category, cover, sources)
  * Protected — edit_reason is REQUIRED (author is notified with it)
  */
