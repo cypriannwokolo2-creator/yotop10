@@ -74,9 +74,7 @@ export function DynamicIsland() {
         >
           <Icon name="Bell" size={24} />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1.5 bg-red-500 text-white rounded-full w-[18px] h-[18px] text-3xs font-bold flex items-center justify-center">
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </span>
+            <span aria-hidden className="absolute top-0 right-2 w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-[var(--color-bg)]" />
           )}
         </button>
       </nav>

@@ -68,6 +68,7 @@ export default function AdminClientShell({
           {admin.role === 'super_admin' && nav('/admin/settings/rate-limits', 'Rate Limits', 'Gauge')}
           {admin.role === 'super_admin' && nav('/admin/settings/ai-moderation', 'AI Moderation', 'Bot')}
           {admin.role === 'super_admin' && nav('/admin/settings/fingerprint', 'Fingerprint', 'Fingerprint')}
+          {admin.role === 'super_admin' && nav('/admin/config', 'Config', 'Settings')}
     </>
   );
 
