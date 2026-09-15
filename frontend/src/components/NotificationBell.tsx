@@ -112,13 +112,11 @@ export default function NotificationBell() {
       <button
         onClick={handleBellClick}
         className={`relative text-lg cursor-pointer px-3 py-1.5 rounded-lg border min-h-10 ${unreadCount > 0 ? 'bg-blue-500/10 border-blue-500/30' : 'bg-transparent border-white/10'}`}
-        aria-label={`Notifications ${unreadCount > 0 ? `(${unreadCount} unread)` : ''}`}
+        aria-label={unreadCount > 0 ? 'Notifications, unread notifications' : 'Notifications'}
       >
         <Icon name="Bell" size={20} color={unreadCount > 0 ? '#90caf9' : '#888'} strokeWidth={2.5} />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white rounded-full w-[18px] h-[18px] text-3xs font-bold flex items-center justify-center">
-            {unreadCount > 9 ? '9+' : unreadCount}
-          </span>
+          <span aria-hidden className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-[var(--color-bg)]" />
         )}
       </button>
 

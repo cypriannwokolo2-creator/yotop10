@@ -49,7 +49,16 @@ export default function NotificationsClient() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { fetchAll(); }, [fetchAll]);
+  useEffect(() => {
+    (async () => {
+      await fetchAll();
+      try {
+        await apiFetch('/users/me/notifications/read-all', { method: 'PATCH' });
+        setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+        window.dispatchEvent(new Event('notifications-changed'));
+      } catch { /* ignore — list still renders */ }
+    })();
+  }, [fetchAll]);
 
   const handleClick = async (n: NotifItem) => {
     if (!n.is_admin && n.type !== 'admin_message') {
