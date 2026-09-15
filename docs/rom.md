@@ -1061,6 +1061,10 @@ This audit analyzed 39 source files:
 | NEW (2026-09-14) | Presented-fingerprint impersonation | ✅ Cookie-bound gate (428) on rename/seed-key/link/unlink/merge-confirm; SHA-256 client hash; fp aliases + rotation |
 | NEW (2026-09-14) | Silent cross-device demotion to 0.7 | ✅ Cross-user-only + audit receipt (`auto_demote_cross_device`) |
 | NEW (2026-09-14) | Math challenge solvable by scripts (loop) | ✅ Proof-of-effort (20-bit SHA-256) + cookie-bound mint; maturity freeze on rename/seed |
+| NEW (2026-09-15) | Post detail API omitted `slug` — every post page canonical/og:url rendered `/undefined` | ✅ Added `slug` to `GET /api/posts/:idOrSlug` response (`posts.ts:471`); frontend uses `params.slug` as defense in depth |
+| NEW (2026-09-15) | Layout `openGraph.url` hardcoded to apex `https://yotop10.com` | ✅ Env-driven (`NEXT_PUBLIC_SITE_URL`); structured og:image with width/height/alt/type |
+| NEW (2026-09-15) | OG image generators used Satori-incompatible CSS (`display: -webkit-box`, `WebkitLineClamp`, system fonts) | ✅ Rewritten: Satori-safe primitives (`lib/seo/ogImageLayout.tsx`), Geist TTF via module-scope loader (`lib/seo/ogFonts.ts`), `export const alt`, immutable cache headers |
+| NEW (2026-09-15) | Article detail page CSR-only — title "Article Not Found" while metadata succeeded | ✅ Refactored to SSR-fetch + `initialArticle` prop, matching post page pattern |
 
 ### Still Open ⏳
 | Section | Issue | Notes |

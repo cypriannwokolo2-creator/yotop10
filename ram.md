@@ -1,6 +1,6 @@
 # RAM.md — Random Access Memory: Current Task State
 
-> **Last updated**: 2026-09-14
+> **Last updated**: 2026-09-15
 > **Working tree**: Clean — committed and pushed
 > **Branch**: main → up to date with origin/main
 > **Latest commits**: `d1d0526 [M04.1]`, `122960f [M15.1]`, `dae0916 [M18.6]`, `e4d6821 [M20.3]` (+M20.1/M20.2/DOC)
@@ -162,3 +162,28 @@ Hardcoded JWT, orphaned setInterval, $regex injection, stub 200s, health check o
 - **Lowered** `.hide-desktop`/`.show-desktop` breakpoint from 1024px to 980px to match Chrome Android "Request Desktop Site" viewport behavior
 - **Committed and pushed** to `origin/main` — commits `7aa16346 [M00.7]` and `7958e402 [M00.8]`
 - Frontend typecheck ✅, lint ✅ (0 errors), build compiled ✅, 32/32 static pages generated ✅
+
+### Production deploy + relink (2026-09-15)
+- **Host cutover**: fresh server, restore `yotop10-db.archive` via `mongorestore --drop` → 5 users / 24 posts / 5 articles / 341 categories (matches source). Archive shredded post-restore.
+- **uploads_data**: `backend/uploads/` (22 files) copied into the named volume before backend start.
+- **nginx.conf bug fix**: production upstreams corrected (`yotop10_dev` → `frontend`/`backend`) — was a copy-paste from dev compose; nginx was crashing with `host not found in upstream` until fixed.
+- **Real TLS**: certbot `certonly --webroot` issued Let's Encrypt cert for `yotop10.com` + `www.yotop10.com`, expires 2026-12-14, YR1 issuer. Init-nginx.sh auto-detected, no self-signed fallback. Auto-renew installed by certbot.
+- **`.env` + Dockerfile.frontend + docker-compose.yml**: converted hardcoded `NEXT_PUBLIC_*` to build args sourced from `.env`. www is now canonical, apex 301s → www. CORS allows both apex and www.
+- **Relink on cutover (per docs/relink.md)**:
+  - `/a/3a54` (a_3a54_037b) → **gojominitia**: full procedure. Fingerprint `0ce6930b3d4938877a1c52d37a3277724981a104ee555c6b75fe83580503d2be` aliased to user `cbd41aeb6627d62a`. Proved live: `/api/users/me` with the old fp returns gojominitia, server re-binds cookie to canonical `ebd94b05...`.
+  - `/a/40b0` (a_40b0_4b3a) → **cutiee**: refused per safety check 2. Fingerprint `00000000695088c4` was 16 chars (not 32) and matched `isLowEntropyFingerprint()` (6 leading zeros), same family as the existing denied value `000000000f6f92bf` and cutiee's existing alias `000000000f6f`. **Same scenario as M20.4** (cutiee relink refused for the same reason). Stranger deleted, value NOT aliased.
+- **Denylist extended**: added `00000000695088c4` to `DENIED_FINGERPRINTS` (`backend/src/middleware/fingerprint.ts:50`). Live test: `curl -b 'device_fingerprint=00000000695088c4' /api/users/me` → 425 with `Set-Cookie: device_fingerprint=16ce7c4fee0b27282910bb7570558b20` (fresh 32-char grace-heal). No mint.
+- **Auto-reject low-entropy fingerprints**: wired `isLowEntropyFingerprint()` into `fingerprintMiddleware` so any value matching `/^0{6,}[0-9a-f]*$/i` is dropped to undefined the same way `DENIED_FINGERPRINTS` entries are. The grace generator produces 32-char random hex at ~1 in 16M for 6 leading zeros, so any match is hand-set by a script. New unit tests cover denylist + low-entropy helpers (`backend/src/middleware/fingerprint.test.ts`). Live verified: `00000000deadbeef` (not in the explicit set, just structurally bot-like) → 425 + fresh grace-heal. Grace generator output (`16ce7c4fee0b27282910bb7570558b20`) and 5-leading-zero strings (below threshold) pass through unchanged.
+- **Backend typecheck ✅, lint ✅ (0/0), build ✅, 689 tests passed (4 skipped; +7 from the new fingerprint.test.ts)**. Frontend typecheck/lint/build ✅. Backend rebuilt + restarted; uploads_data volume preserved.
+
+### SEO + OG platform overhaul (2026-09-15, [M24.1]–[M24.5])
+- **Bug A (P0)**: `GET /api/posts/:idOrSlug` omitted `slug` from the `post` object while the list/counter/edit endpoints all included it. Every post page rendered `canonical` + `og:url` as `https://www.yotop10.com/undefined`. Fixed in `backend/src/routes/posts.ts:471`. Frontend now also uses `params.slug` (defense in depth).
+- **Bug B (P0)**: `frontend/src/app/layout.tsx:53` hardcoded `openGraph.url: "https://yotop10.com"` (apex). Now env-driven (`NEXT_PUBLIC_SITE_URL`), structured og:image object with width/height/alt/type.
+- **OG generators rewritten** (`[slug]/opengraph-image.tsx`, `articles/[slug]/opengraph-image.tsx`): previous versions used Satori-incompatible CSS (`display: -webkit-box`, `WebkitLineClamp`, `system-ui`/`monospace` fonts Satori cannot load), no `alt`, no immutable cache headers, per-request font I/O. New versions: Geist Sans/Mono TTF loaded once at module scope (`lib/seo/ogFonts.ts`), shared Satori-safe JSX primitives (`lib/seo/ogImageLayout.tsx`), `export const alt`, `runtime = 'nodejs'`, `Cache-Control: public, immutable, no-transform, max-age=31536000`.
+- **New OG routes**: `app/opengraph-image.tsx` (homepage, live top-6 titles), `app/a/[username]/opengraph-image.tsx` (profile card), `app/og/category/route.tsx` (category card — route handler, NOT file convention, because `c/[[...slug]]` is a catch-all and Next.js forbids children after catch-alls; nginx proxies `/api/*` to backend so `/og/*` path used). `twitter-image.tsx` re-exports for homepage/post/article/profile (zero duplication).
+- **Metadata standards** (`lib/seo/metadata.ts`): `buildArticleMetadata` / `buildProfileMetadata` / `buildWebsiteMetadata` builders. `og:type` per page (article/profile/website), structured og:image everywhere, `article:{publishedTime,authors,section,tags}`, `twitter:{site,creator,images}`, profile `username/firstName/lastName`. Category page gained `generateMetadata`. Homepage + 10 static pages gained canonical + og:url. Search/saved/notifications/pending marked `noindex`.
+- **Article body bug fixed**: `articles/[slug]/page.tsx` was CSR-only (`ArticleDetailClient` fetched in `useEffect`, title rendered "Article Not Found" while metadata succeeded). Refactored to SSR-fetch + `initialArticle` prop, matching the post page pattern.
+- **Sitemap cadence**: posts/articles `revalidate` 3600 → 300; categories/profiles stay 3600.
+- **IndexNow** (`backend/src/lib/indexnow.ts` + tests): fire-and-forget POST to `api.indexnow.org` on post/article single + bulk approve. Inert without `INDEXNOW_API_KEY` (returns false, warn-log only, never blocks admin response). Key-file name helper for the `{key}.txt` ownership file.
+- **Live verified**: post canonical/og:url/og:type/og:image:alt all www-correct; article title + h1 render server-side; all 6 sitemaps + robots 200; all 5 OG routes + category API route return valid 1200×630 PNGs (70–119KB); `Cache-Control: immutable` confirmed; profile og:image uses real avatar photo.
+- **Gates**: backend typecheck ✅ lint ✅ build ✅ tests ✅ 693 passed (+4 indexnow); frontend typecheck ✅ lint ✅ build ✅. Commits [M24.0]–[M24.5].

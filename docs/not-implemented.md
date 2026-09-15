@@ -217,4 +217,7 @@ unless explicit authorization to implement is given.
 | Design Themes (Futuristic, Retro/Myspace) | product_spec.md, ram.md |
 | Email Notifications | product_spec.md |
 | Post Changelog content revision diffs | ram.md V2.x |
+| IndexNow API key hosting (`{KEY}.txt` at site root) + first live submission verification | docs/seo.md, backend/src/lib/indexnow.ts (code ready, key not yet generated) |
+| Google Search Console sitemap submission + URL Inspection validation | docs/seo.md (manual dashboard step, no code) |
+| Bing Webmaster Tools sitemap submission + IndexNow receipt check | docs/seo.md (manual dashboard step, no code) |
 | Disabled Features: registration, logins, OAuth, JWT for users, follow, connection, strike, report, communities, ephemeral threads, badges, multi-account, NextAuth, custom profiles | product_spec.md §14 |
