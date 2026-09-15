@@ -38,6 +38,7 @@ import { redis } from '../lib/redis';
 import { trustScoreWorker } from '../lib/trustScoreWorker';
 import { indexPost, removePost, indexComment, removeComment } from '../elasticsearch/lib/indexWriter';
 import { submitUrlToIndexNow, submitUrlsToIndexNow, postUrlForSlug, articleUrlForSlug } from '../lib/indexnow';
+import { normalizeEditReason } from '../lib/editReasons';
 
 const router: Router = Router();
 
@@ -804,6 +805,52 @@ router.patch('/articles/:id/reject', async (req, res) => {
 });
 
 /**
+ * PATCH /api/admin/articles/:id — Edit article (title, body, category, cover, sources)
+ * Protected — edit_reason is REQUIRED (author is notified with it)
+ */
+router.patch('/articles/:id', async (req, res) => {
+  try {
+    const article = await Article.findById(req.params.id);
+    if (!article) return res.status(404).json({ code: 'NOT_FOUND', error: 'Article not found' });
+
+    const editReason = normalizeEditReason(req.body.edit_reason);
+    if (!editReason) {
+      return res.status(400).json({ code: 'VALIDATION', error: 'An edit reason is required (pick a preset or write a custom reason, max 500 chars).' });
+    }
+
+    if (req.body.title) { article.title = req.body.title; article.slug = generateUniqueSlug(req.body.title, (article._id as { toString(): string }).toString()); }
+    if (req.body.body !== undefined) article.body = req.body.body;
+    if (req.body.category_slug) { const cat = await Category.findOne({ slug: req.body.category_slug }); if (!cat) return res.status(400).json({ code: 'NOT_FOUND', error: 'Category not found' }); article.category_slug = req.body.category_slug; }
+    if (req.body.cover_image !== undefined) article.cover_image = req.body.cover_image || null;
+    if (req.body.sources !== undefined) {
+      if (!Array.isArray(req.body.sources)) return res.status(400).json({ code: 'VALIDATION', error: 'Sources must be an array of {url, title}.' });
+      for (const s of req.body.sources as Array<{ url?: string; title?: string }>) {
+        if (!s || typeof s.url !== 'string' || s.url.trim().length === 0) {
+          return res.status(400).json({ code: 'VALIDATION', error: 'Every source needs a URL.' });
+        }
+      }
+      article.sources = (req.body.sources as Array<{ url: string; title?: string }>).map((s) => ({ url: s.url.trim(), title: (s.title || '').trim(), accessed_at: new Date() })) as typeof article.sources;
+    }
+    await article.save();
+
+    logAudit({ admin_id: (req.admin?.id as string) || 'unknown', action: 'edit_article', ip: getClientIp(req), metadata: { article_id: (article._id as { toString(): string }).toString(), article_title: article.title, edit_reason: editReason }, user_agent: req.headers['user-agent'] || '' });
+
+    await createNotification({
+      user_id: article.author_id,
+      type: 'article_edited',
+      post_id: (article._id as { toString(): string }).toString(),
+      post_title: article.title,
+      message: `An admin edited your article "${article.title}". Reason: ${editReason}`,
+    });
+
+    res.json({ success: true, article });
+  } catch (error) {
+    console.error('Error editing article:', error);
+    res.status(500).json({ code: 'SERVER_ERROR', error: 'Failed to edit article' });
+  }
+});
+
+/**
  * DELETE /api/admin/articles/:id/cancel — Remove a pending article from review queue
  */
 router.delete('/articles/:id/cancel', async (req, res) => {
@@ -1028,7 +1075,7 @@ router.get('/posts', async (req, res) => {
   } catch (error) { res.status(500).json({ code: 'SERVER_ERROR', error: 'Failed to fetch posts' }); }
 });
 
-// 2. Edit post
+// 2. Edit post — edit_reason is REQUIRED (author is notified with it)
 router.patch('/posts/:id', async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
@@ -1038,13 +1085,19 @@ router.patch('/posts/:id', async (req, res) => {
       return res.status(409).json({ code: 'CONFLICT', error: 'Post was modified by another session. Reload and retry.' });
     }
 
+    const editReason = normalizeEditReason(req.body.edit_reason);
+    if (!editReason) {
+      return res.status(400).json({ code: 'VALIDATION', error: 'An edit reason is required (pick a preset or write a custom reason, max 500 chars).' });
+    }
+
     if (req.body.title) { post.title = req.body.title; post.slug = generateUniqueSlug(post.title, (post._id as { toString(): string }).toString()); }
     if (req.body.intro !== undefined) post.intro = req.body.intro;
     if (req.body.category_slug) { const cat = await Category.findOne({ slug: req.body.category_slug }); if (!cat) return res.status(400).json({ code: 'NOT_FOUND', error: 'Category not found' }); post.category_slug = req.body.category_slug; }
     if (req.body.editorial_note !== undefined) post.editorial_note = req.body.editorial_note || null;
+    if (req.body.hero_image_url !== undefined) post.hero_image_url = req.body.hero_image_url || null;
     await post.save();
 
-    logAudit({ admin_id: (req.admin?.id as string) || 'unknown', action: 'edit_post', ip: getClientIp(req), metadata: { post_id: (post._id as { toString(): string }).toString(), post_title: post.title }, user_agent: req.headers['user-agent'] || '' });
+    logAudit({ admin_id: (req.admin?.id as string) || 'unknown', action: 'edit_post', ip: getClientIp(req), metadata: { post_id: (post._id as { toString(): string }).toString(), post_title: post.title, edit_reason: editReason }, user_agent: req.headers['user-agent'] || '' });
 
     if (req.body.items && Array.isArray(req.body.items)) {
       const { ListItem } = await import('../models/ListItem');
@@ -1056,7 +1109,7 @@ router.patch('/posts/:id', async (req, res) => {
       try {
         await ListItem.deleteMany({ post_id: postId });
         if (req.body.items.length > 0) {
-          await ListItem.insertMany(req.body.items.map((item: { rank: number; title: string; justification: string }) => ({ post_id: postId, rank: item.rank, title: item.title, justification: item.justification })));
+          await ListItem.insertMany(req.body.items.map((item: { rank: number; title: string; justification?: string; image_url?: string; source_url?: string }) => ({ post_id: postId, rank: item.rank, title: item.title, justification: item.justification || '', image_url: item.image_url || null, source_url: item.source_url || null })));
         }
       } catch (itemsError) {
         // Rollback: restore old items on failure
@@ -1068,6 +1121,8 @@ router.patch('/posts/:id', async (req, res) => {
             rank: item.rank,
             title: item.title,
             justification: item.justification,
+            image_url: (item.image_url as string) || null,
+            source_url: (item.source_url as string) || null,
           })));
         }
         throw itemsError;
@@ -1075,6 +1130,14 @@ router.patch('/posts/:id', async (req, res) => {
     }
 
     indexPost(post as unknown as Record<string, unknown>);
+
+    await createNotification({
+      user_id: post.author_id,
+      type: 'post_edited',
+      post_id: (post._id as { toString(): string }).toString(),
+      post_title: post.title,
+      message: `An admin edited your list "${post.title}". Reason: ${editReason}`,
+    });
 
     res.json({ success: true, post });
   } catch (error) { res.status(500).json({ code: 'SERVER_ERROR', error: 'Failed to edit post' }); }
