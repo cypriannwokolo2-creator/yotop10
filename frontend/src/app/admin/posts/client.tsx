@@ -60,6 +60,14 @@ export default function AdminPostsClient() {
   };
 
   useEffect(() => {
+    try {
+      if (new URLSearchParams(window.location.search).get('tab') === 'articles') {
+        setContentType('articles'); setPage(1); setSelected(new Set());
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setMobileDropdownId(null);

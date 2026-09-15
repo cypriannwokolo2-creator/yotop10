@@ -57,7 +57,7 @@ export default function EditArticleClient() {
         body: JSON.stringify({ title, body, category_slug: categorySlug, cover_image: coverImage || null, sources, edit_reason: editReason }),
       });
       toast.success('Article updated. Author notified.');
-      router.push('/admin/articles');
+      router.push('/admin/posts?tab=articles');
     } catch {
       setError('Save failed.');
     } finally { setSaving(false); }
@@ -106,7 +106,7 @@ export default function EditArticleClient() {
     </div>
     <div style={{ display: 'flex', gap: '10px' }}>
       <button onClick={handleSave} disabled={saving} style={{ padding: '10px 24px', fontSize: '14px', cursor: 'pointer' }}>{saving ? 'Saving...' : 'Save Changes'}</button>
-      <button onClick={() => router.push('/admin/articles')} style={{ padding: '10px 24px', fontSize: '14px', cursor: 'pointer' }}>Cancel</button>
+      <button onClick={() => router.push('/admin/posts?tab=articles')} style={{ padding: '10px 24px', fontSize: '14px', cursor: 'pointer' }}>Cancel</button>
     </div>
   </div>);
 }
