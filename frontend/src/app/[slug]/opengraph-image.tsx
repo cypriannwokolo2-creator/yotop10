@@ -23,7 +23,8 @@ const POST_TYPE_LABEL: Record<string, string> = {
   article: 'Article',
 };
 
-function absoluteImage(url: string): string {
+function absoluteImage(url: string): string | null {
+  if (!/\.(jpe?g|png|gif)(\?|#|$)/i.test(url)) return null;
   if (/^https?:\/\//i.test(url)) return url;
   return `${SITE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
 }
@@ -59,7 +60,7 @@ export default async function Image({ params }: { params: { slug: string } }) {
           </div>
           <LightHeadline size={titleSize(title)}>{title}</LightHeadline>
           {category ? (
-            <div style={{ fontSize: 20, fontWeight: 400, color: '#6b7280' }}>{category} · yotop10.com</div>
+            <div style={{ fontSize: 20, fontWeight: 400, color: '#6b7280' }}>{`${category} · www.yotop10.com`}</div>
           ) : null}
           {topItems.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
