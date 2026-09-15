@@ -7,11 +7,13 @@ RUN npm install -g pnpm@10 && pnpm install --frozen-lockfile
 
 FROM node:20-alpine AS builder
 WORKDIR /app
+ARG NEXT_PUBLIC_API_URL=https://www.yotop10.com/api
+ARG NEXT_PUBLIC_SITE_URL=https://www.yotop10.com
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/frontend/node_modules ./frontend/node_modules
 COPY frontend/ ./frontend/
-ENV NEXT_PUBLIC_API_URL=https://yotop10.com
-ENV NEXT_PUBLIC_SITE_URL=https://yotop10.com
 ENV INTERNAL_API_URL=http://backend:8000/api
 RUN npm install -g pnpm@10 && cd frontend && pnpm build
 
@@ -25,9 +27,11 @@ RUN chown -R nextjs:nodejs /app
 USER nextjs
 WORKDIR /app/frontend
 EXPOSE 3000
+ARG NEXT_PUBLIC_API_URL=https://www.yotop10.com/api
+ARG NEXT_PUBLIC_SITE_URL=https://www.yotop10.com
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
-ENV NEXT_PUBLIC_API_URL=https://yotop10.com
-ENV NEXT_PUBLIC_SITE_URL=https://yotop10.com
 ENV INTERNAL_API_URL=http://backend:8000/api
 CMD ["node_modules/.bin/next", "start"]
