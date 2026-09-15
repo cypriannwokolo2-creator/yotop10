@@ -3,7 +3,10 @@ import { redirect, notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import UserProfileClient from './client';
 import { toPublicSlug } from '@/lib/username';
-import { profileUrl } from '@/lib/urls';
+import { absoluteUrl } from '@/lib/urls';
+import { buildProfileMetadata, OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH, SITE } from '@/lib/seo/metadata';
+
+export const runtime = 'nodejs';
 
 interface UserProfile {
   username: string;
@@ -56,20 +59,22 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     if (!res.ok) return { title: 'User Not Found' };
     const u = await res.json() as UserProfile;
     const bio = (u.bio || '').trim();
+    const publicSlug = toPublicSlug(u.username);
     const description = bio ? bio.slice(0, 160) : `Posts and debates by ${u.username} — ${u.stats.total_posts} lists, ${u.stats.total_comments} comments.`;
-    return {
-      title: bio ? `${u.username} — ${bio.slice(0, 40)} — YoTop10` : `${u.username} — YoTop10`,
+    const dynamicOgImageUrl = absoluteUrl(`/a/${publicSlug}/opengraph-image`);
+    const image = u.profile_image_url
+      ? { url: u.profile_image_url.startsWith('http') ? u.profile_image_url : `${SITE.URL}${u.profile_image_url.startsWith('/') ? '' : '/'}${u.profile_image_url}`, width: OG_IMAGE_WIDTH, height: OG_IMAGE_HEIGHT, alt: `${u.username} on YoTop10`, type: 'image/jpeg' }
+      : { url: dynamicOgImageUrl, width: OG_IMAGE_WIDTH, height: OG_IMAGE_HEIGHT, alt: `${u.username} on YoTop10`, type: 'image/png' };
+
+    return buildProfileMetadata({
+      username: u.username,
+      displayName: u.username,
       description,
-      alternates: { canonical: profileUrl(u.username) },
-      openGraph: {
-        title: `${u.username} on YoTop10`,
-        description: bio ? bio.slice(0, 200) : description,
-        url: profileUrl(u.username),
-        type: 'profile',
-        images: u.profile_image_url ? [u.profile_image_url] : ['/og-image.jpg'],
-      },
-      twitter: { card: 'summary_large_image', title: `${u.username} on YoTop10`, description, images: u.profile_image_url ? [u.profile_image_url] : ['/og-image.jpg'] },
-    };
+      path: `/a/${publicSlug}`,
+      image,
+      postCount: u.stats.total_posts,
+      trustScore: typeof u.trust_score === 'number' ? u.trust_score : undefined,
+    });
   } catch {
     return { title: 'User Not Found' };
   }

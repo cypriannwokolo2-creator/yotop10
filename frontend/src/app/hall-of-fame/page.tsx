@@ -3,6 +3,16 @@ import Link from 'next/link';
 import { apiFetch } from '@/lib/api/client';
 import { formatDate, relativeTime, cleanTitle } from '@/lib/dates';
 import type { HallOfFameEntry } from '@/lib/api/types';
+import type { Metadata } from 'next';
+import { buildWebsiteMetadata } from '@/lib/seo/metadata';
+
+export const runtime = 'nodejs';
+
+export const metadata: Metadata = buildWebsiteMetadata({
+  path: '/hall-of-fame',
+  title: 'Hall of Fame',
+  description: 'Curated standout ranked lists from YoTop10. The best of the best, editorially selected.',
+});
 
 interface HallOfFameResponse {
   featured: HallOfFameEntry[];

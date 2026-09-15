@@ -1,10 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
 import { API } from '@/lib/api';
 import type { Article } from '@/lib/api/types';
-import Link from 'next/link';
 import Image from 'next/image';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { BookmarkButton } from '@/components/BookmarkButton';
@@ -27,48 +25,24 @@ const factCheckLabels: Record<string, string> = {
 
 const WORDS_PER_MIN = 265;
 
-export default function ArticleDetailClient() {
-  const params = useParams()!;
-  const slug = typeof params.slug === 'string' ? params.slug : '';
+interface ArticleDetailClientProps {
+  slug: string;
+  initialArticle: Article;
+}
 
-  const [article, setArticle] = useState<Article | null>(null);
-  const [loading, setLoading] = useState(true);
+export default function ArticleDetailClient({ slug, initialArticle }: ArticleDetailClientProps) {
+  const [article, setArticle] = useState<Article>(initialArticle);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!slug) return;
-    setLoading(true);
-    setError(null);
-    API.getArticle(slug)
+    API.getArticle(slug, { noCount: true })
       .then((data) => { setArticle(data.article); })
-      .catch((e) => { setError(e instanceof Error ? e.message : 'Failed to load article'); })
-      .finally(() => { setLoading(false); });
+      .catch((e) => { setError(e instanceof Error ? e.message : 'Failed to refresh article'); });
   }, [slug]);
 
-  if (loading) {
-    return <ArticleDetailSkeleton />;
-  }
-
-  if (error) {
-    return (
-      <main className="mx-auto min-h-screen max-w-2xl px-5 py-20 sm:px-6">
-        <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-5 py-4 text-sm text-red-400">{error}</div>
-        <Link href="/articles" className="mt-6 inline-flex items-center gap-1 text-sm text-zinc-400 transition hover:text-white">
-          <Icon name="ArrowLeft" size={14} /> Back to Articles
-        </Link>
-      </main>
-    );
-  }
-
   if (!article) {
-    return (
-      <main className="mx-auto min-h-screen max-w-2xl px-5 py-20 sm:px-6">
-        <Link href="/articles" className="inline-flex items-center gap-1 text-sm text-zinc-400 transition hover:text-white">
-          <Icon name="ArrowLeft" size={14} /> Back to Articles
-        </Link>
-        <p className="mt-12 text-zinc-500">Article not found.</p>
-      </main>
-    );
+    return <ArticleDetailSkeleton />;
   }
 
   const paragraphs = article.body ? article.body.split('\n\n').filter(Boolean) : [];
@@ -77,6 +51,11 @@ export default function ArticleDetailClient() {
 
   return (
     <main className="mx-auto min-h-screen max-w-2xl px-5 py-12 sm:px-6 lg:py-16">
+      {error && (
+        <div className="mb-6 rounded-xl border border-yellow-500/20 bg-yellow-500/5 px-5 py-3 text-sm text-yellow-400" role="alert">
+          {error} — showing cached version.
+        </div>
+      )}
       <Breadcrumbs items={[
         { label: 'Home', href: '/' },
         { label: 'Articles', href: '/articles' },

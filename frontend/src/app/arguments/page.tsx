@@ -2,17 +2,17 @@ import type { Metadata } from 'next';
 import { API } from '@/lib/api';
 import type { ArgumentPost, Category } from '@/lib/api/types';
 import ArgumentsClient from './client';
+import { buildWebsiteMetadata } from '@/lib/seo/metadata';
+
+export const runtime = 'nodejs';
 
 const PER_PAGE = 20;
 
-export const metadata: Metadata = {
-  title: 'Hot Debates — YoTop10',
-  description: 'Vote on the most heated debates. Pick a side, cast your vote, and join the discussion.',
-  openGraph: {
-    title: 'Hot Debates — YoTop10',
-    description: 'Vote on the most heated debates. Pick a side, cast your vote, and join the discussion.',
-  },
-};
+export const metadata: Metadata = buildWebsiteMetadata({
+  path: '/arguments',
+  title: 'Hot Debates',
+  description: 'Vote on the most heated debates. Pick a side, cast your vote, and join the discussion on YoTop10.',
+});
 
 export default async function ArgumentsPage() {
   let posts: ArgumentPost[] = [];

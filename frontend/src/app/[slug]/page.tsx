@@ -5,6 +5,9 @@ import { API } from '@/lib/api';
 import { RESERVED_ROUTES } from '@/lib/reservedRoutes';
 import { absoluteUrl } from '@/lib/urls';
 import { toPublicSlug } from '@/lib/username';
+import { buildArticleMetadata, OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/lib/seo/metadata';
+
+export const runtime = 'nodejs';
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -15,54 +18,54 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const slug = String(resolvedParams.slug);
 
   if (RESERVED_ROUTES.has(slug)) {
-    return { title: 'Post Not Found' };
+    return { title: 'Post Not Found', robots: { index: false, follow: true } };
   }
-  
+
   try {
     const data = await API.getPost(slug, { noCount: true });
     const post = data.post;
     const description = post.intro?.substring(0, 160) ?? '';
-    const ogDescription = post.intro?.substring(0, 200) ?? '';
 
-    // SEO Indexing Guard
     const ageHours = (Date.now() - new Date(post.created_at).getTime()) / 3600000;
     const isStale = (post.comment_count === 0 || !post.comment_count) && (post.view_count === 0 || !post.view_count) && ageHours > 48;
     const isThin = ((post.intro?.length || 0) < 100) && ageHours > 24;
     const isUnpublished = post.status !== 'approved';
     const isNoindex = isStale || isThin || isUnpublished;
 
-    return {
-      title: `${post.title} — YoTop10`,
+    const dynamicOgImageUrl = absoluteUrl(`/${slug}/opengraph-image`);
+    const image = {
+      url: dynamicOgImageUrl,
+      width: OG_IMAGE_WIDTH,
+      height: OG_IMAGE_HEIGHT,
+      alt: `${post.title} — YoTop10`,
+      type: 'image/png',
+    };
+
+    const base = buildArticleMetadata({
+      slug,
+      title: post.title,
       description,
+      path: `/${slug}`,
+      image,
+      publishedTime: post.published_at || post.created_at,
+      modifiedTime: post.updated_at || post.published_at || post.created_at,
+      authorName: post.author_display_name || post.author_username,
+      authorUrl: absoluteUrl(`/a/${toPublicSlug(post.author_username)}`),
+      section: post.category_name || post.category_slug,
+      tags: [post.post_type, post.category_slug].filter(Boolean),
+    });
+
+    return {
+      ...base,
       robots: {
         index: !isNoindex,
         follow: true,
       },
-      alternates: {
-        canonical: absoluteUrl(`/${post.slug}`),
-      },
-      openGraph: {
-        title: post.title,
-        description: ogDescription,
-        type: 'article',
-        images: post.hero_image_url ? [post.hero_image_url] : [],
-        url: absoluteUrl(`/${post.slug}`),
-      },
-      twitter: {
-        card: 'summary_large_image',
-        title: post.title,
-        description: ogDescription,
-        images: post.hero_image_url ? [post.hero_image_url] : [],
-      },
     };
   } catch {
-    return {
-      title: 'Post Not Found',
-    };
+    return { title: 'Post Not Found', robots: { index: false, follow: true } };
   }
 }
-
-
 
 export default async function PostDetailPage({ params }: PageProps) {
   const resolvedParams = await params;
@@ -86,7 +89,7 @@ export default async function PostDetailPage({ params }: PageProps) {
       "@graph": [
         {
           "@type": "ItemList",
-          "@id": absoluteUrl(`/${post.slug}#list`),
+          "@id": absoluteUrl(`/${slug}#list`),
           "name": post.title,
           "description": post.intro?.substring(0, 200) || '',
           "numberOfItems": items.length,
@@ -101,14 +104,14 @@ export default async function PostDetailPage({ params }: PageProps) {
           })),
           "author": { "@type": "Person", "name": post.author_display_name || post.author_username, "url": absoluteUrl(`/a/${toPublicSlug(post.author_username)}`) },
           "datePublished": post.created_at,
-          "image": post.hero_image_url || undefined,
+          "image": post.hero_image_url || absoluteUrl(`/${slug}/opengraph-image`),
         },
         {
           "@type": "BreadcrumbList",
           "itemListElement": [
             { "@type": "ListItem", "position": 1, "name": "Home", "item": absoluteUrl('/') },
             { "@type": "ListItem", "position": 2, "name": post.category_name || post.category_slug, "item": absoluteUrl(`/c/${post.category_slug}`) },
-            { "@type": "ListItem", "position": 3, "name": post.title, "item": absoluteUrl(`/${post.slug}`) },
+            { "@type": "ListItem", "position": 3, "name": post.title, "item": absoluteUrl(`/${slug}`) },
           ],
         },
       ],

@@ -46,6 +46,7 @@ export interface Post {
   topItems?: Array<{ rank: number; title: string }>;
   totalItems?: number;
   created_at: string;
+  updated_at?: string;
   published_at?: string;
   rejection_reason?: string;
 }
@@ -136,6 +137,7 @@ export interface Article {
   category_name?: string;
   created_at: string;
   updated_at: string;
+  published_at?: string;
 }
 
 export interface ArticlesResponse {

@@ -70,11 +70,40 @@ async function fetchJson<T>(url: string, fallback: T): Promise<T> {
 export const metadata: Metadata = {
   title: 'YoTop10 — Fact Mine. Debate Ground.',
   description: 'The open catalog of ranked lists. Submit your list. Defend your rankings. Vote on debates, discover facts, and curate the best of everything.',
+  alternates: { canonical: '/' },
   openGraph: {
     title: 'YoTop10 — Fact Mine. Debate Ground.',
+    description: 'The open catalog of ranked lists. Submit your list. Defend your rankings. Vote on debates, discover facts, and curate the best of everything.',
+    url: '/',
+    siteName: 'YoTop10',
+    locale: 'en_US',
+    type: 'website',
+    images: [
+      {
+        url: '/opengraph-image',
+        width: 1200,
+        height: 630,
+        alt: 'YoTop10 — Fact Mine. Debate Ground.',
+        type: 'image/png',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    site: '@yotop10',
+    creator: '@yotop10',
+    title: 'YoTop10 — Fact Mine. Debate Ground.',
     description: 'The open catalog of ranked lists. Submit your list. Defend your rankings.',
+    images: [
+      {
+        url: '/opengraph-image',
+        alt: 'YoTop10 — Fact Mine. Debate Ground.',
+      },
+    ],
   },
 };
+
+export const runtime = 'nodejs';
 
 export default async function Home() {
   const [postsData, catsData, argsData, artsData, factsData] = await Promise.all([

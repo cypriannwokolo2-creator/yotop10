@@ -27,10 +27,12 @@ export const viewport: Viewport = {
   colorScheme: "dark",
 };
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.yotop10.com';
+
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://yotop10.com'),
-  title: "YoTop10 — Fact Mine. Debate Ground.",
-  description: "The open catalog of ranked lists. Submit your list. Defend your rankings.",
+  metadataBase: new URL(SITE_URL),
+  title: { default: 'YoTop10 — Fact Mine. Debate Ground.', template: '%s' },
+  description: 'The open catalog of ranked lists, debates, and sourced facts. Submit your list. Defend your rankings. Curate the best of everything.',
   manifest: "/manifest.json",
   icons: {
     icon: [
@@ -47,31 +49,42 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: "YoTop10",
   },
+  alternates: {
+    canonical: '/',
+  },
   openGraph: {
-    title: "YoTop10 — Fact Mine. Debate Ground.",
-    description: "The open catalog of ranked lists. Submit your list. Defend your rankings.",
-    url: "https://yotop10.com",
-    siteName: "YoTop10",
+    title: 'YoTop10 — Fact Mine. Debate Ground.',
+    description: 'The open catalog of ranked lists, debates, and sourced facts. Submit your list. Defend your rankings. Curate the best of everything.',
+    url: '/',
+    siteName: 'YoTop10',
     images: [
       {
-        url: "/og-image.jpg",
+        url: '/og-image.jpg',
         width: 1200,
         height: 630,
-        alt: "YoTop10 — Fact Mine. Debate Ground.",
+        alt: 'YoTop10 — Fact Mine. Debate Ground. Your open platform for ranked lists, debates, and sourced facts.',
+        type: 'image/jpeg',
       },
     ],
-    locale: "en_US",
-    type: "website",
+    locale: 'en_US',
+    type: 'website',
   },
   twitter: {
-    card: "summary_large_image",
-    title: "YoTop10 — Fact Mine. Debate Ground.",
-    description: "The open catalog of ranked lists. Submit your list. Defend your rankings.",
-    images: ["/og-image.jpg"],
+    card: 'summary_large_image',
+    site: '@yotop10',
+    creator: '@yotop10',
+    title: 'YoTop10 — Fact Mine. Debate Ground.',
+    description: 'The open catalog of ranked lists, debates, and sourced facts.',
+    images: [
+      {
+        url: '/og-image.jpg',
+        alt: 'YoTop10 — Fact Mine. Debate Ground.',
+      },
+    ],
   },
   other: {
-    "msapplication-TileColor": "#05050f",
-    "msapplication-TileImage": "/mstile-150x150.png",
+    'msapplication-TileColor': '#05050f',
+    'msapplication-TileImage': '/mstile-150x150.png',
   },
 };
 
@@ -84,25 +97,25 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           '@graph': [
             {
               '@type': 'Organization',
-              '@id': `${process.env.NEXT_PUBLIC_SITE_URL || 'https://yotop10.com'}/#organization`,
+              '@id': `${SITE_URL}/#organization`,
               name: 'YoTop10',
-              url: process.env.NEXT_PUBLIC_SITE_URL || 'https://yotop10.com',
-              logo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://yotop10.com'}/icon-512.png`,
+              url: SITE_URL,
+              logo: `${SITE_URL}/icon-512.png`,
               sameAs: ['https://twitter.com/yotop10', 'https://reddit.com/r/yotop10'],
               foundingDate: '2025',
             },
             {
               '@type': 'WebSite',
-              '@id': `${process.env.NEXT_PUBLIC_SITE_URL || 'https://yotop10.com'}/#website`,
-              url: process.env.NEXT_PUBLIC_SITE_URL || 'https://yotop10.com',
+              '@id': `${SITE_URL}/#website`,
+              url: SITE_URL,
               name: 'YoTop10',
-              description: 'The open catalog of ranked lists. Submit your list. Defend your rankings.',
-              publisher: { '@id': `${process.env.NEXT_PUBLIC_SITE_URL || 'https://yotop10.com'}/#organization` },
+              description: 'The open catalog of ranked lists, debates, and sourced facts. Submit your list. Defend your rankings. Curate the best of everything.',
+              publisher: { '@id': `${SITE_URL}/#organization` },
               potentialAction: {
                 '@type': 'SearchAction',
                 target: {
                   '@type': 'EntryPoint',
-                  urlTemplate: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://yotop10.com'}/search?q={search_term_string}`,
+                  urlTemplate: `${SITE_URL}/search?q={search_term_string}`,
                 },
                 'query-input': 'required name=search_term_string',
               },
