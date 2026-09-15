@@ -9,6 +9,7 @@ type ListOrder = 'asc' | 'desc';
 export default function AdminConfigClient() {
   const [order, setOrder] = useState<ListOrder>('asc');
   const [savedOrder, setSavedOrder] = useState<ListOrder>('asc');
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -17,10 +18,14 @@ export default function AdminConfigClient() {
     setLoading(true);
     setError('');
     try {
-      const data = await apiFetch<{ config: { list_order?: ListOrder } }>('/admin/config');
-      const current = data.config?.list_order === 'desc' ? 'desc' : 'asc';
+      const [configData, meData] = await Promise.all([
+        apiFetch<{ config: { list_order?: ListOrder } }>('/admin/config'),
+        apiFetch<{ role?: string }>('/admin/me').catch(() => ({ role: undefined })),
+      ]);
+      const current = configData.config?.list_order === 'desc' ? 'desc' : 'asc';
       setOrder(current);
       setSavedOrder(current);
+      setIsSuperAdmin(meData.role === 'super_admin');
     } catch {
       setError('Failed to load configuration.');
     } finally {
@@ -31,6 +36,7 @@ export default function AdminConfigClient() {
   useEffect(() => { fetchConfig(); }, [fetchConfig]);
 
   const handleSave = async () => {
+    if (!isSuperAdmin) { setError('Changing the ranking order requires super admin access.'); return; }
     if (order === savedOrder) return;
     setSaving(true);
     setError('');
@@ -64,6 +70,11 @@ export default function AdminConfigClient() {
       {error && <div style={{ background: '#ffebee', padding: '8px', borderRadius: '4px', margin: '12px 0', color: '#c62828' }}>{error}</div>}
 
       <h3 style={{ marginTop: '20px' }}>Top-10 list display order</h3>
+      {!isSuperAdmin && (
+        <p style={{ fontSize: '13px', color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '4px', padding: '8px 10px' }}>
+          View only — changing the ranking order requires super admin access.
+        </p>
+      )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '8px' }}>
         {(['asc', 'desc'] as const).map((value) => {
           const active = order === value;
@@ -77,7 +88,7 @@ export default function AdminConfigClient() {
                 background: active ? '#fff7ed' : '#fff',
               }}
             >
-              <input type="radio" name="list_order" value={value} checked={active} onChange={() => setOrder(value)} style={{ marginTop: '4px' }} />
+              <input type="radio" name="list_order" value={value} checked={active} disabled={!isSuperAdmin} onChange={() => setOrder(value)} style={{ marginTop: '4px' }} />
               <span>
                 <strong>{value === 'asc' ? 'Ascending — 1 → 10' : 'Descending — 10 → 1 (countdown)'}</strong>
                 <br />
@@ -93,7 +104,7 @@ export default function AdminConfigClient() {
       </div>
 
       <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
-        <button onClick={handleSave} disabled={saving || !dirty} style={{ padding: '10px 24px', fontSize: '14px', cursor: dirty && !saving ? 'pointer' : 'not-allowed', opacity: dirty ? 1 : 0.5 }}>
+        <button onClick={handleSave} disabled={saving || !dirty || !isSuperAdmin} style={{ padding: '10px 24px', fontSize: '14px', cursor: dirty && !saving && isSuperAdmin ? 'pointer' : 'not-allowed', opacity: dirty && isSuperAdmin ? 1 : 0.5 }}>
           {saving ? 'Saving...' : 'Save Changes'}
         </button>
         {dirty && <span style={{ fontSize: '12px', color: '#b45309', alignSelf: 'center' }}>Unsaved changes</span>}
