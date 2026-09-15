@@ -171,6 +171,9 @@ html.light-mode .bg-black\/60.text-orange-400,
 html.light-mode .text-orange-400.bg-black\/60 { color: #fb923c; }
 html.light-mode .bg-black\/50.text-zinc-300,
 html.light-mode .text-zinc-300.bg-black\/50 { color: #d4d4d8; }
+html.light-mode .bg-black\/60.text-white\/80,
+html.light-mode .text-white\/80.bg-black\/60 { color: rgba(255, 255, 255, 0.8); }
+html.light-mode .bg-black\/60.hover\:text-white:hover { color: #fff; }
 
 /* ═══ Light-mode extension: theme vars ═══ */
 html.light-mode {
