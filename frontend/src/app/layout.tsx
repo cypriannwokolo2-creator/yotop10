@@ -14,6 +14,7 @@ import { DesktopSidebar } from "@/components/DesktopSidebar";
 import { SlideMenuRouter } from "@/components/SlideMenuRouter";
 // import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import { FingerprintMergeDetector } from "@/components/FingerprintMergeDialog";
+import { THEME_INIT_SCRIPT } from "@/lib/theme";
 
 const anton = Anton({ weight: '400', subsets: ['latin'], display: 'swap', variable: '--font-display' });
 const monoton = Monoton({ weight: '400', subsets: ['latin'], display: 'swap', variable: '--font-accent' });
@@ -23,8 +24,11 @@ const fraunces = Fraunces({ subsets: ['latin'], display: 'swap', variable: '--fo
 export const dynamic = 'force-dynamic';
 
 export const viewport: Viewport = {
-  themeColor: "#05050f",
-  colorScheme: "dark",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f8f8fa" },
+    { media: "(prefers-color-scheme: dark)", color: "#05050f" },
+  ],
+  colorScheme: "dark light",
 };
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.yotop10.com';
@@ -122,16 +126,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             },
           ],
         }).replace(/<\//gi, '<\\/') }} />
-        <script dangerouslySetInnerHTML={{ __html: `
-          (function() {
-            try {
-              var theme = localStorage.getItem('yotop10_theme');
-              if (theme === 'light') {
-                document.documentElement.classList.add('light-mode');
-              }
-            } catch(e) {}
-          })();
-        `}} />
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className={`${anton.variable} ${monoton.variable} ${ubuntu.variable} ${fraunces.variable} min-h-screen flex flex-col bg-[var(--color-bg)] text-[#eaeaef]`} suppressHydrationWarning>
         {/* Mobile top bar */}

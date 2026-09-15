@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function TermsOfUsePage() {
   return (
-    <main className="min-h-screen bg-black px-4 py-16 text-white">
+    <main className="min-h-screen bg-[var(--color-bg)] px-4 py-16 text-white">
       <nav className="mb-12 max-w-3xl mx-auto">
         <Link href="/docs" className="text-sm text-zinc-400 hover:text-white transition-colors">
           &larr; Back to Docs

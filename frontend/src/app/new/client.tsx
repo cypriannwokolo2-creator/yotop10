@@ -111,7 +111,7 @@ export default function NewPostClient() {
             <div className={`mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 ${COLOR_MAP[t.color]}`}>
               <Icon name={t.icon} size={20} />
             </div>
-            <h3 className={`text-sm font-bold text-white mb-1 ${COLOR_MAP[t.color]}`}>{t.name}</h3>
+            <h3 className={`text-sm font-bold mb-1 ${COLOR_MAP[t.color]}`}>{t.name}</h3>
             <p className="text-xs text-zinc-500 leading-relaxed">{t.description}</p>
           </button>
         ))}

@@ -162,7 +162,7 @@ export default function UserProfileClient({ initialProfile }: { initialProfile: 
   return (
     <div className="mx-auto min-h-screen max-w-4xl bg-[var(--color-bg)] text-white px-6 sm:px-8 py-12 sm:py-16">
       {/* ─── Banner ─── */}
-      <div className="h-28 sm:h-36 rounded-3xl bg-gradient-to-br from-zinc-900 via-zinc-800 to-black border border-white/5" />
+      <div className="profile-hero-banner h-28 sm:h-36 rounded-3xl bg-gradient-to-br from-zinc-900 via-zinc-800 to-black border border-white/5" />
 
       {/* ─── Profile Header — original look retained (single, responsive, not md:hidden) ─── */}
       <div className="flex items-start gap-6 md:gap-8 -mt-12 mb-10 px-2">
@@ -171,7 +171,7 @@ export default function UserProfileClient({ initialProfile }: { initialProfile: 
           {profile.profile_image_url ? (
             <Image src={profile.profile_image_url} alt="" fill className="rounded-full object-cover" sizes="96px" unoptimized />
           ) : (
-            <div className="flex h-full w-full items-center justify-center rounded-full bg-gradient-to-br from-zinc-800 to-zinc-900 text-2xl font-bold text-zinc-400">
+            <div className="profile-avatar-fallback flex h-full w-full items-center justify-center rounded-full bg-gradient-to-br from-zinc-800 to-zinc-900 text-2xl font-bold text-zinc-400">
               {initials}
             </div>
           )}
@@ -285,7 +285,7 @@ export default function UserProfileClient({ initialProfile }: { initialProfile: 
                     />
                     {/* Knob */}
                     <div
-                      className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-white shadow-lg ring-2 ring-white/20 transition-all duration-700 ease-out"
+                      className="trust-knob absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-white shadow-lg ring-2 ring-white/20 transition-all duration-700 ease-out"
                       style={{ left: `calc(${Math.min(100, Math.max(0, ((trustScore - 0.1) / 1.9) * 100))}% - 6px)` }}
                     />
                     {/* Ticks */}

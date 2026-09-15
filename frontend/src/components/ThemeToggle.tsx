@@ -2,24 +2,24 @@
 
 import { useState, useEffect } from 'react';
 import { Icon } from '@/components/icons/Icon';
+import { getPreferredTheme, applyTheme, persistTheme, type ThemeName } from '@/lib/theme';
 
 export function ThemeToggle() {
-  const [dark, setDark] = useState(true);
+  const [theme, setTheme] = useState<ThemeName>('dark');
 
   useEffect(() => {
-    const stored = localStorage.getItem('yotop10_theme');
-    if (stored === 'light') {
-      setDark(false);
-      document.documentElement.classList.add('light-mode');
-    }
+    setTheme(getPreferredTheme());
+    applyTheme(getPreferredTheme());
   }, []);
 
   const toggle = () => {
-    const next = !dark;
-    setDark(next);
-    localStorage.setItem('yotop10_theme', next ? 'dark' : 'light');
-    document.documentElement.classList.toggle('light-mode', !next);
+    const next: ThemeName = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    persistTheme(next);
+    applyTheme(next);
   };
+
+  const dark = theme === 'dark';
 
   return (
     <button
