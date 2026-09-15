@@ -218,3 +218,9 @@ Hardcoded JWT, orphaned setInterval, $regex injection, stub 200s, health check o
 - **`/admin/config` page** (super_admin, desktop nav entry): asc/desc radio cards + save; explains scope and countdown semantics.
 - **Live verified**: desc → detail 10→1 numbers intact, list/explore show highest ranks first, this_vs_that unchanged [1,2]; invalid value → 400; mod+config:write → 403; reverted to asc → [1..10] restored. Temp verification admins deleted.
 - **Gates**: backend typecheck ✅ lint ✅ build ✅ tests ✅ 700 passed; frontend typecheck ✅ lint ✅ (build in deploy step).
+
+### Light OG cards per mockups + real post/article images (2026-09-15, [M30.1]–[M30.2])
+- **Assets**: pulled remote `757def5` (user-uploaded `og-image.png` brand card + `og-image (2).png` user template, both 1200×630). Brand PNG converted to JPEG 47KB → replaced `public/og-image.jpg` (was 32KB, now on-brief). Root uploads consumed (kept in git history).
+- **All 5 generators rebuilt light**: homepage = brand bars card (matches mockup 1); profile = logo + tier-colored trust pill + `{name} on YoTop10` + live stats + red CTA + avatar disc with real photo or monogram (matches mockup 2); post/article = logo + type badge + title + top items + **real hero/cover photo side panel when present**; category = light + top-3.
+- **Two runtime bugs found by live logs and fixed**: (1) Satori multi-text-node div (`{category} · yotop10.com`) threw "explicit display:flex" → single template string; (2) Satori cannot decode WebP (`Unsupported image type`) → generators skip `.webp`/unknown extensions, fall back to text/monogram cards.
+- **Gates**: frontend typecheck ✅ lint ✅ (0 errors) build ✅. All 5 routes 200 with valid 1200×630 PNGs; visually inspected home/profile/post renders against the mockups.
