@@ -16,4 +16,4 @@ Three properties make it different from everything adjacent to it:
 2. **Quality without gatekeepers at the door.** Instead of accounts, the platform uses human review: every submission passes a moderator before going live. The door is open; the stage is curated.
 3. **Identity without surveillance.** Contributors are recognized by their device, not by email addresses, phone numbers, or social logins. There is nothing to leak, nothing to sell, and nothing to forget the password to.
 
-The rest of this book explains how each of those works, what the platform has achieved so far, what it costs to run, and where it goes next.
+The rest of this book explains how each of those works, what the platform has achieved so far, and where it goes next.

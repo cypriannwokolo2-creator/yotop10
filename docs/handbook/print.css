@@ -1,8 +1,182 @@
-body { font-family: sans-serif; font-size: 12pt; line-height: 1.65; color: #111; }
-h1 { font-size: 24pt; page-break-before: always; margin-top: 0; color: #111; }
-h1.cover { page-break-before: avoid; font-size: 34pt; text-align: center; margin-top: 22%; }
-h2 { font-size: 15pt; color: #c2410c; margin-top: 1.4em; }
-table { border-collapse: collapse; width: 100%; margin: 1em 0; font-size: 10.5pt; }
-th, td { border: 1px solid #ccc; padding: 6px 8px; text-align: left; }
-th { background: #f5f5f5; }
-blockquote { border-left: 3px solid #f97316; margin-left: 0; padding-left: 1em; color: #444; }
+@page {
+  size: A5;
+  background: #f0efed;
+  margin-top: 22mm;
+  margin-bottom: 20mm;
+  margin-left: 18mm;
+  margin-right: 18mm;
+  @bottom-center {
+    content: counter(page);
+    font-family: "Source Serif 4", serif;
+    font-size: 9pt;
+    color: #9a9895;
+  }
+}
+
+html, body {
+  background: #f0efed;
+}
+
+body {
+  font-family: "Source Serif 4", Georgia, serif;
+  font-size: 11.5pt;
+  line-height: 1.7;
+  color: #1c1b1a;
+  text-align: justify;
+  counter-reset: chapter;
+}
+
+/* ── Cover ── */
+h1.cover {
+  page-break-before: avoid;
+  font-family: "Playfair Display", Georgia, serif;
+  font-weight: 700;
+  font-size: 38pt;
+  line-height: 1.08;
+  color: #111110;
+  margin-top: 26%;
+  margin-bottom: 0.3em;
+  text-align: left;
+  position: relative;
+}
+h1.cover::before {
+  content: "";
+  display: block;
+  width: 220px;
+  height: 220px;
+  border: 1px solid #b9b6b1;
+  border-radius: 50%;
+  position: absolute;
+  top: -260px;
+  right: -60px;
+}
+h1.cover::after {
+  content: "";
+  display: block;
+  width: 130px;
+  height: 130px;
+  border: 1px solid #c6c3bd;
+  border-radius: 50%;
+  position: absolute;
+  top: -180px;
+  right: 120px;
+}
+
+/* ── Chapter titles with faded numerals ── */
+h1:not(.cover) {
+  counter-increment: chapter;
+  font-family: "Playfair Display", Georgia, serif;
+  font-weight: 700;
+  font-size: 30pt;
+  line-height: 1.1;
+  color: #111110;
+  page-break-before: always;
+  margin-top: 12%;
+  margin-bottom: 0.15em;
+  position: relative;
+  padding-top: 1.6em;
+}
+h1:not(.cover)::before {
+  content: counter(chapter);
+  position: absolute;
+  top: -0.35em;
+  left: -0.08em;
+  font-family: "Playfair Display", Georgia, serif;
+  font-weight: 700;
+  font-size: 84pt;
+  line-height: 1;
+  color: #d8d5d0;
+}
+
+/* Pandoc's auto title block (from --metadata) duplicates our cover page */
+header#title-block-header {
+  display: none;
+}
+
+/* ── Subheads ── */
+h2 {
+  font-family: "Playfair Display", Georgia, serif;
+  font-weight: 700;
+  font-size: 15pt;
+  color: #111110;
+  margin-top: 1.5em;
+  margin-bottom: 0.4em;
+  text-align: left;
+}
+h3 {
+  font-family: "Source Serif 4", Georgia, serif;
+  font-weight: 700;
+  font-size: 12pt;
+  color: #111110;
+  margin-top: 1.2em;
+  text-align: left;
+}
+
+/* ── Tables: borderless, hairline rows ── */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1.1em 0;
+  font-size: 10pt;
+  line-height: 1.55;
+  text-align: left;
+}
+thead th {
+  font-family: "Source Serif 4", Georgia, serif;
+  font-weight: 700;
+  font-size: 9.5pt;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6e6c68;
+  border: none;
+  border-bottom: 1px solid #b9b6b1;
+  padding: 6px 10px 6px 0;
+  background: none;
+}
+tbody td {
+  border: none;
+  border-bottom: 1px solid #ddd9d3;
+  padding: 7px 10px 7px 0;
+  vertical-align: top;
+}
+tbody tr:last-child td {
+  border-bottom: none;
+}
+tbody td:first-child {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ── Lists, quotes, code ── */
+ul, ol {
+  padding-left: 1.3em;
+}
+li {
+  margin-bottom: 0.35em;
+}
+li::marker {
+  color: #111110;
+}
+blockquote {
+  border-left: 2px solid #111110;
+  margin-left: 0;
+  padding-left: 1em;
+  color: #4a4845;
+  font-style: italic;
+}
+code {
+  font-size: 9.5pt;
+}
+a {
+  color: #111110;
+  text-decoration: none;
+}
+strong {
+  color: #111110;
+}
+hr {
+  border: none;
+  border-top: 1px solid #c6c3bd;
+  margin: 1.6em auto;
+  width: 35%;
+}
