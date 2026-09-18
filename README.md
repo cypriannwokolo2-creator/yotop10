@@ -5,6 +5,8 @@
 [![CI](https://github.com/nekwasar/yotop10/actions/workflows/ci.yml/badge.svg)](https://github.com/nekwasar/yotop10/actions/workflows/ci.yml) [![CD](https://github.com/nekwasar/yotop10/actions/workflows/cd.yml/badge.svg)](https://github.com/nekwasar/yotop10/actions/workflows/cd.yml) [![Stars](https://img.shields.io/github/stars/nekwasar/yotop10?style=social)](https://github.com/nekwasar/yotop10/stargazers)
 
 **[www.yotop10.com](https://www.yotop10.com)** ·
+**[📖 Handbook: *Fact Mine, Debate Ground* (PDF)](https://github.com/nekwasar/yotop10/releases/download/handbook-v1/handbook.pdf)** ·
+**[(EPUB)](https://github.com/nekwasar/yotop10/releases/download/handbook-v1/handbook.epub)** ·
 **[Documentation](./docs/product_spec.md)** ·
 **[Report a bug](https://github.com/nekwasar/yotop10/issues)** ·
 **[Request a feature](https://github.com/nekwasar/yotop10/issues)**
