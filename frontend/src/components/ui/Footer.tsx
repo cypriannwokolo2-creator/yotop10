@@ -17,6 +17,22 @@ export default function Footer() {
             &copy; {new Date().getFullYear()} YoTop10. Open platform for top 10 lists.
           </p>
         </div>
+        <p className="mt-4 text-center text-xs text-muted-foreground">
+          Built by{' '}
+          <a
+            href="https://www.cyprianz.com"
+            className="underline-offset-2 transition-colors hover:text-foreground hover:underline"
+          >
+            Nzubechukwu Cyprian
+          </a>
+          {' & '}
+          <a
+            href="https://nekwasar.com"
+            className="underline-offset-2 transition-colors hover:text-foreground hover:underline"
+          >
+            NekwasaR
+          </a>
+        </p>
       </div>
     </footer>
   );
