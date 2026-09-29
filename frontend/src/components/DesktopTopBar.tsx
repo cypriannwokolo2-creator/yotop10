@@ -43,16 +43,16 @@ export default function DesktopTopBar() {
 
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <SlideMenuTrigger />
-          <div className="show-from-sm-block">
+          <div>
             <HeaderBells />
           </div>
 
           {!initialized ? (
-            <span className="show-desktop items-center justify-center w-9 h-9 rounded-full bg-white/10 animate-pulse" aria-label="Loading profile" />
+            <span className="flex items-center justify-center w-9 h-9 rounded-full bg-white/10 animate-pulse" aria-label="Loading profile" />
           ) : cleanUsername ? (
             <Link
               href={`/a/${cleanUsername}`}
-              className="show-desktop items-center justify-center w-9 h-9 rounded-full bg-white/5 border border-white/10 text-zinc-400 hover:text-white hover:bg-white/10 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+              className="flex items-center justify-center w-9 h-9 rounded-full bg-white/5 border border-white/10 text-zinc-400 hover:text-white hover:bg-white/10 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
               aria-label="Profile"
             >
               <Icon name="User" size={18} />
@@ -60,7 +60,7 @@ export default function DesktopTopBar() {
           ) : (
             <button
               onClick={() => useAuthStore.getState().fetchUser()}
-              className="show-desktop items-center justify-center w-9 h-9 rounded-full bg-amber-500/20 border border-amber-500/30 text-amber-400 hover:bg-amber-500/30 transition"
+              className="flex items-center justify-center w-9 h-9 rounded-full bg-amber-500/20 border border-amber-500/30 text-amber-400 hover:bg-amber-500/30 transition"
               aria-label="Retry profile"
               title="Tap to retry — profile not loaded"
             >

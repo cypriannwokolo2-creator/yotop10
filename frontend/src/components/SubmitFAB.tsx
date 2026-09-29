@@ -13,7 +13,7 @@ export function SubmitFAB() {
   return (
     <Link
       href="/new"
-      className="fixed bottom-24 min-[980px]:bottom-6 right-4 sm:right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-orange-500 to-pink-500 text-white shadow-lg shadow-orange-500/30 transition hover:shadow-xl hover:shadow-orange-500/40 active:scale-95"
+      className="fixed bottom-24 md:bottom-6 right-4 sm:right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-orange-500 to-pink-500 text-white shadow-lg shadow-orange-500/30 transition hover:shadow-xl hover:shadow-orange-500/40 active:scale-95"
       aria-label="Create new post"
     >
       <Icon name="Plus" size={24} />

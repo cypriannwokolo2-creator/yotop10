@@ -257,3 +257,9 @@ Hardcoded JWT, orphaned setInterval, $regex injection, stub 200s, health check o
 - **YO accent wordmark restored** ([M32.5], [M32.7]): bars stay, `YO` back in font-accent gradient + `Top10` display.
 - **Matched your fork's bar spec** ([M32.6]): red badge, white right-stepped bars. Then per correction ([M32.8]): solid red bars (`#dc2626`), no badge background, same stacking.
 - **Production re-link + redeploy**: DNS `yotop10.com`/`www` → `151.243.3.109` already correct, Let's Encrypt cert present. nginx `unhealthy` root cause was the down `frontend` container (port clash with a host dev server) making `frontend:3000` unresolvable. Fixed: stopped host dev, rebuilt image `2ba7dda82f0e` (latest UI), recreated container. Live verified `https://www.yotop10.com` 200 with new markers (logo ×4, rail toggle ×2, `min-[980px]` ×12, `46vw` ×22). Backend/data untouched.
+
+### Instagram-exact navigation (2026-09-29, [M33.1])
+- **Manual collapse removed** (deleted `stores/sidebar.ts`, toggle button, `ContentShell` store wiring): rail state is now purely viewport-driven like Instagram — 72px icon rail at 768–1263px, full 240px labeled sidebar at ≥1264px, bottom tab bar + mobile top bar below 768px.
+- **Breakpoint unification**: `globals.css` `.hide-desktop`/`.show-desktop` + bottom-nav padding moved 980px → 768px; homepage sections, `FeedClient` card width, `SubmitFAB` clearance moved `min-[980px]` → `md:` (768px). `ContentShell`/`DesktopTopBarMinimal` use static `md:ml/left-[72px]` + `min-[1264px]:ml/left-60` offsets.
+- **Fixed dead profile button**: mobile top-bar profile/bell carried `show-desktop` inside a `hide-desktop` parent, so they never rendered — now always visible.
+- **Gates**: frontend typecheck ✅ lint ✅ (0 errors). Committed as `cypriannwokolo2-creator`, pushed to `cocor-tech/yotop10`.

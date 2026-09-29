@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth';
-import { useSidebarStore } from '@/stores/sidebar';
 import HeaderBells from './HeaderBells';
 import Link from 'next/link';
 import { Logo } from './Logo';
@@ -15,7 +14,6 @@ export default function DesktopTopBarMinimal() {
   const [query, setQuery] = useState('');
   const user = useAuthStore(s => s.user);
   const initialized = useAuthStore(s => s.initialized);
-  const collapsed = useSidebarStore(s => s.collapsed);
   const cleanUsername = user ? toPublicSlug(user.username) : '';
 
   const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -25,7 +23,7 @@ export default function DesktopTopBarMinimal() {
   };
 
   return (
-    <header className={`fixed top-0 left-0 right-0 z-30 h-14 bg-[var(--color-bg)]/70 backdrop-blur-xl border-b border-white/5 ${collapsed ? 'min-[980px]:left-20' : 'min-[980px]:left-64 xl:left-72'}`}>
+    <header className="fixed top-0 left-0 right-0 z-30 h-14 bg-[var(--color-bg)]/70 backdrop-blur-xl border-b border-white/5 md:left-[72px] min-[1264px]:left-60">
       <div className="flex h-full items-center justify-between px-4 lg:px-6">
         <div className="mr-3">
           <Logo markHeight={22} textSize="text-lg" />

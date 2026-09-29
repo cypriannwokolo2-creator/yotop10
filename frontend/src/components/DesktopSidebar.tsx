@@ -4,7 +4,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth';
-import { useSidebarStore } from '@/stores/sidebar';
 import { Icon } from './icons/Icon';
 import { Logo } from './Logo';
 import { ThemeToggle } from './ThemeToggle';
@@ -20,36 +19,34 @@ const NAV_ITEMS = [
   { icon: 'Crown' as const, label: 'Hall of Fame', href: '/hall-of-fame' },
 ];
 
+// Instagram-exact navigation: icon rail (72px) on tablet widths,
+// full labeled sidebar (240px) at ≥1264px, bottom tab bar below 768px.
+// Rail state is purely viewport-driven — no manual toggle.
+const RAIL = 'min-[1264px]:';
+
 export function DesktopSidebar() {
   const pathname = usePathname()!;
   const user = useAuthStore(s => s.user);
   const initialized = useAuthStore(s => s.initialized);
-  const collapsed = useSidebarStore(s => s.collapsed);
-  const toggle = useSidebarStore(s => s.toggle);
   const displayName = user?.custom_display_name || user?.username || 'User';
   const rawUsername = user?.username || 'unknown';
   const cleanUsername = toPublicSlug(rawUsername);
 
   return (
-    <aside className={`fixed top-0 left-0 z-50 h-full bg-[var(--color-bg)]/95 backdrop-blur-2xl border-r border-white/5 flex flex-col overflow-y-auto -translate-x-full min-[980px]:translate-x-0 transition-all duration-300 ease-out ${collapsed ? 'w-20' : 'w-64 xl:w-72'}`}>
-      {/* Brand — stacked-bars mark + wordmark, monogram rail mark when collapsed */}
-      {collapsed ? (
-        <div className="flex items-center justify-center pt-6 pb-4 shrink-0">
-          <Logo markHeight={26} showWordmark={false} />
-        </div>
-      ) : (
-        <div className="flex flex-col px-6 pt-6 pb-4 shrink-0">
-          <Logo markHeight={32} textSize="text-[26px]" />
-          <p className="text-2xs text-zinc-600 mt-1.5 leading-relaxed tracking-wide">Fact Mine. Debate Ground.</p>
-        </div>
-      )}
+    <aside className="fixed top-0 left-0 z-50 h-full w-[72px] min-[1264px]:w-60 bg-[var(--color-bg)]/95 backdrop-blur-2xl border-r border-white/5 hidden md:flex flex-col overflow-y-auto transition-all duration-300 ease-out">
+      {/* Brand — full lockup at ≥1264px, mark-only rail below */}
+      <div className={`hidden ${RAIL}block flex-col px-6 pt-6 pb-4 shrink-0`}>
+        <Logo markHeight={32} textSize="text-[26px]" />
+        <p className="text-2xs text-zinc-600 mt-1.5 leading-relaxed tracking-wide">Fact Mine. Debate Ground.</p>
+      </div>
+      <div className="flex min-[1264px]:hidden items-center justify-center pt-6 pb-4 shrink-0">
+        <Logo markHeight={30} showWordmark={false} />
+      </div>
 
       <hr className="border-white/5 mx-4 mb-3" />
 
       {/* Navigation */}
-      {!collapsed && (
-        <p className="px-7 pb-1.5 text-3xs font-mono uppercase tracking-[0.22em] text-zinc-600">Menu</p>
-      )}
+      <p className={`hidden ${RAIL}block px-7 pb-1.5 text-3xs font-mono uppercase tracking-[0.22em] text-zinc-600`}>Menu</p>
       <nav className="flex-1 px-3 space-y-1">
         {NAV_ITEMS.map(item => {
           const isActive = item.href === '/'
@@ -59,10 +56,8 @@ export function DesktopSidebar() {
             <Link
               key={item.label}
               href={item.href}
-              title={collapsed ? item.label : undefined}
-              className={`relative flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm active:scale-[0.98] ${
-                collapsed ? 'justify-center px-0' : 'hover:translate-x-0.5'
-              } ${
+              title={item.label}
+              className={`relative flex items-center gap-3 py-2.5 rounded-xl transition-all duration-200 text-sm active:scale-[0.98] justify-center px-0 min-[1264px]:justify-start min-[1264px]:px-4 ${
                 isActive
                   ? 'text-orange-400 bg-orange-500/10 font-semibold ring-1 ring-inset ring-orange-500/20'
                   : 'text-zinc-400 hover:text-white hover:bg-white/5'
@@ -72,25 +67,11 @@ export function DesktopSidebar() {
                 <span aria-hidden className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-full bg-gradient-to-b from-orange-400 to-red-600" />
               )}
               <Icon name={item.icon} size={18} />
-              {!collapsed && <span>{item.label}</span>}
+              <span className={`hidden ${RAIL}inline`}>{item.label}</span>
             </Link>
           );
         })}
       </nav>
-
-      {/* Collapse toggle — Instagram-style rail switch */}
-      <div className={`px-3 pb-1 shrink-0 ${collapsed ? 'flex justify-center' : ''}`}>
-        <button
-          type="button"
-          onClick={toggle}
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition text-sm text-zinc-500 hover:text-zinc-200 hover:bg-white/5 ${collapsed ? 'justify-center px-0 w-full' : 'w-full'}`}
-        >
-          <Icon name={collapsed ? 'PanelLeftOpen' : 'PanelLeftClose'} size={18} />
-          {!collapsed && <span>Collapse</span>}
-        </button>
-      </div>
 
       {/* Bottom section */}
       <div className="mt-auto pt-4 pb-4 px-3 space-y-3 shrink-0">
@@ -98,9 +79,9 @@ export function DesktopSidebar() {
 
         {/* User section */}
         {!initialized ? (
-          <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl animate-pulse">
+          <div className="flex items-center justify-center min-[1264px]:justify-start gap-3 min-[1264px]:px-4 py-2.5 rounded-xl animate-pulse">
             <span className="w-8 h-8 rounded-full bg-white/10 shrink-0" />
-            <div className="min-w-0 flex-1 space-y-1.5">
+            <div className={`hidden ${RAIL}block min-w-0 flex-1 space-y-1.5`}>
               <span className="block h-3 w-20 rounded bg-white/10" />
               <span className="block h-2 w-16 rounded bg-white/5" />
             </div>
@@ -108,8 +89,8 @@ export function DesktopSidebar() {
         ) : user ? (
           <Link
             href={`/a/${cleanUsername}`}
-            title={collapsed ? `@${cleanUsername}` : undefined}
-            className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm text-zinc-400 bg-white/[0.03] border border-white/5 hover:text-white hover:bg-white/5 hover:border-white/10 active:scale-[0.98] ${collapsed ? 'justify-center px-0' : ''}`}
+            title={`@${cleanUsername}`}
+            className="flex items-center justify-center min-[1264px]:justify-start gap-3 min-[1264px]:px-4 py-2.5 rounded-xl transition-all duration-200 text-sm text-zinc-400 bg-white/[0.03] border border-white/5 hover:text-white hover:bg-white/5 hover:border-white/10 active:scale-[0.98]"
           >
             {user.profile_image_url ? (
               <Image src={user.profile_image_url} alt="" width={32} height={32} className="w-8 h-8 rounded-full object-cover shrink-0" unoptimized />
@@ -118,26 +99,24 @@ export function DesktopSidebar() {
                 {displayName[0].toUpperCase()}
               </span>
             )}
-            {!collapsed && (
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1">
-                  <span className="text-sm font-semibold text-zinc-300 truncate">{displayName}</span>
-                  {user.posts_approved >= 3 && <Icon name="BadgeCheck" size={12} className="text-orange-400 shrink-0" />}
-                </div>
-                <p className="text-3xs text-zinc-600 font-mono truncate">@{cleanUsername}</p>
+            <div className={`hidden ${RAIL}block min-w-0 flex-1`}>
+              <div className="flex items-center gap-1">
+                <span className="text-sm font-semibold text-zinc-300 truncate">{displayName}</span>
+                {user.posts_approved >= 3 && <Icon name="BadgeCheck" size={12} className="text-orange-400 shrink-0" />}
               </div>
-            )}
+              <p className="text-3xs text-zinc-600 font-mono truncate">@{cleanUsername}</p>
+            </div>
           </Link>
         ) : (
           <button
             onClick={() => useAuthStore.getState().fetchUser()}
-            className="flex w-full items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 transition text-left"
+            className="flex w-full items-center justify-center min-[1264px]:justify-start gap-3 min-[1264px]:px-4 py-2.5 rounded-xl text-sm text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 transition"
             title="Tap to retry — profile not loaded"
           >
             <span className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-500/20 border border-amber-500/30 shrink-0">
               <Icon name="User" size={16} />
             </span>
-            <div className="min-w-0 flex-1">
+            <div className={`hidden ${RAIL}block min-w-0 flex-1 text-left`}>
               <p className="text-sm font-semibold">Tap to retry</p>
               <p className="text-3xs text-amber-300/70 font-mono truncate">profile failed to load</p>
             </div>
@@ -145,29 +124,27 @@ export function DesktopSidebar() {
         )}
 
         {/* Settings + Theme */}
-        <div className={`flex items-center py-1 ${collapsed ? 'flex-col gap-2 px-0 justify-center' : 'justify-between px-4'}`}>
+        <div className="flex flex-col items-center gap-2 px-0 py-1 min-[1264px]:flex-row min-[1264px]:justify-between min-[1264px]:px-4">
           <Link
             href="/settings"
-            title={collapsed ? 'Settings' : undefined}
+            title="Settings"
             className="flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-300 transition"
           >
             <Icon name="Settings" size={16} />
-            {!collapsed && 'Settings'}
+            <span className={`hidden ${RAIL}inline`}>Settings</span>
           </Link>
           <ThemeToggle />
         </div>
 
-        {/* Submit CTA — full button expanded, icon button in rail mode */}
+        {/* Submit CTA — icon button in rail, full button at ≥1264px */}
         <Link
           href="/new"
-          title={collapsed ? 'Submit a List' : undefined}
+          title="Submit a List"
           aria-label="Submit a List"
-          className={`block text-sm font-bold text-white text-center shadow-lg transition hover:shadow-xl hover:scale-[1.02] bg-gradient-to-r from-orange-500 to-pink-500 ${
-            collapsed ? 'mx-auto rounded-full p-3' : 'mx-1 rounded-xl px-4 py-2.5'
-          }`}
+          className="block text-sm font-bold text-white text-center shadow-lg transition hover:shadow-xl hover:scale-[1.02] bg-gradient-to-r from-orange-500 to-pink-500 mx-auto rounded-full p-3 min-[1264px]:mx-1 min-[1264px]:rounded-xl min-[1264px]:px-4 min-[1264px]:py-2.5"
         >
-          <Icon name="Plus" size={14} className={collapsed ? 'block' : 'inline mr-1.5'} />
-          {!collapsed && 'Submit a List'}
+          <Icon name="Plus" size={14} className="block min-[1264px]:inline min-[1264px]:mr-1.5" />
+          <span className={`hidden ${RAIL}inline`}>Submit a List</span>
         </Link>
       </div>
     </aside>
