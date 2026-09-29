@@ -267,3 +267,4 @@ Hardcoded JWT, orphaned setInterval, $regex injection, stub 200s, health check o
 ### Hover-rail + Tailwind literal classes (2026-09-29, [M33.2]–[M33.3])
 - **Root-caused invisible desktop logos**: breakpoint classes built via `${RAIL}` string interpolation are invisible to Tailwind's scanner, so the CSS was never generated. Rewrote all 17 literally ([M33.2]).
 - **Instagram hover-rail** ([M33.3]): rail auto-expands to full width on hover (overlaying content, `group-hover:`), collapses on leave; `overflow-x-hidden` + `whitespace-nowrap` keep short-height/small-width scrolling clean.
+- **Click-to-collapse** ([M33.5]): open state moved from pure CSS `group-hover:` to React state — rail still auto-expands on hover, but any click anywhere collapses it (Instagram web behavior). All classes kept literal for the Tailwind scanner; ≥1264px still permanently open via `min-[1264px]:` overrides.
