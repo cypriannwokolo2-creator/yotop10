@@ -1,38 +1,34 @@
 import Link from 'next/link';
-import { useId } from 'react';
 
+/**
+ * Brand mark matching cypriannwokolo2-creator/yotop10 ui/Logo:
+ * red rounded square with 5 stacked white bars.
+ * Top 2 bars are shorter (75%) and RIGHT-aligned, bottom 3 full width.
+ */
 const BARS = [
-  { x: 20, y: 2, w: 24, h: 8 },
-  { x: 12, y: 13, w: 24, h: 8 },
-  { x: 4, y: 24, w: 40, h: 8 },
-  { x: 4, y: 35, w: 40, h: 8 },
-  { x: 4, y: 46, w: 40, h: 8 },
+  { x: 13, y: 3, w: 20 },
+  { x: 13, y: 10, w: 20 },
+  { x: 7, y: 17, w: 26 },
+  { x: 7, y: 24, w: 26 },
+  { x: 7, y: 31, w: 26 },
 ] as const;
 
+const BAR_H = 5.8;
+
 export function LogoMark({ height = 28, className = '' }: { height?: number; className?: string }) {
-  const gradientId = `yotop10-mark-${useId().replace(/:/g, '')}`;
-  const width = (height * 48) / 56;
   return (
-    <svg
-      width={width}
-      height={height}
-      viewBox="0 0 48 56"
-      fill="none"
+    <span
+      style={{ width: height, height }}
+      className={`rounded-[22%] bg-red-600 flex items-center justify-center shadow-sm shrink-0 ${className}`}
       role="img"
       aria-label="YoTop10 logo"
-      className={`shrink-0 ${className}`}
     >
-      <defs>
-        <linearGradient id={gradientId} x1="6" y1="2" x2="42" y2="54" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#fb923c" />
-          <stop offset="0.55" stopColor="#f97316" />
-          <stop offset="1" stopColor="#dc2626" />
-        </linearGradient>
-      </defs>
-      {BARS.map((bar) => (
-        <rect key={bar.y} x={bar.x} y={bar.y} width={bar.w} height={bar.h} rx={4} fill={`url(#${gradientId})`} />
-      ))}
-    </svg>
+      <svg width="68%" height="68%" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        {BARS.map((bar) => (
+          <rect key={bar.y} x={bar.x} y={bar.y} width={bar.w} height={BAR_H} rx={1.5} fill="white" />
+        ))}
+      </svg>
+    </span>
   );
 }
 
@@ -45,12 +41,12 @@ interface LogoProps {
 
 export function Logo({ markHeight = 28, showWordmark = true, textSize = 'text-xl', className = '' }: LogoProps) {
   return (
-    <Link href="/" className={`flex items-center gap-2 shrink-0 ${className}`} aria-label="YoTop10 home">
+    <Link href="/" className={`flex items-center gap-2.5 shrink-0 ${className}`} aria-label="YoTop10 home">
       <LogoMark height={markHeight} />
       {showWordmark && (
-        <span className="flex items-baseline gap-0">
-          <span className={`font-accent gradient-text ${textSize} tracking-normal`}>YO</span>
-          <span className={`font-display ${textSize} tracking-tight text-white`}>Top10</span>
+        <span className={`font-extrabold tracking-tight ${textSize}`}>
+          <span className="text-red-500">YO</span>
+          <span className="text-white">Top10</span>
         </span>
       )}
     </Link>
