@@ -230,3 +230,7 @@ Hardcoded JWT, orphaned setInterval, $regex injection, stub 200s, health check o
 - **CTAs added** (were missing): black "Join the Fun!" on post, article, and category cards.
 - **Profile 200×200 fix**: metadata used to prefer the raw avatar URL (200px upload, falsely labeled 1200×630) → validators failed it on X/LinkedIn/WhatsApp/Slack. Now always the generator route (true 1200×630, avatar composited inside). Verified by resolving the tagged URL and reading PNG dims.
 - **Post card verified visually**: real title, badge, www domain line, ranked items, CTA, external hotlinked photo renders fine.
+
+### Responsive shell unification (2026-09-29, [M32.1])
+- **Nav dead zone 980–1024 closed**: `layout.tsx` wrappers moved from `lg:` (1024px) to `hide-desktop`/`show-desktop` (980px) to match `DynamicIsland`/`SlideMenu`; `main` margin `lg:ml-64` → `min-[980px]:ml-64`; sidebar `lg:translate-x-0`/`lg:w-72` → `min-[980px]:translate-x-0`/`xl:w-72`; minimal topbar `left-64 lg:left-72` → `left-0 min-[980px]:left-64 xl:left-72`.
+- **Gates**: frontend typecheck ✅ lint ✅. Pushed to `cocor-tech/yotop10` as `cypriannwokolo2-creator` (history rewritten, `origin` untouched).

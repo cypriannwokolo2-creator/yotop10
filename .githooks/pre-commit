@@ -45,14 +45,15 @@ if [ -n "$ENV_STAGED" ]; then
 fi
 
 # ─── Author Identity ──────────────────────────────────────────────
-# Commits must carry the owner's identity. Never `-c user.email=...`
+# Commits must carry a known owner identity. Never `-c user.email=...`
 # overrides, never CI/bot addresses. Repo config (user.name/user.email)
 # is the single source of truth.
-EXPECTED_AUTHOR_EMAIL="lindawheek@gmail.com"
+# Allowlist: nekwasar (origin) + cypriannwokolo2-creator (cocor-tech workflow).
+EXPECTED_AUTHOR_EMAILS="lindawheek@gmail.com 223042488+cypriannwokolo2-creator@users.noreply.github.com"
 ACTUAL_AUTHOR_EMAIL=$(git config user.email 2>/dev/null || true)
-if [ "$ACTUAL_AUTHOR_EMAIL" != "$EXPECTED_AUTHOR_EMAIL" ]; then
-  echo "❌ BLOCKED: git user.email is '$ACTUAL_AUTHOR_EMAIL', expected '$EXPECTED_AUTHOR_EMAIL'."
-  echo "   Fix with: git config user.email \"$EXPECTED_AUTHOR_EMAIL\""
+if ! echo "$EXPECTED_AUTHOR_EMAILS" | grep -qw "$ACTUAL_AUTHOR_EMAIL"; then
+  echo "❌ BLOCKED: git user.email is '$ACTUAL_AUTHOR_EMAIL', expected one of: $EXPECTED_AUTHOR_EMAILS."
+  echo "   Fix with: git config user.email \"<one of the above>\""
   echo "   Do NOT use -c user.email=... overrides."
   exit 1
 fi

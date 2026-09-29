@@ -129,23 +129,23 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className={`${anton.variable} ${monoton.variable} ${ubuntu.variable} ${fraunces.variable} min-h-screen flex flex-col bg-[var(--color-bg)] text-[#eaeaef]`} suppressHydrationWarning>
-        {/* Mobile top bar */}
+        {/* Mobile top bar — 980px custom breakpoint matches DynamicIsland/SlideMenu */}
         <Suspense fallback={<div className="h-14 bg-[var(--color-bg)] animate-pulse" />}>
-          <div className="lg:hidden">
+          <div className="hide-desktop">
             <DesktopTopBar />
           </div>
         </Suspense>
 
-        {/* Desktop sidebar */}
-        <Suspense fallback={<div className="hidden lg:block fixed top-0 left-0 z-40 h-full w-64 lg:w-72 bg-[var(--color-bg)] animate-pulse" />}>
-          <div className="hidden lg:block">
+        {/* Desktop sidebar — visible from 980px, matches .show-desktop */}
+        <Suspense fallback={<div className="show-desktop fixed top-0 left-0 z-40 h-full w-64 xl:w-72 bg-[var(--color-bg)] animate-pulse" />}>
+          <div className="show-desktop">
             <DesktopSidebar />
           </div>
         </Suspense>
 
-        {/* Desktop minimal top bar */}
-        <Suspense fallback={<div className="hidden lg:block h-14 bg-[var(--color-bg)] animate-pulse" />}>
-          <div className="hidden lg:block">
+        {/* Desktop minimal top bar — visible from 980px */}
+        <Suspense fallback={<div className="show-desktop h-14 bg-[var(--color-bg)] animate-pulse" />}>
+          <div className="show-desktop">
             <DesktopTopBarMinimal />
           </div>
         </Suspense>
@@ -156,7 +156,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Suspense>
           <AuthInitializer />
         </Suspense>
-        <main className="flex-1 pt-14 lg:pt-14 lg:ml-64 xl:ml-72 transition-[margin] duration-300 ease-out flex flex-col">
+        <main className="flex-1 pt-14 min-[980px]:ml-64 xl:ml-72 transition-[margin] duration-300 ease-out flex flex-col">
           <div className="flex-1">{children}</div>
           <AppFooter />
         </main>

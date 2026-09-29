@@ -22,7 +22,7 @@ export default function DesktopTopBarMinimal() {
   };
 
   return (
-    <header className="fixed top-0 left-64 lg:left-72 right-0 z-30 h-14 bg-[var(--color-bg)]/70 backdrop-blur-xl border-b border-white/5">
+    <header className="fixed top-0 left-0 min-[980px]:left-64 xl:left-72 right-0 z-30 h-14 bg-[var(--color-bg)]/70 backdrop-blur-xl border-b border-white/5">
       <div className="flex h-full items-center justify-between px-4 lg:px-6">
         <div className="flex-1 flex justify-center">
           <input
