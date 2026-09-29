@@ -2,10 +2,11 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth';
 import { useSlideMenu } from '@/stores/slideMenu';
+import { apiFetch } from '@/lib/api';
 import { Icon } from './icons/Icon';
 import { Logo } from './Logo';
 import { ThemeToggle } from './ThemeToggle';
@@ -29,9 +30,26 @@ export function SlideMenuPanel() {
   const displayName = user?.custom_display_name || user?.username || 'User';
   const rawUsername = user?.username || 'unknown';
   const profileSlug = toPublicSlug(rawUsername);
+  const [unread, setUnread] = useState(0);
+
+  useEffect(() => {
+    if (!open || !user) return;
+    let cancelled = false;
+    apiFetch<{ count: number }>('/users/me/notifications/unread-count')
+      .then((d) => {
+        if (!cancelled) setUnread(d.count || 0);
+      })
+      .catch(() => { /* best-effort badge — menu stays usable if this fails */ });
+    return () => { cancelled = true; };
+  }, [open, user]);
 
   const navItems = [
-    ...(user ? [{ icon: 'User' as const, label: 'Profile', href: `/a/${profileSlug}` }] : []),
+    ...(user
+      ? [
+          { icon: 'Bell' as const, label: 'Notifications', href: '/notifications', badge: unread > 0 ? String(unread) : undefined },
+          { icon: 'User' as const, label: 'Profile', href: `/a/${profileSlug}` },
+        ]
+      : []),
     { icon: 'Folder' as const, label: 'Categories', href: '/categories' },
     { icon: 'MessageCircle' as const, label: 'Argument', href: '/arguments', badge: 'Hot' },
     { icon: 'Search' as const, label: 'Explore', href: '/explore' },
