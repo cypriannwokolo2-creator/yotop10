@@ -25,6 +25,36 @@ const factCheckLabels: Record<string, string> = {
 
 const WORDS_PER_MIN = 265;
 
+type BodyBlock =
+  | { type: 'h2' | 'h3'; text: string }
+  | { type: 'p'; text: string };
+
+/** Split article body into blocks; honour markdown headings (## / ###)
+ *  that would otherwise render as literal "##" text. */
+function parseBody(body: string): BodyBlock[] {
+  return body
+    .split('\n\n')
+    .filter(Boolean)
+    .map((block): BodyBlock => {
+      const h3 = block.match(/^###\s+(.*)$/);
+      if (h3) return { type: 'h3', text: h3[1] };
+      const h2 = block.match(/^##\s+(.*)$/);
+      if (h2) return { type: 'h2', text: h2[1] };
+      return { type: 'p', text: block };
+    });
+}
+
+/** Inline **bold** rendering without a markdown dependency. */
+function renderInline(text: string): React.ReactNode {
+  const parts = text.split(/\*\*(.+?)\*\*/g);
+  if (parts.length === 1) return text;
+  return parts.map((part, i) =>
+    i % 2 === 1
+      ? <strong key={i} className="font-semibold text-white">{part}</strong>
+      : part
+  );
+}
+
 interface ArticleDetailClientProps {
   slug: string;
   initialArticle: Article;
@@ -45,7 +75,7 @@ export default function ArticleDetailClient({ slug, initialArticle }: ArticleDet
     return <ArticleDetailSkeleton />;
   }
 
-  const paragraphs = article.body ? article.body.split('\n\n').filter(Boolean) : [];
+  const blocks = article.body ? parseBody(article.body) : [];
   const wordCount = article.body ? article.body.split(/\s+/).filter(Boolean).length : 0;
   const readingTime = Math.max(1, Math.ceil(wordCount / WORDS_PER_MIN));
 
@@ -70,8 +100,8 @@ export default function ArticleDetailClient({ slug, initialArticle }: ArticleDet
           </div>
         )}
 
-        {/* Title */}
-        <h1 className="text-3xl font-bold leading-tight text-white sm:text-4xl sm:leading-tight lg:text-5xl">
+        {/* Title — editorial serif, sized for scanning not shouting */}
+        <h1 className="font-serif font-semibold text-[1.875rem] sm:text-[2.25rem] lg:text-[2.625rem] leading-[1.15] tracking-[-0.02em] text-white">
           {article.title}
         </h1>
 
@@ -105,11 +135,37 @@ export default function ArticleDetailClient({ slug, initialArticle }: ArticleDet
           </div>
         </div>
 
-        {/* Body */}
+        {/* Body — reading-first: generous leading, comfortable measure,
+            lead paragraph steps up a size for editorial feel */}
         <div className="mt-8 space-y-5 sm:space-y-6">
-          {paragraphs.map((paragraph, idx) => (
-            <p key={idx} className="text-base sm:text-lg leading-relaxed sm:leading-relaxed text-zinc-200">{paragraph}</p>
-          ))}
+          {blocks.map((block, idx) => {
+            if (block.type === 'h2') {
+              return (
+                <h2 key={idx} className="font-serif text-[1.375rem] sm:text-[1.5rem] font-semibold leading-snug tracking-[-0.01em] text-white pt-2">
+                  {renderInline(block.text)}
+                </h2>
+              );
+            }
+            if (block.type === 'h3') {
+              return (
+                <h3 key={idx} className="font-serif text-[1.1875rem] font-semibold leading-snug tracking-[-0.01em] text-white pt-1">
+                  {renderInline(block.text)}
+                </h3>
+              );
+            }
+            return (
+              <p
+                key={idx}
+                className={`text-zinc-200 tracking-[0.003em] ${
+                  idx === 0
+                    ? 'text-[1.125rem] sm:text-[1.1875rem] leading-[1.7] text-zinc-300'
+                    : 'text-[1.0625rem] sm:text-[1.125rem] leading-[1.8]'
+                }`}
+              >
+                {renderInline(block.text)}
+              </p>
+            );
+          })}
         </div>
 
         {/* Sources */}
