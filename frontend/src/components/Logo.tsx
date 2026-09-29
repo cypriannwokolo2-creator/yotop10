@@ -49,6 +49,7 @@ export function Logo({ markHeight = 28, showWordmark = true, textSize = 'text-xl
       <LogoMark height={markHeight} />
       {showWordmark && (
         <span className="flex items-baseline gap-0">
+          <span className={`font-accent gradient-text ${textSize} tracking-normal`}>YO</span>
           <span className={`font-display ${textSize} tracking-tight text-white`}>Top10</span>
         </span>
       )}
