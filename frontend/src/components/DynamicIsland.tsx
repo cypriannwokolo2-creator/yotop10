@@ -16,6 +16,7 @@ export function DynamicIsland() {
   const initialized = useAuthStore((s) => s.initialized);
 
   useEffect(() => {
+    if (!user) return;
     const fetchCount = async () => {
       try {
         const { apiFetch } = await import('@/lib/api/client');
@@ -26,7 +27,7 @@ export function DynamicIsland() {
     fetchCount();
     const interval = setInterval(fetchCount, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [user]);
 
   if (pathname.startsWith('/admin')) return null;
 
@@ -36,11 +37,6 @@ export function DynamicIsland() {
     { icon: 'House' as const, label: 'Home', href: '/', isActive: pathname === '/' },
     { icon: 'Search' as const, label: 'Search', action: () => setSearchOpen(true) },
     { icon: 'MessageCircle' as const, label: 'Arguments', href: '/arguments', isActive: pathname.startsWith('/arguments') },
-    ...(!initialized
-      ? [{ icon: 'User' as const, label: 'Profile', href: '#', isActive: false, disabled: true as const }]
-      : username
-        ? [{ icon: 'User' as const, label: 'Profile', href: `/a/${toPublicSlug(username)}`, isActive: pathname.startsWith('/a/') || pathname === '/a' }]
-        : []),
   ];
 
   const isNotifsActive = pathname.startsWith('/notifications');
@@ -77,6 +73,30 @@ export function DynamicIsland() {
             <span aria-hidden className="absolute top-0 right-2 w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-[var(--color-bg)]" />
           )}
         </button>
+
+        {/* Profile sits rightmost — loading pulse, profile link, or retry */}
+        {!initialized ? (
+          <button disabled aria-label="Profile" className="text-white/30 animate-pulse transition">
+            <Icon name="User" size={24} />
+          </button>
+        ) : username ? (
+          <button
+            onClick={() => router.push(`/a/${toPublicSlug(username)}`)}
+            className={`transition ${pathname.startsWith('/a/') || pathname === '/a' ? 'text-orange-400' : 'text-white'}`}
+            aria-label="Profile"
+          >
+            <Icon name="User" size={24} />
+          </button>
+        ) : (
+          <button
+            onClick={() => useAuthStore.getState().fetchUser()}
+            className="text-amber-400 transition"
+            aria-label="Profile"
+            title="Tap to retry — profile not loaded"
+          >
+            <Icon name="User" size={24} />
+          </button>
+        )}
       </nav>
 
       <CommandSearch open={searchOpen} onClose={() => setSearchOpen(false)} />

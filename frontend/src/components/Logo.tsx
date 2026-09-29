@@ -68,48 +68,29 @@ export function LogoMark({
 interface LogoProps {
   markHeight?: number;
   showWordmark?: boolean;
+  showMark?: boolean;
   textSize?: string;
   className?: string;
   markActive?: boolean;
-  onClick?: () => void;
 }
 
 export function Logo({
   markHeight = 28,
   showWordmark = true,
+  showMark = true,
   textSize = 'text-xl',
   className = '',
   markActive = false,
-  onClick,
 }: LogoProps) {
-  const content = (
-    <>
-      <LogoMark height={markHeight} active={markActive} />
+  return (
+    <Link href="/" className={`flex items-center gap-2.5 shrink-0 ${className}`} aria-label="YoTop10 home">
+      {showMark && <LogoMark height={markHeight} active={markActive} />}
       {showWordmark && (
         <span className="flex items-baseline gap-0">
           <span className={`font-accent gradient-text ${textSize} tracking-normal`}>YO</span>
           <span className={`font-display ${textSize} tracking-tight text-white`}>Top10</span>
         </span>
       )}
-    </>
-  );
-
-  if (onClick) {
-    return (
-      <button
-        type="button"
-        onClick={onClick}
-        aria-label="Open menu"
-        className={`flex items-center gap-2.5 shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 rounded-lg ${className}`}
-      >
-        {content}
-      </button>
-    );
-  }
-
-  return (
-    <Link href="/" className={`flex items-center gap-2.5 shrink-0 ${className}`} aria-label="YoTop10 home">
-      {content}
     </Link>
   );
 }

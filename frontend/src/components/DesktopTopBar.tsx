@@ -2,22 +2,14 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/stores/auth';
-import HeaderBells from './HeaderBells';
-import Link from 'next/link';
 import { Logo } from './Logo';
 import { Icon } from './icons/Icon';
 import { useSlideMenu } from '@/stores/slideMenu';
-import { toPublicSlug } from '@/lib/username';
 
 export default function DesktopTopBar() {
   const router = useRouter();
   const [query, setQuery] = useState('');
-  const user = useAuthStore(s => s.user);
-  const initialized = useAuthStore(s => s.initialized);
-  const menuOpen = useSlideMenu(s => s.open);
   const setMenuOpen = useSlideMenu(s => s.setOpen);
-  const cleanUsername = user ? toPublicSlug(user.username) : '';
 
   const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && query.trim()) {
@@ -28,15 +20,8 @@ export default function DesktopTopBar() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-[var(--color-bg)]/95 border-b border-white/5">
       <div className="mx-auto flex h-full max-w-6xl items-center justify-between px-3 sm:px-6">
-        {/* Brand doubles as the menu button — single affordance, no hamburger */}
-        <div className="flex items-center gap-1 sm:gap-2">
-          <Logo
-            markHeight={26}
-            textSize="text-xl"
-            markActive={menuOpen}
-            onClick={() => setMenuOpen(true)}
-          />
-        </div>
+        {/* Brand wordmark only — no mark, no bell, no profile on small screens */}
+        <Logo markHeight={26} textSize="text-xl" showMark={false} />
 
         <div className="show-from-sm flex-1 mx-4 justify-center">
           <input
@@ -49,32 +34,15 @@ export default function DesktopTopBar() {
           />
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          <div>
-            <HeaderBells />
-          </div>
-
-          {!initialized ? (
-            <span className="flex items-center justify-center w-9 h-9 rounded-full bg-white/10 animate-pulse" aria-label="Loading profile" />
-          ) : cleanUsername ? (
-            <Link
-              href={`/a/${cleanUsername}`}
-              className="flex items-center justify-center w-9 h-9 rounded-full bg-white/5 border border-white/10 text-zinc-400 hover:text-white hover:bg-white/10 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
-              aria-label="Profile"
-            >
-              <Icon name="User" size={18} />
-            </Link>
-          ) : (
-            <button
-              onClick={() => useAuthStore.getState().fetchUser()}
-              className="flex items-center justify-center w-9 h-9 rounded-full bg-amber-500/20 border border-amber-500/30 text-amber-400 hover:bg-amber-500/30 transition"
-              aria-label="Retry profile"
-              title="Tap to retry — profile not loaded"
-            >
-              <Icon name="User" size={18} />
-            </button>
-          )}
-        </div>
+        {/* Menu icon lives at the far right on small screens */}
+        <button
+          type="button"
+          onClick={() => setMenuOpen(true)}
+          aria-label="Menu"
+          className="flex items-center justify-center min-w-11 min-h-11 text-zinc-500 hover:text-orange-500 transition rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+        >
+          <Icon name="Menu" size={22} />
+        </button>
       </div>
     </header>
   );
