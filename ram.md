@@ -246,3 +246,9 @@ Hardcoded JWT, orphaned setInterval, $regex injection, stub 200s, health check o
 - **Logo everywhere**: compact YO-Top10 brand link added to `DesktopTopBarMinimal` (desktop top bar previously had no brand); rail monogram when collapsed.
 - **Equal cards**: `PostCarouselCard` root `h-full` + title `min-h` (2-line reserve) + footer already `mt-auto`; all three carousels (`page`, `FeedClient`, `DesktopCarousel`) `items-stretch` + item `h-full` so row heights match and footers align.
 - **Gates**: frontend typecheck ✅ lint ✅ (0 errors). Committed as `cypriannwokolo2-creator`, pushed to `cocor-tech/yotop10`.
+
+### Real brand mark + premium sidebar + theme sync (2026-09-29, [M32.4])
+- **Stacked-bars logo**: new `components/Logo.tsx` — vector recreation of the brand mark (5 staggered rounded bars, orange→red gradient, unique gradient id per instance) + `Top10` display wordmark. Swapped out every `YO`-text wordmark: mobile top bar, desktop minimal top bar, sidebar (full lockup expanded, mark-only rail), mobile slide-menu header.
+- **Premium sidebar**: `MENU` section caption, active-link left accent bar + inset ring pill, hover slide + press scale, glass user card (`bg-white/[0.03]` + border), refined spacing. No glow effects added (flat borders only).
+- **Theme toggle actually fixed**: root cause was per-instance `useState` — sidebar toggle and menu toggle disagreed after one was used. New `stores/theme.ts` (zustand, default `light` matches head script, post-mount hydrate) now drives all `ThemeToggle` instances; toggle persists + applies + syncs everywhere, clearer aria labels.
+- **Gates**: frontend typecheck ✅ lint ✅ (0 errors). Committed as `cypriannwokolo2-creator`, pushed to `cocor-tech/yotop10`.

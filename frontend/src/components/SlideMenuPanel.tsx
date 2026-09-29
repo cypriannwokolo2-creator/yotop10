@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth';
 import { useSlideMenu } from '@/stores/slideMenu';
 import { Icon } from './icons/Icon';
+import { Logo } from './Logo';
 import { ThemeToggle } from './ThemeToggle';
 import { toPublicSlug } from '@/lib/username';
 
@@ -53,7 +54,10 @@ export function SlideMenuPanel() {
           open ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
-        <div className="px-6 pt-10 pb-4">
+        <div className="px-6 pt-5 pb-1" onClick={() => setOpen(false)}>
+          <Logo markHeight={24} textSize="text-lg" />
+        </div>
+        <div className="px-6 pt-4 pb-4">
           <div className="flex items-center gap-3">
             {user?.profile_image_url ? (
               <Image src={user.profile_image_url} alt="" width={44} height={44} className="w-11 h-11 rounded-full object-cover shrink-0" unoptimized />

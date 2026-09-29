@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth';
 import HeaderBells from './HeaderBells';
 import Link from 'next/link';
+import { Logo } from './Logo';
 import { Icon } from './icons/Icon';
 import { SlideMenuTrigger } from './SlideMenu';
 import { toPublicSlug } from '@/lib/username';
@@ -26,10 +27,7 @@ export default function DesktopTopBar() {
     <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-[var(--color-bg)]/80 backdrop-blur-2xl border-b border-white/5">
       <div className="mx-auto flex h-full max-w-6xl items-center justify-between px-3 sm:px-6">
         <div className="flex items-center gap-2">
-          <Link href="/" className="flex items-baseline gap-0 shrink-0">
-            <span className="font-accent gradient-text text-lg sm:text-xl tracking-normal">YO</span>
-            <span className="font-display text-lg sm:text-xl tracking-tight text-white">Top10</span>
-          </Link>
+          <Logo markHeight={26} textSize="text-xl" />
         </div>
 
         <div className="show-from-sm flex-1 mx-4 justify-center">

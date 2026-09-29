@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/auth';
 import { useSidebarStore } from '@/stores/sidebar';
 import HeaderBells from './HeaderBells';
 import Link from 'next/link';
+import { Logo } from './Logo';
 import { Icon } from './icons/Icon';
 import { toPublicSlug } from '@/lib/username';
 
@@ -26,10 +27,9 @@ export default function DesktopTopBarMinimal() {
   return (
     <header className={`fixed top-0 left-0 right-0 z-30 h-14 bg-[var(--color-bg)]/70 backdrop-blur-xl border-b border-white/5 ${collapsed ? 'min-[980px]:left-20' : 'min-[980px]:left-64 xl:left-72'}`}>
       <div className="flex h-full items-center justify-between px-4 lg:px-6">
-        <Link href="/" className="flex items-baseline gap-0 shrink-0 mr-3" aria-label="YoTop10 home">
-          <span className="font-accent gradient-text text-lg tracking-normal">YO</span>
-          <span className="font-display text-lg tracking-tight text-white">Top10</span>
-        </Link>
+        <div className="mr-3">
+          <Logo markHeight={22} textSize="text-lg" />
+        </div>
         <div className="flex-1 flex justify-center">
           <input
             type="text"

@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth';
 import { useSidebarStore } from '@/stores/sidebar';
 import { Icon } from './icons/Icon';
+import { Logo } from './Logo';
 import { ThemeToggle } from './ThemeToggle';
 import { toPublicSlug } from '@/lib/username';
 
@@ -31,25 +32,25 @@ export function DesktopSidebar() {
 
   return (
     <aside className={`fixed top-0 left-0 z-50 h-full bg-[var(--color-bg)]/95 backdrop-blur-2xl border-r border-white/5 flex flex-col overflow-y-auto -translate-x-full min-[980px]:translate-x-0 transition-all duration-300 ease-out ${collapsed ? 'w-20' : 'w-64 xl:w-72'}`}>
-      {/* Logo — full brand when expanded, monogram rail mark when collapsed */}
+      {/* Brand — stacked-bars mark + wordmark, monogram rail mark when collapsed */}
       {collapsed ? (
-        <Link href="/" className="flex items-center justify-center pt-6 pb-4 shrink-0" aria-label="YoTop10 home">
-          <span className="font-accent gradient-text text-2xl tracking-normal">YO</span>
-        </Link>
+        <div className="flex items-center justify-center pt-6 pb-4 shrink-0">
+          <Logo markHeight={26} showWordmark={false} />
+        </div>
       ) : (
-        <Link href="/" className="flex flex-col px-6 pt-6 pb-4 shrink-0">
-          <div className="flex items-baseline gap-0">
-            <span className="font-accent gradient-text text-3xl lg:text-4xl tracking-normal">YO</span>
-            <span className="font-display text-3xl lg:text-4xl tracking-tight text-white">Top10</span>
-          </div>
-          <p className="text-2xs text-zinc-600 mt-1 leading-relaxed">Fact Mine. Debate Ground.</p>
-        </Link>
+        <div className="flex flex-col px-6 pt-6 pb-4 shrink-0">
+          <Logo markHeight={32} textSize="text-[26px]" />
+          <p className="text-2xs text-zinc-600 mt-1.5 leading-relaxed tracking-wide">Fact Mine. Debate Ground.</p>
+        </div>
       )}
 
-      <hr className="border-white/5 mx-4 mb-4" />
+      <hr className="border-white/5 mx-4 mb-3" />
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 space-y-0.5">
+      {!collapsed && (
+        <p className="px-7 pb-1.5 text-3xs font-mono uppercase tracking-[0.22em] text-zinc-600">Menu</p>
+      )}
+      <nav className="flex-1 px-3 space-y-1">
         {NAV_ITEMS.map(item => {
           const isActive = item.href === '/'
             ? pathname === '/'
@@ -59,14 +60,17 @@ export function DesktopSidebar() {
               key={item.label}
               href={item.href}
               title={collapsed ? item.label : undefined}
-              className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition text-sm ${
-                collapsed ? 'justify-center px-0' : ''
+              className={`relative flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm active:scale-[0.98] ${
+                collapsed ? 'justify-center px-0' : 'hover:translate-x-0.5'
               } ${
                 isActive
-                  ? 'text-orange-400 bg-orange-500/10 font-semibold'
+                  ? 'text-orange-400 bg-orange-500/10 font-semibold ring-1 ring-inset ring-orange-500/20'
                   : 'text-zinc-400 hover:text-white hover:bg-white/5'
               }`}
             >
+              {isActive && (
+                <span aria-hidden className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-full bg-gradient-to-b from-orange-400 to-red-600" />
+              )}
               <Icon name={item.icon} size={18} />
               {!collapsed && <span>{item.label}</span>}
             </Link>
@@ -105,7 +109,7 @@ export function DesktopSidebar() {
           <Link
             href={`/a/${cleanUsername}`}
             title={collapsed ? `@${cleanUsername}` : undefined}
-            className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition text-sm text-zinc-400 hover:text-white hover:bg-white/5 ${collapsed ? 'justify-center px-0' : ''}`}
+            className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-sm text-zinc-400 bg-white/[0.03] border border-white/5 hover:text-white hover:bg-white/5 hover:border-white/10 active:scale-[0.98] ${collapsed ? 'justify-center px-0' : ''}`}
           >
             {user.profile_image_url ? (
               <Image src={user.profile_image_url} alt="" width={32} height={32} className="w-8 h-8 rounded-full object-cover shrink-0" unoptimized />
