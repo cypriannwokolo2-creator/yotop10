@@ -354,8 +354,8 @@ html.light-mode select {
 .font-display { font-family: var(--font-display, sans-serif); }
 
 /* ═══ Responsive Visibility (plain CSS — no Tailwind utilities) ═══
-   Instagram-exact cutover: bottom tab bar + mobile top bar below 768px,
-   icon rail 768–1263px, full sidebar at ≥1264px. */
+   Mobile chrome (bottom tab bar + mobile top bar) below 768px,
+   icon rail + desktop chrome from 768px up. */
 .hide-desktop { display: flex; }
 @media (min-width: 768px) { .hide-desktop { display: none; } }
 

@@ -20,11 +20,12 @@ const NAV_ITEMS = [
   { icon: 'Crown' as const, label: 'Hall of Fame', href: '/hall-of-fame' },
 ];
 
-// Instagram-web navigation: 72px icon rail that auto-expands to the full
-// 240px sidebar while hovered, and collapses again on any click; permanently
-// open at ≥1264px; bottom tab bar below 768px.
-// NOTE: breakpoint/open-state classes are written out literally (never built
-// by interpolation) so Tailwind's scanner generates them.
+// Instagram-web navigation at every desktop width: 72px icon rail that
+// auto-expands to the 240px labeled sidebar while hovered (overlaying
+// content), collapses on any click, and collapses again when the pointer
+// leaves. Bottom tab bar below 768px.
+// NOTE: classes are written out literally (never built by interpolation)
+// so Tailwind's scanner generates them.
 
 export function DesktopSidebar() {
   const pathname = usePathname()!;
@@ -46,21 +47,21 @@ export function DesktopSidebar() {
     <aside
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
-      className={`fixed top-0 left-0 z-50 h-full ${open ? 'w-60' : 'w-[72px]'} min-[1264px]:w-60 bg-[var(--color-bg)]/95 backdrop-blur-2xl border-r border-white/5 hidden md:flex flex-col overflow-y-auto overflow-x-hidden transition-all duration-300 ease-out`}
+      className={`fixed top-0 left-0 z-50 h-full ${open ? 'w-60' : 'w-[72px]'} bg-[var(--color-bg)]/95 backdrop-blur-2xl border-r border-white/5 hidden md:flex flex-col overflow-y-auto overflow-x-hidden transition-all duration-300 ease-out`}
     >
-      {/* Brand — full lockup when open (hover or ≥1264px), mark-only rail otherwise */}
-      <div className={`${open ? 'flex' : 'hidden'} min-[1264px]:flex flex-col px-6 pt-6 pb-4 shrink-0 whitespace-nowrap`}>
+      {/* Brand — full lockup when open, mark-only rail otherwise */}
+      <div className={`${open ? 'flex' : 'hidden'} flex-col px-6 pt-6 pb-4 shrink-0 whitespace-nowrap`}>
         <Logo markHeight={32} textSize="text-[26px]" />
         <p className="text-2xs text-zinc-600 mt-1.5 leading-relaxed tracking-wide">Fact Mine. Debate Ground.</p>
       </div>
-      <div className={`${open ? 'hidden' : 'flex'} min-[1264px]:hidden items-center justify-center pt-6 pb-4 shrink-0`}>
+      <div className={`${open ? 'hidden' : 'flex'} items-center justify-center pt-6 pb-4 shrink-0`}>
         <Logo markHeight={30} showWordmark={false} />
       </div>
 
       <hr className="border-white/5 mx-4 mb-3" />
 
       {/* Navigation */}
-      <p className={`${open ? 'block' : 'hidden'} min-[1264px]:block px-7 pb-1.5 text-3xs font-mono uppercase tracking-[0.22em] text-zinc-600 whitespace-nowrap`}>Menu</p>
+      <p className={`${open ? 'block' : 'hidden'} px-7 pb-1.5 text-3xs font-mono uppercase tracking-[0.22em] text-zinc-600 whitespace-nowrap`}>Menu</p>
       <nav className="flex-1 px-3 space-y-1">
         {NAV_ITEMS.map(item => {
           const isActive = item.href === '/'
@@ -71,7 +72,7 @@ export function DesktopSidebar() {
               key={item.label}
               href={item.href}
               title={item.label}
-              className={`relative flex items-center gap-3 py-2.5 rounded-xl transition-all duration-200 text-sm active:scale-[0.98] whitespace-nowrap ${open ? 'justify-start px-4' : 'justify-center px-0'} min-[1264px]:justify-start min-[1264px]:px-4 ${
+              className={`relative flex items-center gap-3 py-2.5 rounded-xl transition-all duration-200 text-sm active:scale-[0.98] whitespace-nowrap ${open ? 'justify-start px-4' : 'justify-center px-0'} ${
                 isActive
                   ? 'text-orange-400 bg-orange-500/10 font-semibold ring-1 ring-inset ring-orange-500/20'
                   : 'text-zinc-400 hover:text-white hover:bg-white/5'
@@ -81,7 +82,7 @@ export function DesktopSidebar() {
                 <span aria-hidden className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-full bg-gradient-to-b from-orange-400 to-red-600" />
               )}
               <Icon name={item.icon} size={18} />
-              <span className={`${open ? 'inline' : 'hidden'} min-[1264px]:inline`}>{item.label}</span>
+              <span className={open ? 'inline' : 'hidden'}>{item.label}</span>
             </Link>
           );
         })}
@@ -93,9 +94,9 @@ export function DesktopSidebar() {
 
         {/* User section */}
         {!initialized ? (
-          <div className={`flex items-center gap-3 py-2.5 rounded-xl animate-pulse ${open ? 'justify-start px-4' : 'justify-center'} min-[1264px]:justify-start min-[1264px]:px-4`}>
+          <div className={`flex items-center gap-3 py-2.5 rounded-xl animate-pulse ${open ? 'justify-start px-4' : 'justify-center'}`}>
             <span className="w-8 h-8 rounded-full bg-white/10 shrink-0" />
-            <div className={`${open ? 'block' : 'hidden'} min-[1264px]:block min-w-0 flex-1 space-y-1.5`}>
+            <div className={`${open ? 'block' : 'hidden'} min-w-0 flex-1 space-y-1.5`}>
               <span className="block h-3 w-20 rounded bg-white/10" />
               <span className="block h-2 w-16 rounded bg-white/5" />
             </div>
@@ -104,7 +105,7 @@ export function DesktopSidebar() {
           <Link
             href={`/a/${cleanUsername}`}
             title={`@${cleanUsername}`}
-            className={`flex items-center gap-3 py-2.5 rounded-xl transition-all duration-200 text-sm text-zinc-400 bg-white/[0.03] border border-white/5 hover:text-white hover:bg-white/5 hover:border-white/10 active:scale-[0.98] whitespace-nowrap ${open ? 'justify-start px-4' : 'justify-center'} min-[1264px]:justify-start min-[1264px]:px-4`}
+            className={`flex items-center gap-3 py-2.5 rounded-xl transition-all duration-200 text-sm text-zinc-400 bg-white/[0.03] border border-white/5 hover:text-white hover:bg-white/5 hover:border-white/10 active:scale-[0.98] whitespace-nowrap ${open ? 'justify-start px-4' : 'justify-center'}`}
           >
             {user.profile_image_url ? (
               <Image src={user.profile_image_url} alt="" width={32} height={32} className="w-8 h-8 rounded-full object-cover shrink-0" unoptimized />
@@ -113,7 +114,7 @@ export function DesktopSidebar() {
                 {displayName[0].toUpperCase()}
               </span>
             )}
-            <div className={`${open ? 'block' : 'hidden'} min-[1264px]:block min-w-0 flex-1`}>
+            <div className={`${open ? 'block' : 'hidden'} min-w-0 flex-1`}>
               <div className="flex items-center gap-1">
                 <span className="text-sm font-semibold text-zinc-300 truncate">{displayName}</span>
                 {user.posts_approved >= 3 && <Icon name="BadgeCheck" size={12} className="text-orange-400 shrink-0" />}
@@ -124,13 +125,13 @@ export function DesktopSidebar() {
         ) : (
           <button
             onClick={() => useAuthStore.getState().fetchUser()}
-            className={`flex w-full items-center gap-3 py-2.5 rounded-xl text-sm text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 transition whitespace-nowrap ${open ? 'justify-start px-4' : 'justify-center'} min-[1264px]:justify-start min-[1264px]:px-4`}
+            className={`flex w-full items-center gap-3 py-2.5 rounded-xl text-sm text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 transition whitespace-nowrap ${open ? 'justify-start px-4' : 'justify-center'}`}
             title="Tap to retry — profile not loaded"
           >
             <span className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-500/20 border border-amber-500/30 shrink-0">
               <Icon name="User" size={16} />
             </span>
-            <div className={`${open ? 'block' : 'hidden'} min-[1264px]:block min-w-0 flex-1 text-left`}>
+            <div className={`${open ? 'block' : 'hidden'} min-w-0 flex-1 text-left`}>
               <p className="text-sm font-semibold">Tap to retry</p>
               <p className="text-3xs text-amber-300/70 font-mono truncate">profile failed to load</p>
             </div>
@@ -138,27 +139,27 @@ export function DesktopSidebar() {
         )}
 
         {/* Settings + Theme */}
-        <div className={`flex items-center gap-2 py-1 ${open ? 'flex-row justify-between px-4' : 'flex-col px-0'} min-[1264px]:flex-row min-[1264px]:justify-between min-[1264px]:px-4`}>
+        <div className={`flex items-center gap-2 py-1 ${open ? 'flex-row justify-between px-4' : 'flex-col px-0'}`}>
           <Link
             href="/settings"
             title="Settings"
             className="flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-300 transition"
           >
             <Icon name="Settings" size={16} />
-            <span className={`${open ? 'inline' : 'hidden'} min-[1264px]:inline`}>Settings</span>
+            <span className={open ? 'inline' : 'hidden'}>Settings</span>
           </Link>
           <ThemeToggle />
         </div>
 
-        {/* Submit CTA — icon button in rail, full button when open or ≥1264px */}
+        {/* Submit CTA — icon button in rail, full button when open */}
         <Link
           href="/new"
           title="Submit a List"
           aria-label="Submit a List"
-          className={`block text-sm font-bold text-white text-center shadow-lg transition hover:shadow-xl hover:scale-[1.02] bg-gradient-to-r from-orange-500 to-pink-500 p-3 ${open ? 'mx-1 rounded-xl px-4 py-2.5' : 'mx-auto rounded-full'} min-[1264px]:mx-1 min-[1264px]:rounded-xl min-[1264px]:px-4 min-[1264px]:py-2.5 whitespace-nowrap`}
+          className={`block text-sm font-bold text-white text-center shadow-lg transition hover:shadow-xl hover:scale-[1.02] bg-gradient-to-r from-orange-500 to-pink-500 p-3 whitespace-nowrap ${open ? 'mx-1 rounded-xl px-4 py-2.5' : 'mx-auto rounded-full'}`}
         >
-          <Icon name="Plus" size={14} className={`${open ? 'inline mr-1.5' : 'block'} min-[1264px]:inline min-[1264px]:mr-1.5`} />
-          <span className={`${open ? 'inline' : 'hidden'} min-[1264px]:inline`}>Submit a List</span>
+          <Icon name="Plus" size={14} className={open ? 'inline mr-1.5' : 'block'} />
+          <span className={open ? 'inline' : 'hidden'}>Submit a List</span>
         </Link>
       </div>
     </aside>

@@ -23,7 +23,7 @@ export default function DesktopTopBarMinimal() {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-30 h-14 bg-[var(--color-bg)]/70 backdrop-blur-xl border-b border-white/5 md:left-[72px] min-[1264px]:left-60">
+    <header className="fixed top-0 left-0 right-0 z-30 h-14 bg-[var(--color-bg)]/70 backdrop-blur-xl border-b border-white/5 md:left-[72px]">
       <div className="flex h-full items-center justify-between px-4 lg:px-6">
         <div className="mr-3">
           <Logo markHeight={22} textSize="text-lg" />
