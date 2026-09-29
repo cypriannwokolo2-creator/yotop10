@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
+import Link from 'next/link';
 import { PostCarouselCard } from '@/components/PostCarouselCard';
 import { DesktopCarousel } from '@/components/DesktopCarousel';
 import { HomeCategoryFeed } from '@/components/HomeCategoryFeed';
@@ -136,7 +137,7 @@ export default async function Home() {
   if (!hasContent) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[80vh] px-6 text-center">
-        <div className="mb-6 inline-flex h-20 w-20 items-center justify-center rounded-3xl bg-white/5">
+        <div className="mb-6 inline-flex h-20 w-20 items-center justify-center rounded-3xl bg-white/5 border border-white/10">
           <Icon name="FileText" size={36} className="text-zinc-600" />
         </div>
         <h2 className="mb-2 text-xl font-bold text-white">Welcome to YoTop10</h2>
@@ -156,11 +157,18 @@ export default async function Home() {
     <>
       {/* Section 1: Latest Lists — horizontal carousel */}
       <div className="pb-2">
-        <div className="px-3 sm:px-6 pt-6 pb-2">
+        <div className="px-3 sm:px-6 pt-6 pb-2 flex items-center justify-between">
           <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
             <Icon name="Flame" size={16} className="text-orange-400" />
             Latest Lists
           </h2>
+          <Link
+            href="/explore"
+            className="flex items-center gap-1 text-xs font-medium text-zinc-500 hover:text-orange-400 transition"
+          >
+            View all
+            <Icon name="ChevronRight" size={13} />
+          </Link>
         </div>
         <div className="md:hidden">
           <div className="flex flex-row overflow-x-auto overflow-y-hidden gap-3 pl-4 py-2 -webkit-overflow-scrolling-touch snap-x snap-mandatory scroll-smooth items-stretch">

@@ -6,6 +6,7 @@ import type { Article } from '@/lib/api/types';
 import Link from 'next/link';
 import Image from 'next/image';
 import { relativeTime, cleanTitle } from '@/lib/dates';
+import { Icon } from '@/components/icons/Icon';
 
 const PAGE_SIZE = 10;
 
@@ -57,8 +58,12 @@ export default function ArticlesClient({ initialArticles, initialHasMore }: Arti
     <main className="mx-auto min-h-screen max-w-3xl bg-[var(--color-bg)] px-4 py-12 sm:px-6 lg:py-16">
 
       {articles.length === 0 && (
-        <div className="rounded-2xl border border-white/5 bg-white/5 p-12 text-center backdrop-blur-xl">
-          <p className="text-zinc-500">No articles yet. Be the first to publish.</p>
+        <div className="card rounded-2xl p-12 text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 border border-white/10">
+            <Icon name="FileText" size={22} className="text-zinc-600" />
+          </div>
+          <p className="mb-1 font-semibold text-white">No articles yet</p>
+          <p className="text-sm text-zinc-500">Be the first to publish an editorial on YoTop10.</p>
         </div>
       )}
 
@@ -67,7 +72,7 @@ export default function ArticlesClient({ initialArticles, initialHasMore }: Arti
           <Link
             key={article.id}
             href={`/articles/${article.slug}`}
-            className="block rounded-2xl border border-white/5 bg-white/5 p-6 backdrop-blur-xl transition hover:border-white/10"
+            className="card card-hover block rounded-2xl p-6"
           >
             {article.cover_image && (
               <div className="relative mb-5 w-full overflow-hidden rounded-xl">

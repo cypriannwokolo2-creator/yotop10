@@ -107,7 +107,7 @@ export function FeedClient({ initialPosts, initialHasMore, category }: FeedClien
   if (posts.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center px-4">
-        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5">
+        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 border border-white/10">
           <Icon name="FileText" size={24} className="text-zinc-600" />
         </div>
         <h3 className="mb-2 text-base font-semibold text-zinc-300">No ranked lists yet.</h3>
