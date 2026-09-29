@@ -436,6 +436,16 @@ html.light-mode select {
 .show-from-sm-block { display: none; }
 @media (min-width: 640px) { .show-from-sm-block { display: block; } }
 
+/* ═══ Notification panel entrance ═══ */
+@keyframes popIn {
+  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.pop-in {
+  animation: popIn 0.16s ease-out both;
+  transform-origin: top right;
+}
+
 /* ═══ Bottom Nav Safe Area — prevent DynamicIsland from overlaying content ═══ */
 @media (max-width: 767px) {
   body > main { padding-bottom: 90px; }
