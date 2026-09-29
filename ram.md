@@ -252,3 +252,8 @@ Hardcoded JWT, orphaned setInterval, $regex injection, stub 200s, health check o
 - **Premium sidebar**: `MENU` section caption, active-link left accent bar + inset ring pill, hover slide + press scale, glass user card (`bg-white/[0.03]` + border), refined spacing. No glow effects added (flat borders only).
 - **Theme toggle actually fixed**: root cause was per-instance `useState` — sidebar toggle and menu toggle disagreed after one was used. New `stores/theme.ts` (zustand, default `light` matches head script, post-mount hydrate) now drives all `ThemeToggle` instances; toggle persists + applies + syncs everywhere, clearer aria labels.
 - **Gates**: frontend typecheck ✅ lint ✅ (0 errors). Committed as `cypriannwokolo2-creator`, pushed to `cocor-tech/yotop10`.
+
+### Logo refinements + production redeploy (2026-09-29, [M32.5]–[M32.8])
+- **YO accent wordmark restored** ([M32.5], [M32.7]): bars stay, `YO` back in font-accent gradient + `Top10` display.
+- **Matched your fork's bar spec** ([M32.6]): red badge, white right-stepped bars. Then per correction ([M32.8]): solid red bars (`#dc2626`), no badge background, same stacking.
+- **Production re-link + redeploy**: DNS `yotop10.com`/`www` → `151.243.3.109` already correct, Let's Encrypt cert present. nginx `unhealthy` root cause was the down `frontend` container (port clash with a host dev server) making `frontend:3000` unresolvable. Fixed: stopped host dev, rebuilt image `2ba7dda82f0e` (latest UI), recreated container. Live verified `https://www.yotop10.com` 200 with new markers (logo ×4, rail toggle ×2, `min-[980px]` ×12, `46vw` ×22). Backend/data untouched.
