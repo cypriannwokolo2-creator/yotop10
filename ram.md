@@ -263,3 +263,7 @@ Hardcoded JWT, orphaned setInterval, $regex injection, stub 200s, health check o
 - **Breakpoint unification**: `globals.css` `.hide-desktop`/`.show-desktop` + bottom-nav padding moved 980px → 768px; homepage sections, `FeedClient` card width, `SubmitFAB` clearance moved `min-[980px]` → `md:` (768px). `ContentShell`/`DesktopTopBarMinimal` use static `md:ml/left-[72px]` + `min-[1264px]:ml/left-60` offsets.
 - **Fixed dead profile button**: mobile top-bar profile/bell carried `show-desktop` inside a `hide-desktop` parent, so they never rendered — now always visible.
 - **Gates**: frontend typecheck ✅ lint ✅ (0 errors). Committed as `cypriannwokolo2-creator`, pushed to `cocor-tech/yotop10`.
+
+### Hover-rail + Tailwind literal classes (2026-09-29, [M33.2]–[M33.3])
+- **Root-caused invisible desktop logos**: breakpoint classes built via `${RAIL}` string interpolation are invisible to Tailwind's scanner, so the CSS was never generated. Rewrote all 17 literally ([M33.2]).
+- **Instagram hover-rail** ([M33.3]): rail auto-expands to full width on hover (overlaying content, `group-hover:`), collapses on leave; `overflow-x-hidden` + `whitespace-nowrap` keep short-height/small-width scrolling clean.
