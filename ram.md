@@ -270,3 +270,12 @@ Hardcoded JWT, orphaned setInterval, $regex injection, stub 200s, health check o
 - **Click-to-collapse** ([M33.5]): open state moved from pure CSS `group-hover:` to React state — rail still auto-expands on hover, but any click anywhere collapses it (Instagram web behavior). All classes kept literal for the Tailwind scanner; ≥1264px still permanently open via `min-[1264px]:` overrides.
 - **Auto-hide at every desktop width** ([M33.7]): the `min-[1264px]:` permanent-open overrides meant wide screens never auto-hid — removed them (sidebar, `ContentShell` margin, `DesktopTopBarMinimal` offset, css comment). Rail is now 72px by default at all ≥768px widths, hover → 240px overlay, click/leave → 72px.
 - **Verified with real browser tests** (Playwright/Chromium): `initial=72 hover=240 click=72 away=72 rehover=240` PASS at 1000px, 1600px and 1920px — no more assertions without measurement.
+
+### Premium UI + reading pass (2026-09-29, [M34.1]–[M34.6])
+- **Header cleanup** ([M34.1]): profile icon removed from desktop header, duplicate logo removed (brand lives only in the sidebar rail/lockup), search left-aligned with Search icon pill.
+- **Card system** ([M34.2]): theme-aware `.card` (dark glass tint + hairline, light white + two-layer soft shadow) and `.card-elevate` (depth without overriding tinted backgrounds) in `globals.css`; light-mode contrast raised for `text-zinc-500/600` (WCAG AA), arbitrary-alpha white borders flipped, blue/sky-300 VS text darkened.
+- **List cards** ([M34.3]): premium surface, ringed rank badges, Eye icon in footer, reserved "… more items" row so footers align across equal-height cards.
+- **Explore feed** ([M34.4]): all five card variants elevated (neutral cards → `.card`, tinted → `.card-elevate`), meta text bumped 11px→12px with AA colors, tighter tab pills.
+- **Article reading** ([M34.5]): editorial serif (`font-serif`/Fraunces) H1 at controlled scale, lead paragraph steps up, body 17–18px/1.8, markdown `##`/`###` headings now render as real headings (they previously showed as literal `##` text) plus `**bold**` inline parsing.
+- **Empty states + section headers** ([M34.6]): icon chips with borders, home "Latest Lists" gained a "View all" link, articles list uses `.card` surfaces.
+- **Gates**: frontend typecheck ✅ lint ✅ (0 errors). Screenshot-verified light+dark, desktop+mobile via Playwright (header/logo/card/reading confirmed visually). Committed as cypriannwokolo2-creator, pushed to cocor.
