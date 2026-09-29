@@ -44,9 +44,9 @@ export function Logo({ markHeight = 28, showWordmark = true, textSize = 'text-xl
     <Link href="/" className={`flex items-center gap-2.5 shrink-0 ${className}`} aria-label="YoTop10 home">
       <LogoMark height={markHeight} />
       {showWordmark && (
-        <span className={`font-extrabold tracking-tight ${textSize}`}>
-          <span className="text-red-500">YO</span>
-          <span className="text-white">Top10</span>
+        <span className="flex items-baseline gap-0">
+          <span className={`font-accent gradient-text ${textSize} tracking-normal`}>YO</span>
+          <span className={`font-display ${textSize} tracking-tight text-white`}>Top10</span>
         </span>
       )}
     </Link>
