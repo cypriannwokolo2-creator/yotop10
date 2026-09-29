@@ -240,3 +240,9 @@ Hardcoded JWT, orphaned setInterval, $regex injection, stub 200s, health check o
 - **Carousel widths**: mobile cards `w-[calc(76vw-12px)]` → add `sm:w-[calc(46vw-12px)]` (two-card peek on ≥640px); `FeedClient` adds `min-[980px]:w-[380px]`; card image `h-44 lg:h-64` → `h-44 sm:h-52 lg:h-64`.
 - **FAB overlap fixed**: `SubmitFAB` `sm:bottom-6` → `min-[980px]:bottom-6` so it clears the 90px bottom nav on 640–980px tablets.
 - **Gates**: frontend typecheck ✅ lint ✅ (0 errors). Committed as `cypriannwokolo2-creator`, pushed to `cocor-tech/yotop10`.
+
+### Sidebar rail toggle + logo + equal cards (2026-09-29, [M32.3])
+- **Instagram-style sidebar toggle**: new `stores/sidebar.ts` (zustand, `collapsed` persisted to `localStorage` behind try/catch, SSR-safe default expanded + post-mount hydrate). `DesktopSidebar` collapses to a `w-20` icon rail (monogram logo, icon-only nav/user/CTA, `PanelLeftClose/Open` toggle). New `ContentShell` client wrapper drives `<main>` margin (`min-[980px]:ml-20` vs `ml-64/xl:ml-72`); `DesktopTopBarMinimal` offset follows the same store.
+- **Logo everywhere**: compact YO-Top10 brand link added to `DesktopTopBarMinimal` (desktop top bar previously had no brand); rail monogram when collapsed.
+- **Equal cards**: `PostCarouselCard` root `h-full` + title `min-h` (2-line reserve) + footer already `mt-auto`; all three carousels (`page`, `FeedClient`, `DesktopCarousel`) `items-stretch` + item `h-full` so row heights match and footers align.
+- **Gates**: frontend typecheck ✅ lint ✅ (0 errors). Committed as `cypriannwokolo2-creator`, pushed to `cocor-tech/yotop10`.

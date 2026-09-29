@@ -73,11 +73,11 @@ export function DesktopCarousel({ posts }: DesktopCarouselProps) {
           {/* Carousel Container */}
           <div
             ref={scrollContainerRef}
-            className="flex flex-row overflow-x-auto overflow-y-hidden gap-3 py-6 px-3 sm:px-4 lg:px-6 xl:px-8 -webkit-overflow-scrolling-touch snap-x snap-mandatory scroll-smooth scrollbar-hide"
+            className="flex flex-row overflow-x-auto overflow-y-hidden gap-3 py-6 px-3 sm:px-4 lg:px-6 xl:px-8 -webkit-overflow-scrolling-touch snap-x snap-mandatory scroll-smooth scrollbar-hide items-stretch"
             style={{ scrollBehavior: 'smooth' }}
           >
             {posts.map((post) => (
-              <div key={post.id} className="flex-shrink-0 scroll-snap-align-start" style={{ width: cardWidth }}>
+              <div key={post.id} className="flex-shrink-0 scroll-snap-align-start h-full" style={{ width: cardWidth }}>
                 <PostCarouselCard post={post} />
               </div>
             ))}

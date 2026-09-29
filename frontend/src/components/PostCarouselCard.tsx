@@ -30,11 +30,11 @@ export const PostCarouselCard = memo(function PostCarouselCard({ post }: { post:
   return (
     <Link
       href={`/${post.slug}`}
-      className="rounded-2xl border border-white/5 bg-white/5 backdrop-blur-sm overflow-hidden transition hover:border-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 flex flex-col"
+      className="h-full rounded-2xl border border-white/5 bg-white/5 backdrop-blur-sm overflow-hidden transition hover:border-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 flex flex-col"
     >
       {/* Section A: Title + Description */}
       <div className="px-4 lg:px-5 pt-4 lg:pt-5 pb-3 lg:pb-4">
-        <h3 className="text-lg lg:text-2xl font-bold text-white leading-snug lg:leading-tight line-clamp-2">
+        <h3 className="text-lg lg:text-2xl font-bold text-white leading-snug lg:leading-tight line-clamp-2 min-h-[3.5rem] lg:min-h-[3.75rem]">
           {cleanTitle(post.title)}
         </h3>
         {post.intro && (

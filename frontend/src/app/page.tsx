@@ -163,9 +163,9 @@ export default async function Home() {
           </h2>
         </div>
         <div className="min-[980px]:hidden">
-          <div className="flex flex-row overflow-x-auto overflow-y-hidden gap-3 pl-4 py-2 -webkit-overflow-scrolling-touch snap-x snap-mandatory scroll-smooth">
+          <div className="flex flex-row overflow-x-auto overflow-y-hidden gap-3 pl-4 py-2 -webkit-overflow-scrolling-touch snap-x snap-mandatory scroll-smooth items-stretch">
             {posts.map(post => (
-              <div key={post.id} className="flex-shrink-0 w-[calc(76vw-12px)] sm:w-[calc(46vw-12px)] scroll-snap-align-start">
+              <div key={post.id} className="flex-shrink-0 w-[calc(76vw-12px)] sm:w-[calc(46vw-12px)] scroll-snap-align-start h-full">
                 <PostCarouselCard post={post} />
               </div>
             ))}

@@ -7,10 +7,10 @@ import ToastContainer from "@/components/Toast";
 import AnalyticsBeacon from "@/components/AnalyticsBeacon";
 import { DynamicIsland } from "@/components/DynamicIsland";
 import { SubmitFAB } from "@/components/SubmitFAB";
-import { AppFooter } from "@/components/AppFooter";
 import DesktopTopBar from "@/components/DesktopTopBar";
 import DesktopTopBarMinimal from "@/components/DesktopTopBarMinimal";
 import { DesktopSidebar } from "@/components/DesktopSidebar";
+import { ContentShell } from "@/components/ContentShell";
 import { SlideMenuRouter } from "@/components/SlideMenuRouter";
 // import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import { FingerprintMergeDetector } from "@/components/FingerprintMergeDialog";
@@ -156,10 +156,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Suspense>
           <AuthInitializer />
         </Suspense>
-        <main className="flex-1 pt-14 min-[980px]:ml-64 xl:ml-72 transition-[margin] duration-300 ease-out flex flex-col">
-          <div className="flex-1">{children}</div>
-          <AppFooter />
-        </main>
+        <ContentShell>{children}</ContentShell>
         <Suspense>
           <ToastContainer />
         </Suspense>
