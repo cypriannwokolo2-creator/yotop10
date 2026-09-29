@@ -16,19 +16,22 @@ const BARS = [
 const BAR_H = 5.8;
 
 export function LogoMark({ height = 28, className = '' }: { height?: number; className?: string }) {
+  const width = (height * 40) / 40;
   return (
-    <span
-      style={{ width: height, height }}
-      className={`rounded-[22%] bg-red-600 flex items-center justify-center shadow-sm shrink-0 ${className}`}
+    <svg
+      width={width}
+      height={height}
+      viewBox="0 0 40 40"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
       role="img"
       aria-label="YoTop10 logo"
+      className={`shrink-0 ${className}`}
     >
-      <svg width="68%" height="68%" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-        {BARS.map((bar) => (
-          <rect key={bar.y} x={bar.x} y={bar.y} width={bar.w} height={BAR_H} rx={1.5} fill="white" />
-        ))}
-      </svg>
-    </span>
+      {BARS.map((bar) => (
+        <rect key={bar.y} x={bar.x} y={bar.y} width={bar.w} height={BAR_H} rx={1.5} fill="#dc2626" />
+      ))}
+    </svg>
   );
 }
 
