@@ -28,7 +28,7 @@ interface ExploreClientProps {
 function ListCard({ post }: { post: ExplorePost }) {
   return (
     <Link href={`/${post.slug}`} className="block group">
-      <div className="relative rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/[0.1] transition-all overflow-hidden">
+      <div className="card card-hover relative rounded-2xl overflow-hidden">
         {post.hero_image_url && (
           <div className="relative h-40 sm:h-48 w-full overflow-hidden">
             <Image src={post.hero_image_url} alt="" fill className="object-cover" unoptimized />
@@ -41,12 +41,12 @@ function ListCard({ post }: { post: ExplorePost }) {
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400">
               {post.post_type === 'best_of' ? 'BEST OF' : post.post_type === 'worst_of' ? 'WORST OF' : 'TOP LIST'}
             </span>
-            <span className="text-[10px] font-mono text-zinc-600 uppercase">
+            <span className="text-[10px] font-mono text-zinc-500 uppercase">
               {post.category_name || post.category_slug}
             </span>
           </div>
 
-          <h2 className="text-lg sm:text-xl font-bold text-white leading-snug mb-3 group-hover:text-orange-400 transition-colors line-clamp-2">
+          <h2 className="text-lg sm:text-xl font-bold text-white tracking-[-0.01em] leading-snug mb-3 group-hover:text-orange-400 transition-colors line-clamp-2">
             {cleanTitle(post.title)}
           </h2>
 
@@ -73,10 +73,10 @@ function ListCard({ post }: { post: ExplorePost }) {
               <span className="flex items-center justify-center rounded-full bg-white/10 text-[10px] font-mono text-zinc-400 w-5 h-5 shrink-0">
                 {(toPublicSlug(post.author_display_name || post.author_username) || '?')[0].toUpperCase()}
               </span>
-              <span className="text-[11px] text-zinc-600">{toPublicSlug(post.author_display_name || post.author_username)}</span>
-              <span className="text-[11px] text-zinc-700" suppressHydrationWarning>{relativeTime(post.created_at)}</span>
+              <span className="text-xs text-zinc-500">{toPublicSlug(post.author_display_name || post.author_username)}</span>
+              <span className="text-xs text-zinc-600" suppressHydrationWarning>{relativeTime(post.created_at)}</span>
             </div>
-            <div className="flex items-center gap-3 text-[11px] text-zinc-600 font-mono tabular-nums">
+            <div className="flex items-center gap-3 text-xs text-zinc-500 font-mono tabular-nums">
               <span className="flex items-center gap-1"><Icon name="Eye" size={11} />{post.view_count ?? 0}</span>
               <span className="flex items-center gap-1"><Icon name="MessageCircle" size={11} />{post.comment_count ?? 0}</span>
             </div>
@@ -94,7 +94,7 @@ function DebateCard({ post }: { post: ExplorePost }) {
 
   return (
     <Link href={`/${post.slug}`} className="block group">
-      <div className="relative rounded-2xl border border-purple-500/15 bg-purple-500/[0.03] hover:bg-purple-500/[0.06] hover:border-purple-500/30 transition-all overflow-hidden">
+      <div className="card-elevate relative rounded-2xl border border-purple-500/15 bg-purple-500/[0.03] hover:bg-purple-500/[0.06] hover:border-purple-500/30 transition-all overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-purple-500/40 to-transparent" />
 
         <div className="p-5 sm:p-6">
@@ -102,12 +102,12 @@ function DebateCard({ post }: { post: ExplorePost }) {
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400">
               THIS VS THAT
             </span>
-            <span className="text-[10px] font-mono text-zinc-600 uppercase">
+            <span className="text-[10px] font-mono text-zinc-500 uppercase">
               {post.category_name || post.category_slug}
             </span>
           </div>
 
-          <h2 className="text-lg sm:text-xl font-bold text-white leading-snug mb-4 group-hover:text-purple-400 transition-colors line-clamp-2">
+          <h2 className="text-lg sm:text-xl font-bold text-white tracking-[-0.01em] leading-snug mb-4 group-hover:text-purple-400 transition-colors line-clamp-2">
             {cleanTitle(post.title)}
           </h2>
 
@@ -128,10 +128,10 @@ function DebateCard({ post }: { post: ExplorePost }) {
               <span className="flex items-center justify-center rounded-full bg-white/10 text-[10px] font-mono text-zinc-400 w-5 h-5 shrink-0">
                 {(toPublicSlug(post.author_display_name || post.author_username) || '?')[0].toUpperCase()}
               </span>
-              <span className="text-[11px] text-zinc-600">{toPublicSlug(post.author_display_name || post.author_username)}</span>
-              <span className="text-[11px] text-zinc-700" suppressHydrationWarning>{relativeTime(post.created_at)}</span>
+              <span className="text-xs text-zinc-500">{toPublicSlug(post.author_display_name || post.author_username)}</span>
+              <span className="text-xs text-zinc-600" suppressHydrationWarning>{relativeTime(post.created_at)}</span>
             </div>
-            <div className="flex items-center gap-3 text-[11px] text-zinc-600 font-mono tabular-nums">
+            <div className="flex items-center gap-3 text-xs text-zinc-500 font-mono tabular-nums">
               <span className="flex items-center gap-1"><Icon name="MessageCircle" size={11} />{post.comment_count ?? 0}</span>
               <span className="flex items-center gap-1"><Icon name="Eye" size={11} />{post.view_count ?? 0}</span>
             </div>
@@ -145,7 +145,7 @@ function DebateCard({ post }: { post: ExplorePost }) {
 function ArticleCard({ post }: { post: ExplorePost }) {
   return (
     <Link href={`/articles/${post.slug}`} className="block group">
-      <div className="relative rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] hover:border-sky-500/20 transition-all overflow-hidden">
+      <div className="card card-hover relative rounded-2xl overflow-hidden">
         {post.hero_image_url ? (
           <div className="relative h-40 sm:h-52 w-full overflow-hidden">
             <Image src={post.hero_image_url} alt="" fill className="object-cover" unoptimized />
@@ -160,10 +160,10 @@ function ArticleCard({ post }: { post: ExplorePost }) {
         <div className="p-5 sm:p-6">
           <div className="flex items-center gap-2 mb-3">
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-400">ARTICLE</span>
-            <span className="text-[10px] font-mono text-zinc-600 uppercase">{post.category_name || post.category_slug}</span>
+            <span className="text-[10px] font-mono text-zinc-500 uppercase">{post.category_name || post.category_slug}</span>
           </div>
 
-          <h2 className="text-lg sm:text-xl font-bold text-white leading-snug mb-2 group-hover:text-sky-400 transition-colors line-clamp-2">
+          <h2 className="text-lg sm:text-xl font-bold text-white tracking-[-0.01em] leading-snug mb-2 group-hover:text-sky-400 transition-colors line-clamp-2">
             {cleanTitle(post.title)}
           </h2>
 
@@ -172,10 +172,10 @@ function ArticleCard({ post }: { post: ExplorePost }) {
               <span className="flex items-center justify-center rounded-full bg-white/10 text-[10px] font-mono text-zinc-400 w-5 h-5 shrink-0">
                 {(toPublicSlug(post.author_display_name || post.author_username) || '?')[0].toUpperCase()}
               </span>
-              <span className="text-[11px] text-zinc-600">{toPublicSlug(post.author_display_name || post.author_username)}</span>
-              <span className="text-[11px] text-zinc-700" suppressHydrationWarning>{relativeTime(post.created_at)}</span>
+              <span className="text-xs text-zinc-500">{toPublicSlug(post.author_display_name || post.author_username)}</span>
+              <span className="text-xs text-zinc-600" suppressHydrationWarning>{relativeTime(post.created_at)}</span>
             </div>
-            <div className="flex items-center gap-3 text-[11px] text-zinc-600 font-mono tabular-nums">
+            <div className="flex items-center gap-3 text-xs text-zinc-500 font-mono tabular-nums">
               <span className="flex items-center gap-1"><Icon name="Eye" size={11} />{post.view_count ?? 0}</span>
               <span className="flex items-center gap-1"><Icon name="MessageCircle" size={11} />{post.comment_count ?? 0}</span>
             </div>
@@ -189,13 +189,13 @@ function ArticleCard({ post }: { post: ExplorePost }) {
 function FactCard({ post }: { post: ExplorePost }) {
   return (
     <Link href={`/${post.slug}`} className="block group">
-      <div className="relative rounded-2xl border border-pink-500/15 bg-pink-500/[0.03] hover:bg-pink-500/[0.06] hover:border-pink-500/30 transition-all overflow-hidden">
+      <div className="card-elevate relative rounded-2xl border border-pink-500/15 bg-pink-500/[0.03] hover:bg-pink-500/[0.06] hover:border-pink-500/30 transition-all overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-pink-500/40 to-transparent" />
 
         <div className="p-5 sm:p-6">
           <div className="flex items-center gap-2 mb-3">
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-400">DID YOU KNOW</span>
-            <span className="text-[10px] font-mono text-zinc-600 uppercase">{post.category_name || post.category_slug}</span>
+            <span className="text-[10px] font-mono text-zinc-500 uppercase">{post.category_name || post.category_slug}</span>
           </div>
 
           <div className="flex items-start gap-3">
@@ -212,10 +212,10 @@ function FactCard({ post }: { post: ExplorePost }) {
               <span className="flex items-center justify-center rounded-full bg-white/10 text-[10px] font-mono text-zinc-400 w-5 h-5 shrink-0">
                 {(toPublicSlug(post.author_display_name || post.author_username) || '?')[0].toUpperCase()}
               </span>
-              <span className="text-[11px] text-zinc-600">{toPublicSlug(post.author_display_name || post.author_username)}</span>
-              <span className="text-[11px] text-zinc-700" suppressHydrationWarning>{relativeTime(post.created_at)}</span>
+              <span className="text-xs text-zinc-500">{toPublicSlug(post.author_display_name || post.author_username)}</span>
+              <span className="text-xs text-zinc-600" suppressHydrationWarning>{relativeTime(post.created_at)}</span>
             </div>
-            <div className="flex items-center gap-3 text-[11px] text-zinc-600 font-mono tabular-nums">
+            <div className="flex items-center gap-3 text-xs text-zinc-500 font-mono tabular-nums">
               <span className="flex items-center gap-1"><Icon name="Eye" size={11} />{post.view_count ?? 0}</span>
               <span className="flex items-center gap-1"><Icon name="MessageCircle" size={11} />{post.comment_count ?? 0}</span>
             </div>
@@ -229,16 +229,16 @@ function FactCard({ post }: { post: ExplorePost }) {
 function CounterCard({ post }: { post: ExplorePost }) {
   return (
     <Link href={`/${post.slug}`} className="block group">
-      <div className="relative rounded-2xl border border-amber-500/15 bg-amber-500/[0.03] hover:bg-amber-500/[0.06] hover:border-amber-500/30 transition-all overflow-hidden">
+      <div className="card-elevate relative rounded-2xl border border-amber-500/15 bg-amber-500/[0.03] hover:bg-amber-500/[0.06] hover:border-amber-500/30 transition-all overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-500/40 to-transparent" />
 
         <div className="p-5 sm:p-6">
           <div className="flex items-center gap-2 mb-3">
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400">COUNTER LIST</span>
-            <span className="text-[10px] font-mono text-zinc-600 uppercase">{post.category_name || post.category_slug}</span>
+            <span className="text-[10px] font-mono text-zinc-500 uppercase">{post.category_name || post.category_slug}</span>
           </div>
 
-          <h2 className="text-lg sm:text-xl font-bold text-white leading-snug mb-3 group-hover:text-amber-400 transition-colors line-clamp-2">
+          <h2 className="text-lg sm:text-xl font-bold text-white tracking-[-0.01em] leading-snug mb-3 group-hover:text-amber-400 transition-colors line-clamp-2">
             {cleanTitle(post.title)}
           </h2>
 
@@ -260,10 +260,10 @@ function CounterCard({ post }: { post: ExplorePost }) {
               <span className="flex items-center justify-center rounded-full bg-white/10 text-[10px] font-mono text-zinc-400 w-5 h-5 shrink-0">
                 {(toPublicSlug(post.author_display_name || post.author_username) || '?')[0].toUpperCase()}
               </span>
-              <span className="text-[11px] text-zinc-600">{toPublicSlug(post.author_display_name || post.author_username)}</span>
-              <span className="text-[11px] text-zinc-700" suppressHydrationWarning>{relativeTime(post.created_at)}</span>
+              <span className="text-xs text-zinc-500">{toPublicSlug(post.author_display_name || post.author_username)}</span>
+              <span className="text-xs text-zinc-600" suppressHydrationWarning>{relativeTime(post.created_at)}</span>
             </div>
-            <div className="flex items-center gap-3 text-[11px] text-zinc-600 font-mono tabular-nums">
+            <div className="flex items-center gap-3 text-xs text-zinc-500 font-mono tabular-nums">
               <span className="flex items-center gap-1"><Icon name="MessageCircle" size={11} />{post.comment_count ?? 0}</span>
               <span className="flex items-center gap-1"><Icon name="Eye" size={11} />{post.view_count ?? 0}</span>
             </div>
@@ -337,9 +337,9 @@ export default function ExploreClient({ initialPosts, initialHasMore }: ExploreC
               key={t.value}
               type="button"
               onClick={() => handleTabChange(t.value)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
                 tab === t.value
-                  ? 'bg-orange-500/15 text-orange-400 border border-orange-500/30'
+                  ? 'bg-orange-500/15 text-orange-500 border border-orange-500/30'
                   : 'bg-white/[0.03] text-zinc-500 border border-transparent hover:text-zinc-300 hover:bg-white/[0.06]'
               }`}
             >
