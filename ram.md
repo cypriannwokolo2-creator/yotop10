@@ -279,3 +279,8 @@ Hardcoded JWT, orphaned setInterval, $regex injection, stub 200s, health check o
 - **Article reading** ([M34.5]): editorial serif (`font-serif`/Fraunces) H1 at controlled scale, lead paragraph steps up, body 17–18px/1.8, markdown `##`/`###` headings now render as real headings (they previously showed as literal `##` text) plus `**bold**` inline parsing.
 - **Empty states + section headers** ([M34.6]): icon chips with borders, home "Latest Lists" gained a "View all" link, articles list uses `.card` surfaces.
 - **Gates**: frontend typecheck ✅ lint ✅ (0 errors). Screenshot-verified light+dark, desktop+mobile via Playwright (header/logo/card/reading confirmed visually). Committed as cypriannwokolo2-creator, pushed to cocor.
+
+### Mobile menu position + notification popup (2026-09-29, [M35.1]–[M35.2])
+- **Menu icon on the left** ([M35.1]): mobile top bar now renders `SlideMenuTrigger` before the logo (measured `menu.x=12 < logo.x=60` via Playwright); bell + avatar stay right.
+- **Notification popup** ([M35.2]): rounded panel with `overflow-hidden` (corners clip), header row with live unread count + "Mark all read", per-item icon chips (orange when unread), relative timestamps, admin priority pills + tinted backgrounds + dismiss, designed empty state, sticky "See all" footer, `pop-in` entrance animation. Bell button restyled to a round brand-orange badge (was blue box).
+- **Gates**: typecheck ✅ lint ✅; popup opened + screenshotted on mobile & desktop (real admin broadcasts rendered).
