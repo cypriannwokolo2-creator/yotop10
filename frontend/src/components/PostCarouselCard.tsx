@@ -30,11 +30,11 @@ export const PostCarouselCard = memo(function PostCarouselCard({ post }: { post:
   return (
     <Link
       href={`/${post.slug}`}
-      className="h-full rounded-2xl border border-white/5 bg-white/5 backdrop-blur-sm overflow-hidden transition hover:border-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 flex flex-col"
+      className="card card-hover h-full rounded-2xl overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 flex flex-col"
     >
       {/* Section A: Title + Description */}
       <div className="px-4 lg:px-5 pt-4 lg:pt-5 pb-3 lg:pb-4">
-        <h3 className="text-lg lg:text-2xl font-bold text-white leading-snug lg:leading-tight line-clamp-2 min-h-[3.5rem] lg:min-h-[3.75rem]">
+        <h3 className="text-lg lg:text-2xl font-bold text-white leading-snug lg:leading-tight tracking-[-0.01em] line-clamp-2 min-h-[3.5rem] lg:min-h-[3.75rem]">
           {cleanTitle(post.title)}
         </h3>
         {post.intro && (
@@ -49,15 +49,15 @@ export const PostCarouselCard = memo(function PostCarouselCard({ post }: { post:
         <div className="px-4 lg:px-5 space-y-2 lg:space-y-3 mb-2 lg:mb-3">
           {topItems.slice(0, 3).map((item) => (
             <div key={item.rank} className="flex items-center gap-3 lg:gap-4">
-              <span className="flex items-center justify-center w-6 lg:w-8 h-6 lg:h-8 rounded-full bg-gradient-to-r from-orange-500 to-red-600 text-3xs lg:text-xs font-bold font-mono text-white shrink-0" style={{ color: '#fff' }}>
+              <span className="flex items-center justify-center w-6 lg:w-7 h-6 lg:h-7 rounded-full bg-gradient-to-r from-orange-500 to-red-600 ring-1 ring-inset ring-black/10 text-3xs lg:text-xs font-bold font-mono text-white shrink-0" style={{ color: '#fff' }}>
                 #{item.rank}
               </span>
-              <span className="text-sm lg:text-lg text-zinc-300 truncate">{item.title}</span>
+              <span className="text-sm lg:text-[17px] leading-snug text-zinc-300 truncate">{item.title}</span>
             </div>
           ))}
-          {remaining > 0 && (
-            <p className="text-right text-2xs lg:text-xs text-zinc-600 mt-1 lg:mt-2 mb-1">
-              ... and {remaining} more items
+          {topItems.length > 0 && (
+            <p className={`text-right text-2xs lg:text-xs text-zinc-600 mt-1 lg:mt-2 mb-1 ${remaining === 0 ? 'invisible' : ''}`}>
+              ... and {Math.max(remaining, 1)} more items
             </p>
           )}
         </div>
@@ -90,7 +90,7 @@ export const PostCarouselCard = memo(function PostCarouselCard({ post }: { post:
       <div className="px-4 lg:px-5 pt-3 lg:pt-4 pb-1 flex items-center gap-1.5 lg:gap-2 text-xs lg:text-sm text-zinc-500">
         <span>By</span>
         <span className="font-mono text-zinc-400">@{displayName}</span>
-        
+
         <span className="text-zinc-700">&middot;</span>
         <span suppressHydrationWarning>{formatDate(post.published_at || post.created_at)}</span>
       </div>
@@ -98,10 +98,11 @@ export const PostCarouselCard = memo(function PostCarouselCard({ post }: { post:
       {/* Section E: Engagement Footer */}
       <div className="flex items-center justify-between px-4 lg:px-5 py-3 lg:py-4 mt-auto border-t border-white/5">
         <span className="flex items-center gap-1.5 text-3xs lg:text-xs text-zinc-500">
-          <Icon name="MessageCircle" size={16} />
+          <Icon name="MessageCircle" size={14} />
           <span>{post.comment_count} comments</span>
         </span>
         <span className="flex items-center gap-1.5 text-3xs lg:text-xs text-zinc-500">
+          <Icon name="Eye" size={14} />
           <span>{post.view_count} views</span>
         </span>
       </div>
