@@ -22,7 +22,8 @@ const NAV_ITEMS = [
 // Instagram-exact navigation: icon rail (72px) on tablet widths,
 // full labeled sidebar (240px) at ≥1264px, bottom tab bar below 768px.
 // Rail state is purely viewport-driven — no manual toggle.
-const RAIL = 'min-[1264px]:';
+// NOTE: breakpoint classes are written out literally (never built by
+// string interpolation) so Tailwind's scanner generates them.
 
 export function DesktopSidebar() {
   const pathname = usePathname()!;
@@ -35,7 +36,7 @@ export function DesktopSidebar() {
   return (
     <aside className="fixed top-0 left-0 z-50 h-full w-[72px] min-[1264px]:w-60 bg-[var(--color-bg)]/95 backdrop-blur-2xl border-r border-white/5 hidden md:flex flex-col overflow-y-auto transition-all duration-300 ease-out">
       {/* Brand — full lockup at ≥1264px, mark-only rail below */}
-      <div className={`hidden ${RAIL}block flex-col px-6 pt-6 pb-4 shrink-0`}>
+      <div className={`hidden min-[1264px]:block flex-col px-6 pt-6 pb-4 shrink-0`}>
         <Logo markHeight={32} textSize="text-[26px]" />
         <p className="text-2xs text-zinc-600 mt-1.5 leading-relaxed tracking-wide">Fact Mine. Debate Ground.</p>
       </div>
@@ -46,7 +47,7 @@ export function DesktopSidebar() {
       <hr className="border-white/5 mx-4 mb-3" />
 
       {/* Navigation */}
-      <p className={`hidden ${RAIL}block px-7 pb-1.5 text-3xs font-mono uppercase tracking-[0.22em] text-zinc-600`}>Menu</p>
+      <p className={`hidden min-[1264px]:block px-7 pb-1.5 text-3xs font-mono uppercase tracking-[0.22em] text-zinc-600`}>Menu</p>
       <nav className="flex-1 px-3 space-y-1">
         {NAV_ITEMS.map(item => {
           const isActive = item.href === '/'
@@ -67,7 +68,7 @@ export function DesktopSidebar() {
                 <span aria-hidden className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-full bg-gradient-to-b from-orange-400 to-red-600" />
               )}
               <Icon name={item.icon} size={18} />
-              <span className={`hidden ${RAIL}inline`}>{item.label}</span>
+              <span className={`hidden min-[1264px]:inline`}>{item.label}</span>
             </Link>
           );
         })}
@@ -81,7 +82,7 @@ export function DesktopSidebar() {
         {!initialized ? (
           <div className="flex items-center justify-center min-[1264px]:justify-start gap-3 min-[1264px]:px-4 py-2.5 rounded-xl animate-pulse">
             <span className="w-8 h-8 rounded-full bg-white/10 shrink-0" />
-            <div className={`hidden ${RAIL}block min-w-0 flex-1 space-y-1.5`}>
+            <div className={`hidden min-[1264px]:block min-w-0 flex-1 space-y-1.5`}>
               <span className="block h-3 w-20 rounded bg-white/10" />
               <span className="block h-2 w-16 rounded bg-white/5" />
             </div>
@@ -99,7 +100,7 @@ export function DesktopSidebar() {
                 {displayName[0].toUpperCase()}
               </span>
             )}
-            <div className={`hidden ${RAIL}block min-w-0 flex-1`}>
+            <div className={`hidden min-[1264px]:block min-w-0 flex-1`}>
               <div className="flex items-center gap-1">
                 <span className="text-sm font-semibold text-zinc-300 truncate">{displayName}</span>
                 {user.posts_approved >= 3 && <Icon name="BadgeCheck" size={12} className="text-orange-400 shrink-0" />}
@@ -116,7 +117,7 @@ export function DesktopSidebar() {
             <span className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-500/20 border border-amber-500/30 shrink-0">
               <Icon name="User" size={16} />
             </span>
-            <div className={`hidden ${RAIL}block min-w-0 flex-1 text-left`}>
+            <div className={`hidden min-[1264px]:block min-w-0 flex-1 text-left`}>
               <p className="text-sm font-semibold">Tap to retry</p>
               <p className="text-3xs text-amber-300/70 font-mono truncate">profile failed to load</p>
             </div>
@@ -131,7 +132,7 @@ export function DesktopSidebar() {
             className="flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-300 transition"
           >
             <Icon name="Settings" size={16} />
-            <span className={`hidden ${RAIL}inline`}>Settings</span>
+            <span className={`hidden min-[1264px]:inline`}>Settings</span>
           </Link>
           <ThemeToggle />
         </div>
@@ -144,7 +145,7 @@ export function DesktopSidebar() {
           className="block text-sm font-bold text-white text-center shadow-lg transition hover:shadow-xl hover:scale-[1.02] bg-gradient-to-r from-orange-500 to-pink-500 mx-auto rounded-full p-3 min-[1264px]:mx-1 min-[1264px]:rounded-xl min-[1264px]:px-4 min-[1264px]:py-2.5"
         >
           <Icon name="Plus" size={14} className="block min-[1264px]:inline min-[1264px]:mr-1.5" />
-          <span className={`hidden ${RAIL}inline`}>Submit a List</span>
+          <span className={`hidden min-[1264px]:inline`}>Submit a List</span>
         </Link>
       </div>
     </aside>
