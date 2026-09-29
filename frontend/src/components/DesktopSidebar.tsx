@@ -47,7 +47,7 @@ export function DesktopSidebar() {
     <aside
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={() => setOpen(false)}
-      className={`fixed top-0 left-0 z-50 h-full ${open ? 'w-60' : 'w-[72px]'} bg-[var(--color-bg)]/95 backdrop-blur-2xl border-r border-white/5 hidden md:flex flex-col overflow-y-auto overflow-x-hidden transition-all duration-300 ease-out`}
+      className={`fixed top-0 left-0 z-50 h-full ${open ? 'w-60' : 'w-[72px]'} bg-[var(--color-bg)]/95 border-r border-white/5 hidden md:flex flex-col overflow-y-auto overflow-x-hidden transition-[width] duration-300 ease-out`}
     >
       {/* Brand — full lockup when open, mark-only rail otherwise */}
       <div className={`${open ? 'flex' : 'hidden'} flex-col px-6 pt-6 pb-4 shrink-0 whitespace-nowrap`}>
@@ -72,7 +72,7 @@ export function DesktopSidebar() {
               key={item.label}
               href={item.href}
               title={item.label}
-              className={`relative flex items-center gap-3 py-2.5 rounded-xl transition-all duration-200 text-sm active:scale-[0.98] whitespace-nowrap ${open ? 'justify-start px-4' : 'justify-center px-0'} ${
+              className={`relative flex items-center gap-3 py-2.5 rounded-xl transition-[padding,color,background-color,box-shadow,transform] duration-200 text-sm active:scale-[0.98] whitespace-nowrap ${open ? 'justify-start px-4' : 'justify-center px-0'} ${
                 isActive
                   ? 'text-orange-400 bg-orange-500/10 font-semibold ring-1 ring-inset ring-orange-500/20'
                   : 'text-zinc-400 hover:text-white hover:bg-white/5'
@@ -105,7 +105,7 @@ export function DesktopSidebar() {
           <Link
             href={`/a/${cleanUsername}`}
             title={`@${cleanUsername}`}
-            className={`flex items-center gap-3 py-2.5 rounded-xl transition-all duration-200 text-sm text-zinc-400 bg-white/[0.03] border border-white/5 hover:text-white hover:bg-white/5 hover:border-white/10 active:scale-[0.98] whitespace-nowrap ${open ? 'justify-start px-4' : 'justify-center'}`}
+            className={`flex items-center gap-3 py-2.5 rounded-xl transition-[padding,color,background-color,border-color,transform] duration-200 text-sm text-zinc-400 bg-white/[0.03] border border-white/5 hover:text-white hover:bg-white/5 hover:border-white/10 active:scale-[0.98] whitespace-nowrap ${open ? 'justify-start px-4' : 'justify-center'}`}
           >
             {user.profile_image_url ? (
               <Image src={user.profile_image_url} alt="" width={32} height={32} className="w-8 h-8 rounded-full object-cover shrink-0" unoptimized />

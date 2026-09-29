@@ -26,7 +26,7 @@ export default function DesktopTopBar() {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-[var(--color-bg)]/80 backdrop-blur-2xl border-b border-white/5">
+    <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-[var(--color-bg)]/95 border-b border-white/5">
       <div className="mx-auto flex h-full max-w-6xl items-center justify-between px-3 sm:px-6">
         {/* Brand doubles as the menu button — single affordance, no hamburger */}
         <div className="flex items-center gap-1 sm:gap-2">

@@ -338,7 +338,7 @@ export default function UserProfileClient({ initialProfile }: { initialProfile: 
         {/* Right feed — tabs + posts/comments/stats */}
         <div className="flex-1 min-w-0">
           {/* ─── Tabs ─── */}
-      <div className="sticky top-14 z-10 mb-8 flex border-b border-white/5 bg-[var(--color-bg)]/80 backdrop-blur-xl -mx-4 sm:-mx-6 px-4 sm:px-6" role="tablist">
+      <div className="sticky top-14 z-10 mb-8 flex border-b border-white/5 bg-[var(--color-bg)]/95 -mx-4 sm:-mx-6 px-4 sm:px-6" role="tablist">
         <button role="tab" aria-selected={activeTab === 'posts'} onClick={() => setActiveTab('posts')} className={`relative px-5 sm:px-6 py-3.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 ${activeTab === 'posts' ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}>
           Posts ({profile.posts.length})
           {activeTab === 'posts' && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-400" />}

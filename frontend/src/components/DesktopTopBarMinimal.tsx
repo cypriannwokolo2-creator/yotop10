@@ -16,7 +16,7 @@ export default function DesktopTopBarMinimal() {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-30 h-14 bg-[var(--color-bg)]/70 backdrop-blur-xl border-b border-white/5 md:left-[72px]">
+    <header className="fixed top-0 left-0 right-0 z-30 h-14 bg-[var(--color-bg)]/95 border-b border-white/5 md:left-[72px]">
       <div className="flex h-full items-center gap-4 px-4 lg:px-6">
         {/* Brand lives in the sidebar rail — no logo here (avoids the duplicate) */}
         <div className="relative flex-1 max-w-xl">

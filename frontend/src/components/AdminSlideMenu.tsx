@@ -66,7 +66,7 @@ export function AdminSlideMenu() {
     <>
       {open && (
         <div
-          className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm"
+          className="fixed inset-0 z-[60] bg-black/60"
           onClick={() => setOpen(false)}
         />
       )}

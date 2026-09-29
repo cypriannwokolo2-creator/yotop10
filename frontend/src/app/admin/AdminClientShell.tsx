@@ -75,7 +75,7 @@ export default function AdminClientShell({
   return (
     <div className="flex min-h-screen bg-zinc-950">
       {/* Mobile top bar */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 h-12 bg-zinc-950/95 backdrop-blur-xl border-b border-white/10 flex items-center justify-between px-4">
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 h-12 bg-zinc-950/95 border-b border-white/10 flex items-center justify-between px-4">
         <div className="flex items-center gap-2">
           <button onClick={() => setMobileOpen(!mobileOpen)} className="text-white/70 hover:text-white p-1">
             <Icon name={mobileOpen ? 'X' : 'Menu'} size={20} />
