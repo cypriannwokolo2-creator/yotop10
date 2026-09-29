@@ -15,7 +15,17 @@ const BARS = [
 
 const BAR_H = 5.8;
 
-export function LogoMark({ height = 28, className = '' }: { height?: number; className?: string }) {
+const BAR_TRANSITION = 'transform 300ms cubic-bezier(0.22, 1, 0.36, 1)';
+
+export function LogoMark({
+  height = 28,
+  className = '',
+  active = false,
+}: {
+  height?: number;
+  className?: string;
+  active?: boolean;
+}) {
   const width = (height * 40) / 40;
   return (
     <svg
@@ -28,9 +38,29 @@ export function LogoMark({ height = 28, className = '' }: { height?: number; cla
       aria-label="YoTop10 logo"
       className={`shrink-0 ${className}`}
     >
-      {BARS.map((bar) => (
-        <rect key={bar.y} x={bar.x} y={bar.y} width={bar.w} height={BAR_H} rx={1.5} fill="#dc2626" />
-      ))}
+      {BARS.map((bar, index) => {
+        const isTopBar = index < 2;
+        return (
+          <rect
+            key={bar.y}
+            x={bar.x}
+            y={bar.y}
+            width={bar.w}
+            height={BAR_H}
+            rx={1.5}
+            fill="#dc2626"
+            style={
+              isTopBar
+                ? {
+                    transform: active ? 'translateX(-6px)' : 'translateX(0)',
+                    transition: BAR_TRANSITION,
+                    transitionDelay: index === 1 ? '70ms' : '0ms',
+                  }
+                : undefined
+            }
+          />
+        );
+      })}
     </svg>
   );
 }
@@ -40,18 +70,46 @@ interface LogoProps {
   showWordmark?: boolean;
   textSize?: string;
   className?: string;
+  markActive?: boolean;
+  onClick?: () => void;
 }
 
-export function Logo({ markHeight = 28, showWordmark = true, textSize = 'text-xl', className = '' }: LogoProps) {
-  return (
-    <Link href="/" className={`flex items-center gap-2.5 shrink-0 ${className}`} aria-label="YoTop10 home">
-      <LogoMark height={markHeight} />
+export function Logo({
+  markHeight = 28,
+  showWordmark = true,
+  textSize = 'text-xl',
+  className = '',
+  markActive = false,
+  onClick,
+}: LogoProps) {
+  const content = (
+    <>
+      <LogoMark height={markHeight} active={markActive} />
       {showWordmark && (
         <span className="flex items-baseline gap-0">
           <span className={`font-accent gradient-text ${textSize} tracking-normal`}>YO</span>
           <span className={`font-display ${textSize} tracking-tight text-white`}>Top10</span>
         </span>
       )}
+    </>
+  );
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label="Open menu"
+        className={`flex items-center gap-2.5 shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 rounded-lg ${className}`}
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <Link href="/" className={`flex items-center gap-2.5 shrink-0 ${className}`} aria-label="YoTop10 home">
+      {content}
     </Link>
   );
 }

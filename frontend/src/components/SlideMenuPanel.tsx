@@ -55,7 +55,7 @@ export function SlideMenuPanel() {
         }`}
       >
         <div className="px-6 pt-5 pb-1" onClick={() => setOpen(false)}>
-          <Logo markHeight={24} textSize="text-lg" />
+          <Logo markHeight={24} textSize="text-lg" markActive={open} />
         </div>
         <div className="px-6 pt-4 pb-4">
           <div className="flex items-center gap-3">
