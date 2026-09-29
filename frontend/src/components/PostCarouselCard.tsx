@@ -34,7 +34,7 @@ export const PostCarouselCard = memo(function PostCarouselCard({ post }: { post:
     >
       {/* Section A: Title + Description */}
       <div className="px-4 lg:px-5 pt-4 lg:pt-5 pb-3 lg:pb-4">
-        <h3 className="text-lg lg:text-2xl font-bold text-white leading-snug lg:leading-tight tracking-[-0.01em] line-clamp-2 min-h-[3.5rem] lg:min-h-[3.75rem]">
+        <h3 className="text-base lg:text-2xl font-bold text-white leading-snug lg:leading-tight tracking-[-0.01em] line-clamp-2 min-h-[3rem] lg:min-h-[3.75rem]">
           {cleanTitle(post.title)}
         </h3>
         {post.intro && (
@@ -52,7 +52,7 @@ export const PostCarouselCard = memo(function PostCarouselCard({ post }: { post:
               <span className="flex items-center justify-center w-6 lg:w-7 h-6 lg:h-7 rounded-full bg-gradient-to-r from-orange-500 to-red-600 ring-1 ring-inset ring-black/10 text-3xs lg:text-xs font-bold font-mono text-white shrink-0" style={{ color: '#fff' }}>
                 #{item.rank}
               </span>
-              <span className="text-sm lg:text-[17px] leading-snug text-zinc-300 truncate">{item.title}</span>
+              <span className="text-xs lg:text-[17px] leading-snug text-zinc-300 truncate">{item.title}</span>
             </div>
           ))}
           {topItems.length > 0 && (
@@ -87,7 +87,7 @@ export const PostCarouselCard = memo(function PostCarouselCard({ post }: { post:
       </div>
 
       {/* Section D: Author Byline — below media */}
-      <div className="px-4 lg:px-5 pt-3 lg:pt-4 pb-1 flex items-center gap-1.5 lg:gap-2 text-xs lg:text-sm text-zinc-500">
+      <div className="px-4 lg:px-5 pt-3 lg:pt-4 pb-1 flex items-center gap-1.5 lg:gap-2 text-2xs lg:text-sm text-zinc-500">
         <span>By</span>
         <span className="font-mono text-zinc-400">@{displayName}</span>
 
