@@ -162,22 +162,22 @@ export default async function Home() {
             Latest Lists
           </h2>
         </div>
-        <div className="lg:hidden">
+        <div className="min-[980px]:hidden">
           <div className="flex flex-row overflow-x-auto overflow-y-hidden gap-3 pl-4 py-2 -webkit-overflow-scrolling-touch snap-x snap-mandatory scroll-smooth">
             {posts.map(post => (
-              <div key={post.id} className="flex-shrink-0 w-[calc(76vw-12px)] scroll-snap-align-start">
+              <div key={post.id} className="flex-shrink-0 w-[calc(76vw-12px)] sm:w-[calc(46vw-12px)] scroll-snap-align-start">
                 <PostCarouselCard post={post} />
               </div>
             ))}
           </div>
         </div>
-        <div className="hidden lg:block">
+        <div className="hidden min-[980px]:block">
           <DesktopCarousel posts={posts} />
         </div>
       </div>
 
-      {/* ─── Mobile sections (unchanged, hidden on md+) ─── */}
-      <div className="md:hidden">
+      {/* ─── Mobile sections (hidden from 980px, matches nav breakpoint) ─── */}
+      <div className="min-[980px]:hidden">
         {/* Section 2: Hot Debates */}
         <HomeDebates debates={debates} />
 
@@ -210,8 +210,8 @@ export default async function Home() {
         </section>
       </div>
 
-      {/* ─── Desktop sections (hidden below md) ─── */}
-      <div className="hidden md:block px-4 lg:px-6 pb-12">
+      {/* ─── Desktop sections (visible from 980px, matches nav breakpoint) ─── */}
+      <div className="hidden min-[980px]:block px-4 lg:px-6 pb-12">
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6">
           {/* Row 1: Debates Arena (2/3 width) + Articles (1/3 width) */}
           <DesktopDebates className="col-span-2 lg:col-span-2" debates={debates} />

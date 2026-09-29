@@ -234,3 +234,9 @@ Hardcoded JWT, orphaned setInterval, $regex injection, stub 200s, health check o
 ### Responsive shell unification (2026-09-29, [M32.1])
 - **Nav dead zone 980–1024 closed**: `layout.tsx` wrappers moved from `lg:` (1024px) to `hide-desktop`/`show-desktop` (980px) to match `DynamicIsland`/`SlideMenu`; `main` margin `lg:ml-64` → `min-[980px]:ml-64`; sidebar `lg:translate-x-0`/`lg:w-72` → `min-[980px]:translate-x-0`/`xl:w-72`; minimal topbar `left-64 lg:left-72` → `left-0 min-[980px]:left-64 xl:left-72`.
 - **Gates**: frontend typecheck ✅ lint ✅. Pushed to `cocor-tech/yotop10` as `cypriannwokolo2-creator` (history rewritten, `origin` untouched).
+
+### Homepage responsive unification (2026-09-29, [M32.2])
+- **Tablet mismatch fixed**: homepage carousel (`lg:`) and content sections (`md:`) now both switch at `min-[980px]`, matching the nav/sidebar breakpoint — no more mobile-carousel + desktop-grid mix on 768–1024px tablets.
+- **Carousel widths**: mobile cards `w-[calc(76vw-12px)]` → add `sm:w-[calc(46vw-12px)]` (two-card peek on ≥640px); `FeedClient` adds `min-[980px]:w-[380px]`; card image `h-44 lg:h-64` → `h-44 sm:h-52 lg:h-64`.
+- **FAB overlap fixed**: `SubmitFAB` `sm:bottom-6` → `min-[980px]:bottom-6` so it clears the 90px bottom nav on 640–980px tablets.
+- **Gates**: frontend typecheck ✅ lint ✅ (0 errors). Committed as `cypriannwokolo2-creator`, pushed to `cocor-tech/yotop10`.

@@ -64,7 +64,7 @@ export const PostCarouselCard = memo(function PostCarouselCard({ post }: { post:
       )}
 
       {/* Section C: Media — Image or Category Gradient Fallback */}
-      <div className="mx-4 lg:mx-5 rounded-xl overflow-hidden h-44 lg:h-64 bg-white/5">
+      <div className="mx-4 lg:mx-5 rounded-xl overflow-hidden h-44 sm:h-52 lg:h-64 bg-white/5">
         {post.hero_image_url ? (
           <Image
             src={post.hero_image_url}

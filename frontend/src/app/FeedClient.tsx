@@ -147,7 +147,7 @@ export function FeedClient({ initialPosts, initialHasMore, category }: FeedClien
         className="flex flex-row overflow-x-auto overflow-y-hidden gap-3 pl-4 pb-4 -webkit-overflow-scrolling-touch snap-x snap-mandatory scroll-smooth"
       >
         {posts.map((post) => (
-          <div key={post.id} className="flex-shrink-0 w-[calc(76vw-12px)] scroll-snap-align-start">
+          <div key={post.id} className="flex-shrink-0 w-[calc(76vw-12px)] sm:w-[calc(46vw-12px)] min-[980px]:w-[380px] scroll-snap-align-start">
             <PostCarouselCard post={post} />
           </div>
         ))}
