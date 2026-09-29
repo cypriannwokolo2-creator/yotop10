@@ -155,7 +155,7 @@ export default function SearchClient() {
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)] px-3 py-6 sm:px-6 sm:py-10">
-      <div className="mx-auto max-w-5xl">
+      <div className="mx-auto max-w-7xl">
         <div className="relative mb-4 sm:mb-6">
           <div className="flex gap-2 sm:gap-3">
             <div className="relative flex-1">

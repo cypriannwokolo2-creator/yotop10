@@ -43,7 +43,7 @@ export default async function HallOfFamePage() {
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)]">
-      <div className="max-w-6xl mx-auto px-4 py-8 sm:py-12">
+      <div className="max-w-7xl mx-auto px-4 py-8 sm:py-12">
         <div className="mb-8 sm:mb-12">
           <h1 className="font-display text-3xl sm:text-4xl text-white mb-2">Hall of Fame</h1>
           <p className="text-zinc-500 text-sm sm:text-base">The best lists, confirmed by the community</p>
@@ -115,7 +115,7 @@ export default async function HallOfFamePage() {
         </div>
 
         {grid.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {grid.map((entry) => {
               const post = entry.post;
               return (

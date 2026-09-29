@@ -160,7 +160,7 @@ export default function UserProfileClient({ initialProfile }: { initialProfile: 
   });
 
   return (
-    <div className="mx-auto min-h-screen max-w-4xl bg-[var(--color-bg)] text-white px-6 sm:px-8 py-12 sm:py-16">
+    <div className="mx-auto min-h-screen max-w-6xl bg-[var(--color-bg)] text-white px-6 sm:px-8 py-12 sm:py-16">
       {/* ─── Banner ─── */}
       <div className="profile-hero-banner h-28 sm:h-36 rounded-3xl bg-gradient-to-br from-zinc-900 via-zinc-800 to-black border border-white/5" />
 
@@ -400,7 +400,7 @@ export default function UserProfileClient({ initialProfile }: { initialProfile: 
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
               {filteredPosts.map((post, idx) => (
                 <Link key={post.id} href={post.status !== 'approved' ? `/pending/${post.id}` : `/${post.slug}`} className={`group p-6 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 card-deck-enter ${idx < 2 ? 'rounded-2xl glass-slab spatial-depth border border-white/5' : 'rounded-2xl border border-white/5 bg-white/5 backdrop-blur-sm hover:border-orange-500/20 hover:shadow-lg hover:shadow-orange-500/5 hover:-translate-y-0.5'}`} style={{ animationDelay: `${idx * 40}ms` }}>
                   <div className="flex items-start gap-2 mb-3">

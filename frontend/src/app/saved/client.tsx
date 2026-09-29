@@ -57,7 +57,7 @@ export default function SavedClient() {
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)] px-3 py-6 sm:px-6 sm:py-10">
-      <div className="mx-auto max-w-3xl">
+      <div className="mx-auto max-w-7xl">
         {error && <p className="mb-4 rounded-lg bg-red-500/10 px-4 py-2 text-sm text-red-400">{error}</p>}
         <h1 className="mb-8 text-2xl font-bold text-white sm:text-3xl">Saved</h1>
 

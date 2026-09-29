@@ -15,7 +15,7 @@ import { DesktopFacts } from '@/components/DesktopFacts';
 import { DesktopCta } from '@/components/DesktopCta';
 
 import { DesktopTrending } from '@/components/DesktopTrending';
-import { DesktopHallOfFame } from '@/components/DesktopHallOfFame';
+import { DesktopHallOfFame, type HofEntry } from '@/components/DesktopHallOfFame';
 import { DesktopStats } from '@/components/DesktopStats';
 import CtaButton from '@/components/CtaButton';
 import { Icon } from '@/components/icons/Icon';
@@ -107,12 +107,14 @@ export const metadata: Metadata = {
 export const runtime = 'nodejs';
 
 export default async function Home() {
-  const [postsData, catsData, argsData, artsData, factsData] = await Promise.all([
+  const [postsData, catsData, argsData, artsData, factsData, trendingData, hofData] = await Promise.all([
     fetchJson<PostsResponse>(`${API_BASE}/posts?post_type=top_list%2Cbest_of%2Cworst_of`, { posts: [] }),
     fetchJson<{ categories: CategoryItem[] }>(`${API_BASE}/categories`, { categories: [] }),
     fetchJson<{ arguments: DebateItem[] }>(`${API_BASE}/arguments?limit=12`, { arguments: [] }),
     fetchJson<{ articles: ArticleItem[] }>(`${API_BASE}/articles?limit=8`, { articles: [] }),
     fetchJson<PostsResponse>(`${API_BASE}/posts?post_type=fact_drop&limit=10`, { posts: [] }),
+    fetchJson<{ trending: { query: string; count: number }[] }>(`${API_BASE}/search/trending`, { trending: [] }),
+    fetchJson<{ featured: HofEntry[] }>(`${API_BASE}/hall-of-fame`, { featured: [] }),
   ]);
 
   // Deduplicate by title — never show the same content twice
@@ -131,6 +133,8 @@ export default async function Home() {
   const debates = uniqueByTitle(argsData.arguments || []);
   const articles = uniqueByTitle(artsData.articles || []);
   const facts = uniqueByTitle(factsData.posts || []);
+  const trendingTerms = (trendingData.trending || []).map(t => t.query).filter(Boolean).slice(0, 6);
+  const hofEntries = (hofData.featured || []).slice(0, 3);
 
   const hasContent = posts.length > 0 || debates.length > 0 || categories.some(c => c.post_count > 0) || articles.length > 0;
 
@@ -220,22 +224,33 @@ export default async function Home() {
 
       {/* ─── Desktop sections (visible from 768px, matches nav breakpoint) ─── */}
       <div className="hidden md:block px-4 lg:px-6 pb-12">
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6">
-          {/* Row 1: Debates Arena (2/3 width) + Articles (1/3 width) */}
-          <DesktopDebates className="col-span-2 lg:col-span-2" debates={debates} />
-          <DesktopArticles className="col-span-2 lg:col-span-1" articles={articles} />
+        <div className="flex flex-col min-[1280px]:flex-row gap-5 lg:gap-6">
+          {/* Main column — widgets fill the space */}
+          <div className="flex-1 min-w-0">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6">
+              {/* Row 1: Debates Arena (2/3 width) + Articles (1/3 width) */}
+              <DesktopDebates className="col-span-2 lg:col-span-2" debates={debates} />
+              <DesktopArticles className="col-span-2 lg:col-span-1" articles={articles} />
 
-          {/* Row 2: Categories + Did You Know */}
-          <DesktopCategories className="col-span-2 lg:col-span-1" categories={categories} />
-          <DesktopFacts className="col-span-2 lg:col-span-1" facts={facts} />
+              {/* Row 2: Categories + Did You Know + Stats */}
+              <DesktopCategories className="col-span-2 lg:col-span-1" categories={categories} />
+              <DesktopFacts className="col-span-2 lg:col-span-1" facts={facts} />
+              <DesktopStats className="col-span-2 lg:col-span-1" />
 
-          {/* Row 3: Trending + Hall of Fame + Stats */}
-          <DesktopTrending className="col-span-2 lg:col-span-1" />
-          <DesktopHallOfFame className="col-span-2 lg:col-span-1" />
-          <DesktopStats className="col-span-2 lg:col-span-1" />
+              {/* Row 3: CTA */}
+              <DesktopCta className="col-span-2 lg:col-span-3" />
+            </div>
+          </div>
 
-          {/* Row 4: CTA */}
-          <DesktopCta className="col-span-2 lg:col-span-3" />
+          {/* Right rail — stacked below the grid under 1280px; only when data exists */}
+          {(trendingTerms.length > 0 || hofEntries.length > 0) && (
+            <aside className="min-[1280px]:w-[340px] min-[1280px]:shrink-0">
+              <div className="grid grid-cols-2 min-[1280px]:grid-cols-1 gap-5 lg:gap-6">
+                {trendingTerms.length > 0 && <DesktopTrending terms={trendingTerms} />}
+                {hofEntries.length > 0 && <DesktopHallOfFame entries={hofEntries} />}
+              </div>
+            </aside>
+          )}
         </div>
       </div>
     </>

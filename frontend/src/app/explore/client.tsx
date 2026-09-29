@@ -329,7 +329,7 @@ export default function ExploreClient({ initialPosts, initialHasMore }: ExploreC
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)]">
-      <div className="max-w-5xl mx-auto px-5 py-10 sm:px-8 sm:py-14">
+      <div className="max-w-7xl mx-auto px-5 py-10 sm:px-8 sm:py-14">
         {/* Pill Tabs */}
         <div className="flex flex-wrap items-center gap-2 mb-8">
           {TABS.map((t) => (

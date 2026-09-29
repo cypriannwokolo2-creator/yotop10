@@ -1,32 +1,15 @@
-'use client';
-
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Icon } from './icons/Icon';
 
-export function DesktopTrending({ className = '' }: { className?: string }) {
-  const [trending, setTrending] = useState<string[]>([]);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const { apiFetch } = await import('@/lib/api/client');
-        const data = await apiFetch<{ terms: string[] }>('/search/trending');
-        setTrending(data.terms?.slice(0, 6) || []);
-      } catch { /* ignore */ }
-    })();
-  }, []);
-
-  if (trending.length === 0) return null;
-
+export function DesktopTrending({ terms }: { terms: string[] }) {
   return (
-    <section className={className}>
+    <section>
       <div className="flex items-center gap-2 mb-4">
         <Icon name="TrendingUp" size={16} className="text-orange-400" />
         <h2 className="text-sm font-bold text-white uppercase tracking-wider">Trending Now</h2>
       </div>
       <div className="flex flex-wrap gap-2">
-        {trending.map(term => (
+        {terms.map(term => (
           <Link
             key={term}
             href={`/search?q=${encodeURIComponent(term)}`}

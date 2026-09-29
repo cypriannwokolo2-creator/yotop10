@@ -1,11 +1,8 @@
-'use client';
-
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Icon } from './icons/Icon';
 import { cleanTitle } from '@/lib/dates';
 
-interface HofEntry {
+export interface HofEntry {
   id: string;
   post_id: string;
   post: {
@@ -20,23 +17,9 @@ interface HofEntry {
   editorial_note?: string | null;
 }
 
-export function DesktopHallOfFame({ className = '' }: { className?: string }) {
-  const [entries, setEntries] = useState<HofEntry[]>([]);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const { apiFetch } = await import('@/lib/api/client');
-        const data = await apiFetch<{ entries: HofEntry[] }>('/hall-of-fame?limit=3');
-        setEntries(data.entries?.slice(0, 3) || []);
-      } catch { /* ignore */ }
-    })();
-  }, []);
-
-  if (entries.length === 0) return null;
-
+export function DesktopHallOfFame({ entries }: { entries: HofEntry[] }) {
   return (
-    <section className={className}>
+    <section>
       <div className="flex items-center gap-2 mb-4">
         <Icon name="Crown" size={16} className="text-orange-400" />
         <h2 className="text-sm font-bold text-white uppercase tracking-wider">Hall of Fame</h2>

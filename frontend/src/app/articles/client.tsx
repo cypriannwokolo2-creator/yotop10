@@ -55,7 +55,7 @@ export default function ArticlesClient({ initialArticles, initialHasMore }: Arti
   };
 
   return (
-    <main className="mx-auto min-h-screen max-w-3xl bg-[var(--color-bg)] px-4 py-12 sm:px-6 lg:py-16">
+    <main className="mx-auto min-h-screen max-w-7xl bg-[var(--color-bg)] px-4 py-12 sm:px-6 lg:py-16">
 
       {articles.length === 0 && (
         <div className="card rounded-2xl p-12 text-center">

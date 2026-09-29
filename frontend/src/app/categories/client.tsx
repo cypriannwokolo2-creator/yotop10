@@ -37,7 +37,7 @@ export default function CategoriesClient() {
           <Link href="/" className="text-sm font-bold text-orange-400 transition hover:text-orange-300">Home</Link>
           <span className="text-sm font-semibold text-white">Categories</span>
         </nav>
-        <main className="mx-auto max-w-6xl">
+        <main className="mx-auto max-w-7xl">
           <div className="rounded-2xl border border-orange-500/20 bg-orange-500/5 p-6 backdrop-blur-sm sm:p-8">
             <div className="mb-3 flex items-center gap-2">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-orange-400"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
@@ -57,7 +57,7 @@ export default function CategoriesClient() {
           <Link href="/" className="text-sm font-bold text-orange-400 transition hover:text-orange-300">Home</Link>
           <span className="text-sm font-semibold text-white">Categories</span>
         </nav>
-        <main className="mx-auto max-w-6xl">
+        <main className="mx-auto max-w-7xl">
           <div className="py-16 text-center">
             <p className="text-sm text-zinc-500">No categories available.</p>
           </div>
@@ -73,10 +73,10 @@ export default function CategoriesClient() {
         <span className="text-sm font-semibold text-white">Categories</span>
       </nav>
 
-      <main className="mx-auto max-w-6xl">
+      <main className="mx-auto max-w-7xl">
         <h1 className="mb-6 text-2xl font-bold text-white sm:text-3xl">Categories</h1>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
           {categories.map(cat => (
             <Link
               key={cat.id}
