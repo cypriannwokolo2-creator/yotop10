@@ -26,7 +26,9 @@ export default function DesktopTopBar() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-14 bg-[var(--color-bg)]/80 backdrop-blur-2xl border-b border-white/5">
       <div className="mx-auto flex h-full max-w-6xl items-center justify-between px-3 sm:px-6">
-        <div className="flex items-center gap-2">
+        {/* Menu sits on the left, brand next to it */}
+        <div className="flex items-center gap-1 sm:gap-2">
+          <SlideMenuTrigger />
           <Logo markHeight={26} textSize="text-xl" />
         </div>
 
@@ -42,7 +44,6 @@ export default function DesktopTopBar() {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          <SlideMenuTrigger />
           <div>
             <HeaderBells />
           </div>
