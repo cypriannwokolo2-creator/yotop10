@@ -5,8 +5,8 @@ services:
       dockerfile: Dockerfile.dev
     container_name: yotop10_dev
     ports:
-      - "3100:3000"
-      - "8100:8000"
+      - "3200:3000"
+      - "8200:8000"
     environment:
       - NODE_ENV=development
       - CORS_ORIGINS=https://yotop10.com,https://www.yotop10.com
@@ -47,7 +47,7 @@ volumes:
 networks:
   yotop10_frontend_net:
     external: true
-    name: yotop10prod_frontend_net
+    name: yotop10_frontend_net
   yotop10_backend_net:
     external: true
-    name: yotop10prod_backend_net
+    name: yotop10_backend_net
