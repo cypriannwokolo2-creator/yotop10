@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth';
+import { useSidebarStore } from '@/stores/sidebar';
 import { Icon } from './icons/Icon';
-import { Logo } from './Logo';
+import { LogoMark } from './Logo';
 import { ThemeToggle } from './ThemeToggle';
 import { toPublicSlug } from '@/lib/username';
 
@@ -20,10 +21,11 @@ const NAV_ITEMS = [
   { icon: 'Crown' as const, label: 'Hall of Fame', href: '/hall-of-fame' },
 ];
 
-// Instagram-web navigation at every desktop width: 72px icon rail that
-// auto-expands to the 240px labeled sidebar while hovered (overlaying
-// content), collapses on any click, and collapses again when the pointer
-// leaves. Bottom tab bar below 768px.
+// Desktop navigation: 72px icon-only rail (brand lives in the top bar, not
+// here) that expands to the 240px labeled sidebar on hover / tap of the
+// collapsed rail, PUSHING the site body right in sync (ContentShell + top
+// bar read the same store) and animating back on close / outside click.
+// Bottom tab bar below 768px.
 // NOTE: classes are written out literally (never built by interpolation)
 // so Tailwind's scanner generates them.
 
@@ -31,38 +33,64 @@ export function DesktopSidebar() {
   const pathname = usePathname()!;
   const user = useAuthStore(s => s.user);
   const initialized = useAuthStore(s => s.initialized);
+  const open = useSidebarStore(s => s.open);
+  const setOpen = useSidebarStore(s => s.setOpen);
   const displayName = user?.custom_display_name || user?.username || 'User';
   const rawUsername = user?.username || 'unknown';
   const cleanUsername = toPublicSlug(rawUsername);
-  const [open, setOpen] = useState(false);
+  const asideRef = useRef<HTMLElement | null>(null);
 
-  // Any click (inside or outside the rail) collapses the expanded sidebar.
+  // Hover intent: expand while the pointer is over the rail.
+  const handleMouseEnter = () => setOpen(true);
+  const handleMouseLeave = () => setOpen(false);
+
+  // Clicks outside the rail collapse the expanded sidebar.
   useEffect(() => {
-    const collapse = () => setOpen(false);
+    const collapse = (e: MouseEvent) => {
+      if (asideRef.current && e.target instanceof Node && asideRef.current.contains(e.target)) return;
+      setOpen(false);
+    };
     document.addEventListener('click', collapse);
     return () => document.removeEventListener('click', collapse);
-  }, []);
+  }, [setOpen]);
+
+  // Expand on click/tap when collapsed (touch screens have no hover). Taps on
+  // links/buttons navigate instead of expanding.
+  const handleAsideClick = (e: React.MouseEvent) => {
+    if (open) return;
+    const target = e.target as HTMLElement;
+    if (target.closest('a, button')) return;
+    setOpen(true);
+  };
 
   return (
     <aside
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
+      ref={asideRef}
+      onClick={handleAsideClick}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       className={`fixed top-0 left-0 z-50 h-full ${open ? 'w-60' : 'w-[72px]'} bg-[var(--color-bg)]/95 border-r border-white/5 hidden md:flex flex-col overflow-y-auto overflow-x-hidden transition-[width] duration-300 ease-out`}
     >
-      {/* Brand — full lockup when open, mark-only rail otherwise */}
-      <div className={`${open ? 'flex' : 'hidden'} flex-col px-6 pt-6 pb-4 shrink-0 whitespace-nowrap`}>
-        <Logo markHeight={32} textSize="text-[26px]" />
-        <p className="text-2xs text-zinc-600 mt-1.5 leading-relaxed tracking-wide">Fact Mine. Debate Ground.</p>
-      </div>
-      <div className={`${open ? 'hidden' : 'flex'} items-center justify-center pt-6 pb-4 shrink-0`}>
-        <Logo markHeight={30} showWordmark={false} />
+      {/* Brand mark — the bars glyph lives at the top of the nav rail. It
+          slides right as the rail expands but stops at a capped 32px
+          position (px-8) instead of following the full 240px width; closed,
+          the -11px transform re-centers it in the 72px rail. */}
+      <div className="flex items-center justify-start px-8 pt-6 pb-4 shrink-0">
+        <div
+          style={{
+            transform: open ? 'translateX(0)' : 'translateX(-11px)',
+            transition: 'transform 300ms cubic-bezier(0.22, 1, 0.36, 1)',
+          }}
+        >
+          <LogoMark height={30} />
+        </div>
       </div>
 
       <hr className="border-white/5 mx-4 mb-3" />
 
-      {/* Navigation */}
-      <p className={`${open ? 'block' : 'hidden'} px-7 pb-1.5 text-3xs font-mono uppercase tracking-[0.22em] text-zinc-600 whitespace-nowrap`}>Menu</p>
-      <nav className="flex-1 px-3 space-y-1">
+      {/* Navigation — icons only when closed, labels when open */}
+      <p className={`${open ? 'block' : 'hidden'} px-7 pt-6 pb-1.5 text-3xs font-mono uppercase tracking-[0.22em] text-zinc-600 whitespace-nowrap`}>Menu</p>
+      <nav className={`flex-1 px-3 space-y-1 ${open ? '' : 'pt-6'}`}>
         {NAV_ITEMS.map(item => {
           const isActive = item.href === '/'
             ? pathname === '/'
@@ -72,6 +100,7 @@ export function DesktopSidebar() {
               key={item.label}
               href={item.href}
               title={item.label}
+              onClick={() => setOpen(false)}
               className={`relative flex items-center gap-3 py-2.5 rounded-xl transition-[padding,color,background-color,box-shadow,transform] duration-200 text-sm active:scale-[0.98] whitespace-nowrap ${open ? 'justify-start px-4' : 'justify-center px-0'} ${
                 isActive
                   ? 'text-orange-400 bg-orange-500/10 font-semibold ring-1 ring-inset ring-orange-500/20'
@@ -81,7 +110,7 @@ export function DesktopSidebar() {
               {isActive && (
                 <span aria-hidden className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-full bg-gradient-to-b from-orange-400 to-red-600" />
               )}
-              <Icon name={item.icon} size={18} />
+              <Icon name={item.icon} size={18} className="shrink-0" />
               <span className={open ? 'inline' : 'hidden'}>{item.label}</span>
             </Link>
           );
@@ -105,6 +134,7 @@ export function DesktopSidebar() {
           <Link
             href={`/a/${cleanUsername}`}
             title={`@${cleanUsername}`}
+            onClick={() => setOpen(false)}
             className={`flex items-center gap-3 py-2.5 rounded-xl transition-[padding,color,background-color,border-color,transform] duration-200 text-sm text-zinc-400 bg-white/[0.03] border border-white/5 hover:text-white hover:bg-white/5 hover:border-white/10 active:scale-[0.98] whitespace-nowrap ${open ? 'justify-start px-4' : 'justify-center'}`}
           >
             {user.profile_image_url ? (
@@ -156,6 +186,7 @@ export function DesktopSidebar() {
           href="/new"
           title="Submit a List"
           aria-label="Submit a List"
+          onClick={() => setOpen(false)}
           className={`block text-sm font-bold text-white text-center shadow-lg transition hover:shadow-xl hover:scale-[1.02] bg-gradient-to-r from-orange-500 to-pink-500 p-3 whitespace-nowrap ${open ? 'mx-1 rounded-xl px-4 py-2.5' : 'mx-auto rounded-full'}`}
         >
           <Icon name="Plus" size={14} className={open ? 'inline mr-1.5' : 'block'} />

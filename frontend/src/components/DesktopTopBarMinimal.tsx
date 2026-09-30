@@ -1,13 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import HeaderBells from './HeaderBells';
+import { useSidebarStore } from '@/stores/sidebar';
+import { Logo } from './Logo';
 import { Icon } from './icons/Icon';
 
 export default function DesktopTopBarMinimal() {
   const router = useRouter();
   const [query, setQuery] = useState('');
+  const open = useSidebarStore(s => s.open);
+  // SSR + first render use the closed (72px) offset; store hydrates after mount.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const pushed = mounted && open;
 
   const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && query.trim()) {
@@ -16,9 +24,12 @@ export default function DesktopTopBarMinimal() {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-30 h-14 bg-[var(--color-bg)]/95 border-b border-white/5 md:left-[72px]">
+    <header className={`fixed top-0 left-0 right-0 z-30 h-14 bg-[var(--color-bg)]/95 border-b border-white/5 ${pushed ? 'md:left-60' : 'md:left-[72px]'}`}>
       <div className="flex h-full items-center gap-4 px-4 lg:px-6">
-        {/* Brand lives in the sidebar rail — no logo here (avoids the duplicate) */}
+        {/* Brand — wordmark only; the bars mark lives in the nav rail */}
+        <Link href="/" aria-label="YoTop10 home" className="shrink-0">
+          <Logo showMark={false} textSize="text-[22px]" />
+        </Link>
         <div className="relative flex-1 max-w-2xl">
           <Icon
             name="Search"

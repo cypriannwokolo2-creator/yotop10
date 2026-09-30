@@ -1,9 +1,23 @@
+# Frontend image — slim standalone runner.
+#
+# Why this shape (fixes the previous 5GB / slow-deploy image):
+# - `output: "standalone"` in next.config.ts makes the build emit
+#   .next/standalone with a pruned node_modules and a server.js entry.
+# - The runner copies ONLY that output + static assets + public (~150MB),
+#   not the whole workspace node_modules (667MB) nor the full .next (1.2GB).
+# - COPY --chown sets ownership at copy time; no `RUN chown -R` layer
+#   (that duplicated 1.98GB of files into its own layer).
+
 FROM node:20-alpine AS deps
 WORKDIR /app
 COPY pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY frontend/package.json ./frontend/
 COPY backend/package.json ./backend/
-RUN npm install -g pnpm@10 && pnpm install --frozen-lockfile
+# node-linker=hoisted: real directories instead of .pnpm symlinks, so the
+# standalone output's traced node_modules is self-contained and survives
+# Docker COPY (symlinks into the store would break outside the builder).
+# Set via .npmrc — `--node-linker` is not a valid install flag on pnpm 10.
+RUN printf 'node-linker=hoisted\n' > /app/.npmrc && npm install -g pnpm@10 && pnpm install --frozen-lockfile
 
 FROM node:20-alpine AS builder
 WORKDIR /app
@@ -12,26 +26,33 @@ ARG NEXT_PUBLIC_SITE_URL=https://www.yotop10.com
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 ENV NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/frontend/node_modules ./frontend/node_modules
+# Hoisted layout installs everything at the workspace root — there is no
+# frontend/node_modules. COPY frontend/ last so source lands on top without
+# clobbering the root store.
 COPY frontend/ ./frontend/
 ENV INTERNAL_API_URL=http://backend:8000/api
-RUN npm install -g pnpm@10 && cd frontend && pnpm build
+# Hoisted layout keeps all binaries in the root store; pnpm exec does not
+# resolve them from a subpackage dir, so invoke the binary directly.
+RUN cd frontend && ../node_modules/.bin/next build
 
 FROM node:20-alpine AS runner
 WORKDIR /app
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
-COPY --from=builder /app/frontend ./frontend
-COPY --from=builder /app/node_modules ./node_modules
-RUN chown -R nextjs:nodejs /app
+
+# Standalone server (pruned node_modules + server.js) — ownership set at
+# copy time, no chown layer. With outputFileTracingRoot set to the workspace
+# root, the output mirrors the monorepo layout: node_modules at /app,
+# server.js nested at /app/frontend/server.js.
+COPY --from=builder --chown=nextjs:nodejs /app/frontend/.next/standalone ./
+# Static assets must sit at ./frontend/.next/static and ./frontend/public
+# relative to the standalone server.js (which lives at /app/frontend/server.js).
+COPY --from=builder --chown=nextjs:nodejs /app/frontend/.next/static ./frontend/.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/frontend/public ./frontend/public
+
 USER nextjs
-WORKDIR /app/frontend
-EXPOSE 3000
-ARG NEXT_PUBLIC_API_URL=https://www.yotop10.com/api
-ARG NEXT_PUBLIC_SITE_URL=https://www.yotop10.com
-ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
-ENV NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
-ENV INTERNAL_API_URL=http://backend:8000/api
-CMD ["node_modules/.bin/next", "start"]
+ENV NODE_ENV=production
+EXPOSE 3000
+CMD ["node", "frontend/server.js"]
