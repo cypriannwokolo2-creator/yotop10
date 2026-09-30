@@ -1032,6 +1032,14 @@ This audit analyzed 39 source files:
 
 ---
 
+## Architectural decisions (append-only)
+
+| Date | Decision | Rationale |
+|------|----------|-----------|
+| 2026-09-30 | CI/CD = GitHub Actions + SSH forced-command (no registry, no PaaS) | Server builds images directly; deploy script health-gates (boot probe + 200 check) before prod swap with auto-rollback — encodes the M39.0 outage postmortem. Global flock serializes deploys across the 8 sites planned for this box; Watchtower rejected (no health gate), Coolify rejected (would fight existing compose + nginx). Details: ram.md [M39.1]. |
+
+---
+
 ## ROM Tracker — Resolution Status (Updated 2026-05-08)
 
 ### Resolved ✅

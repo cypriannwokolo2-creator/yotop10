@@ -11,9 +11,9 @@ STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM)
 SECRET_PATTERNS='(JWT_SECRET=|password=|api.key=|api_secret=|secret=|private.key|-----BEGIN.*PRIVATE KEY-----)'
 
 # Exception list (false positives): files that only ever reference secrets via
-# ${VAR} interpolation — values live in .env, which this hook always blocks.
-# Promised by the message below; implemented here.
-SECRET_EXCEPTIONS='^docker-compose\.yml$|^docker-compose\.dev\.yml$|^\.githooks/pre-commit$'
+# ${VAR} interpolation — values live in .env / GitHub secret store, never in
+# the file itself. Promised by the message below; implemented here.
+SECRET_EXCEPTIONS='^docker-compose\.yml$|^docker-compose\.dev\.yml$|^\.githooks/pre-commit$|^\.github/workflows/.*\.yml$'
 
 echo "$STAGED_FILES" | while read -r file; do
   if [ -f "$file" ]; then
