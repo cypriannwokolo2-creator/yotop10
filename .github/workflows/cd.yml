@@ -40,6 +40,12 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
+          file: ./Dockerfile.frontend
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            NEXT_PUBLIC_API_URL=https://www.yotop10.com/api
+            NEXT_PUBLIC_SITE_URL=https://www.yotop10.com
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
