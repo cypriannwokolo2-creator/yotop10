@@ -8,6 +8,7 @@ export interface IListItem extends Document {
   justification?: string;
   image_url?: string;
   source_url?: string;
+  fire_count: number;
   created_at: Date;
   updated_at: Date;
 }
@@ -37,6 +38,14 @@ const listItemSchema = new Schema<IListItem>(
     },
     source_url: {
       type: String,
+    },
+    // Community fire votes on this item (see routes/reactions.ts). Mongoose
+    // strict mode silently drops $inc on paths absent from the schema — the
+    // field MUST exist here for the reaction counter to work.
+    fire_count: {
+      type: Number,
+      default: 0,
+      index: true,
     },
   },
   {

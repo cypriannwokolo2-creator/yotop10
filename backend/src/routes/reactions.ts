@@ -1,18 +1,40 @@
 /* eslint-disable no-restricted-syntax, @typescript-eslint/no-explicit-any -- Express middleware type chains */
-import { Router, Request } from 'express';
-import { body, validationResult } from 'express-validator';
+/**
+ * Fire reaction engine (M40.1) — generalized to comment | post | list_item.
+ *
+ * Invariants:
+ * - One reaction per (fingerprint, target_type, target_id) — enforced by the
+ *   Reaction compound unique index; toggle is delete-first to avoid TOCTOU.
+ * - fire_count on the target model is the single source of truth for counts;
+ *   it is updated atomically with $inc in the same flow as the Reaction doc.
+ * - Side effects per target type:
+ *     comment   → spark score recompute + ancestor propagation + ES reindex
+ *                 + boost grant at exactly 3 fires (legacy behavior preserved)
+ *     post      → last_engaged_at + ES reindex
+ *     list_item → fire counter only (list items are not ES-indexed)
+ * - Rate limited per fingerprint (lib/fireRateLimit) before any DB work.
+ * - All Mongoose calls run through per-type switches so every call site is on
+ *   a concrete model — union-of-models method calls do not typecheck.
+ */
+import { Router, Request, Response } from 'express';
 import mongoose from 'mongoose';
 import { Reaction } from '../models/Reaction';
 import { Comment } from '../models/Comment';
+import { Post } from '../models/Post';
+import { ListItem } from '../models/ListItem';
 import { grantBoost, BoostType } from '../lib/ladderSystem';
 import { getThresholds, computeSparkScore, computeParentSparkScore } from '../lib/sparkScore';
+import { indexComment, indexPost } from '../elasticsearch/lib/indexWriter';
+import { consumeFire } from '../lib/fireRateLimit';
+import {
+  reactionToggleSchema,
+  reactionStateQuerySchema,
+  reactionTargetParamsSchema,
+} from '../schemas/reactions';
 
 const router: Router = Router();
 
-const validateReaction = [
-  body('target_type').isIn(['comment']).withMessage('Invalid target type'),
-  body('target_id').isMongoId().withMessage('Invalid target ID'),
-];
+type TargetType = 'comment' | 'post' | 'list_item';
 
 const getFingerprint = (req: Request): string | undefined => {
   const fp = req.user?.device_fingerprint || req.fingerprint;
@@ -20,47 +42,166 @@ const getFingerprint = (req: Request): string | undefined => {
   return fp;
 };
 
-// POST /api/reactions - Toggle fire reaction
-router.post("/", ...validateReaction, async (req: any, res: any) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+/** Atomically bump fire_count (+ side-effect fields) on the concrete model. */
+async function bumpFireCount(
+  targetType: TargetType,
+  targetId: string,
+  delta: 1 | -1
+): Promise<{ fire_count: number } | null> {
+  const now = new Date();
+  switch (targetType) {
+    case 'comment': {
+      const updated = await Comment.findByIdAndUpdate(
+        targetId,
+        { $inc: { fire_count: delta }, last_engaged_at: now },
+        { new: true }
+      );
+      return updated ? { fire_count: updated.fire_count } : null;
     }
+    case 'post': {
+      const updated = await Post.findByIdAndUpdate(
+        targetId,
+        { $inc: { fire_count: delta }, last_engaged_at: now },
+        { new: true }
+      );
+      return updated ? { fire_count: updated.fire_count } : null;
+    }
+    case 'list_item': {
+      const updated = await ListItem.findByIdAndUpdate(
+        targetId,
+        { $inc: { fire_count: delta } },
+        { new: true }
+      );
+      return updated ? { fire_count: updated.fire_count } : null;
+    }
+  }
+}
 
-    const { target_type, target_id } = req.body;
-    const device_fingerprint = req.user?.device_fingerprint || req.fingerprint;
-    if (!device_fingerprint || device_fingerprint === 'unknown') {
+/** Existence + current count lookup on the concrete model (null = missing). */
+async function getFireCount(targetType: TargetType, targetId: string): Promise<number | null> {
+  switch (targetType) {
+    case 'comment': {
+      const doc = await Comment.findById(targetId).select('fire_count').lean();
+      return doc ? (doc.fire_count || 0) : null;
+    }
+    case 'post': {
+      const doc = await Post.findById(targetId).select('fire_count').lean();
+      return doc ? (doc.fire_count || 0) : null;
+    }
+    case 'list_item': {
+      const doc = await ListItem.findById(targetId).select('fire_count').lean();
+      return doc ? (doc.fire_count || 0) : null;
+    }
+  }
+}
+
+/**
+ * Comment-only side effects: boost at exactly 3 fires, spark score recompute,
+ * ancestor propagation, ES reindex. Legacy behavior from the comment-only era.
+ */
+async function applyCommentSideEffects(targetId: string, action: 'added' | 'removed', newCount: number): Promise<number> {
+  const comment = await Comment.findById(targetId);
+  if (!comment) return newCount;
+
+  const thresholds = await getThresholds();
+
+  if (comment.fire_count === 3 && action === 'added' && comment.author_id) {
+    await grantBoost(comment.author_id.toString(), BoostType.COMMENT_THREE_FIRES);
+  }
+
+  const sparkScore = computeSparkScore(
+    { fireCount: comment.fire_count, replyCount: comment.reply_count, createdAt: comment.created_at },
+    thresholds
+  );
+  await Comment.findByIdAndUpdate(targetId, { spark_score: sparkScore });
+
+  if (comment.parent_comment_id) {
+    let currentParentId = comment.parent_comment_id.toString();
+    const visited = new Set<string>();
+    const now = new Date();
+    while (currentParentId && !visited.has(currentParentId)) {
+      visited.add(currentParentId);
+      const parent = await Comment.findById(currentParentId);
+      if (!parent) break;
+
+      const children = await Comment.find({ parent_comment_id: currentParentId })
+        .select('fire_count reply_count')
+        .lean();
+      let childFires = 0;
+      let childReplies = 0;
+      for (const child of children) {
+        childFires += (child as { fire_count?: number }).fire_count || 0;
+        childReplies += (child as { reply_count?: number }).reply_count || 0;
+      }
+      const parentSparkScore = computeParentSparkScore(
+        {
+          fireCount: parent.fire_count,
+          replyCount: parent.reply_count,
+          createdAt: parent.created_at,
+          childFires,
+          childReplies,
+        },
+        thresholds
+      );
+      await Comment.findByIdAndUpdate(currentParentId, {
+        spark_score: parentSparkScore,
+        last_engaged_at: now,
+      });
+      if (!parent.parent_comment_id) break;
+      currentParentId = parent.parent_comment_id.toString();
+    }
+  }
+
+  const fresh = await Comment.findById(targetId).lean();
+  if (fresh) indexComment(fresh as unknown as Record<string, unknown>);
+  return sparkScore;
+}
+
+function zodMessage(err: { issues: Array<{ message: string }> }): string {
+  return err.issues.map((i) => i.message).join('; ');
+}
+
+// POST /api/reactions - Toggle fire reaction on comment | post | list_item
+router.post('/', async (req: Request, res: Response) => {
+  try {
+    const device_fingerprint = getFingerprint(req);
+    if (!device_fingerprint) {
       return res.status(401).json({ error: 'Device identity required for reactions' });
     }
 
-    // Only allow comments
-    if (target_type !== 'comment') {
-      return res.status(400).json({ error: 'Invalid target type - reactions are only allowed on comments' });
-    }
-    
-    // Verify target exists and get current fire count
-    const target = await Comment.findById(target_id);
-    if (!target) {
-      return res.status(404).json({ error: `${target_type} not found` });
+    const rate = consumeFire(device_fingerprint);
+    if (!rate.allowed) {
+      res.setHeader('Retry-After', Math.ceil(rate.retryAfterMs / 1000).toString());
+      return res.status(429).json({ error: 'Too many reactions, slow down', retry_after_ms: rate.retryAfterMs });
     }
 
-    // Atomic delete-first: prevents TOCTOU race via unique compound index
+    const parsed = reactionToggleSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: zodMessage(parsed.error) });
+    }
+    const targetType = parsed.data.target_type;
+    const target_id = parsed.data.target_id;
+
+    const existing = await getFireCount(targetType, target_id);
+    if (existing === null) {
+      return res.status(404).json({ error: `${targetType} not found` });
+    }
+
+    // Atomic delete-first toggle: prevents TOCTOU race via unique compound index.
     const removed = await Reaction.findOneAndDelete({
       user_device_fingerprint: device_fingerprint,
-      target_type,
+      target_type: targetType,
       target_id,
     });
 
     let action: 'added' | 'removed';
-
     if (removed) {
       action = 'removed';
     } else {
       try {
         await Reaction.create({
           user_device_fingerprint: device_fingerprint,
-          target_type,
+          target_type: targetType,
           target_id,
           reaction_type: 'fire',
         });
@@ -73,172 +214,109 @@ router.post("/", ...validateReaction, async (req: any, res: any) => {
       }
     }
 
-    // Atomically increment/decrement fire_count
-    const now = new Date();
-    const updated = await Comment.findByIdAndUpdate(target_id, {
-      $inc: { fire_count: action === 'added' ? 1 : -1 },
-      last_engaged_at: now,
-    }, { new: true });
-
-    if (!updated) {
-      return res.status(404).json({ error: 'Comment not found' });
+    const bumped = await bumpFireCount(targetType, target_id, action === 'added' ? 1 : -1);
+    if (!bumped) {
+      return res.status(404).json({ error: `${targetType} not found` });
     }
 
-    const currentFireCount = updated.fire_count;
-    
-    // Grant boost if comment reaches exactly 3 fires
-    if (currentFireCount === 3 && action === 'added') {
-      const comment = await Comment.findById(target_id);
-      if (comment) {
-        await grantBoost(comment.author_id.toString(), BoostType.COMMENT_THREE_FIRES);
-      }
-    }
-    
-    // Calculate new spark score for this comment
-    const comment = await Comment.findById(target_id);
-    if (comment) {
-      const thresholds = await getThresholds();
-      const sparkScore = computeSparkScore(
-        { fireCount: currentFireCount, replyCount: comment.reply_count, createdAt: comment.created_at },
-        thresholds
-      );
-
-      await Comment.findByIdAndUpdate(target_id, { spark_score: sparkScore });
-
-      // Propagate engagement to ancestors
-      if (comment.parent_comment_id) {
-        let currentParentId = comment.parent_comment_id.toString();
-        const visited = new Set<string>();
-
-        while (currentParentId && !visited.has(currentParentId)) {
-          visited.add(currentParentId);
-
-          const parent = await Comment.findById(currentParentId);
-          if (!parent) break;
-
-          const parentNow = new Date();
-          const children = await Comment.find({ parent_comment_id: currentParentId });
-          let childFires = 0;
-          let childReplies = 0;
-          for (const child of children) {
-            childFires += child.fire_count || 0;
-            childReplies += child.reply_count || 0;
-          }
-
-          const parentSparkScore = computeParentSparkScore(
-            { fireCount: parent.fire_count, replyCount: parent.reply_count, createdAt: parent.created_at, childFires, childReplies },
-            thresholds
-          );
-
-          await Comment.findByIdAndUpdate(currentParentId, {
-            spark_score: parentSparkScore,
-            last_engaged_at: parentNow
-          });
-
-          if (!parent.parent_comment_id) break;
-          currentParentId = parent.parent_comment_id.toString();
-        }
-      }
+    let count = bumped.fire_count;
+    if (targetType === 'comment') {
+      count = await applyCommentSideEffects(target_id, action, count);
+    } else if (targetType === 'post') {
+      const fresh = await Post.findById(target_id).lean();
+      if (fresh) indexPost(fresh as unknown as Record<string, unknown>);
     }
 
-    res.json({
+    return res.json({
       success: true,
       action,
-      target_type,
+      target_type: targetType,
       target_id,
-      fire_count: currentFireCount,
+      fire_count: count,
+      count,
       user_reacted: action === 'added',
     });
   } catch (error) {
     console.error('Toggle reaction error:', error);
-    res.status(500).json({ error: 'Failed to toggle reaction' });
+    return res.status(500).json({ error: 'Failed to toggle reaction' });
   }
 });
 
 // GET /api/reactions/state - Check reaction status for multiple targets
-router.get('/state', async (req, res) => {
+router.get('/state', async (req: Request, res: Response) => {
   try {
-    const { targets } = req.query;
-    const device_fingerprint = getFingerprint(req as any);
-
-    if (!targets) {
-      return res.status(400).json({ error: 'No targets provided' });
+    const device_fingerprint = getFingerprint(req);
+    if (!device_fingerprint) {
+      return res.status(401).json({ error: 'Device identity required' });
     }
 
-    let parsedTargets: Array<{ type: string; id: string }>;
-    try {
-      parsedTargets = JSON.parse(targets as string);
-    } catch {
-      return res.status(400).json({ error: 'Invalid targets format' });
+    const parsed = reactionStateQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      return res.status(400).json({ error: zodMessage(parsed.error) });
     }
 
+    const parsedTargets = JSON.parse(parsed.data.targets) as Array<{ type: TargetType; id: string }>;
     if (parsedTargets.length === 0) {
       return res.json({ targets: [] });
     }
 
-    const targetIds = parsedTargets.map(t => new mongoose.Types.ObjectId(t.id));
-    
+    const targetIds = parsedTargets.map((t) => new mongoose.Types.ObjectId(t.id));
     const userReactions = await Reaction.find({
       user_device_fingerprint: device_fingerprint,
       target_id: { $in: targetIds },
-    });
+    }).lean();
 
     const reactedMap = new Map<string, boolean>();
-    userReactions.forEach(r => {
-      reactedMap.set(r.target_id.toString(), true);
-    });
+    userReactions.forEach((r) => reactedMap.set((r.target_id as mongoose.Types.ObjectId).toString(), true));
 
-    const results = parsedTargets.map(t => ({
+    const results = parsedTargets.map((t) => ({
       type: t.type,
       id: t.id,
       user_reacted: reactedMap.has(t.id) || false,
     }));
 
-    res.json({ targets: results });
+    return res.json({ targets: results });
   } catch (error) {
     console.error('Get reaction state error:', error);
-    res.status(500).json({ error: 'Failed to get reaction state' });
+    return res.status(500).json({ error: 'Failed to get reaction state' });
   }
 });
 
 // GET /api/reactions/:targetType/:targetId - Get reaction count and user status
-router.get('/:targetType/:targetId', async (req, res) => {
+router.get('/:targetType/:targetId', async (req: Request, res: Response) => {
   try {
-    const { targetType, targetId } = req.params;
-    const device_fingerprint = getFingerprint(req as any);
-
-    // Only allow comments
-    if (targetType !== 'comment') {
-      return res.status(400).json({ error: 'Invalid target type - reactions are only allowed on comments' });
+    const parsed = reactionTargetParamsSchema.safeParse(req.params);
+    if (!parsed.success) {
+      return res.status(400).json({ error: zodMessage(parsed.error) });
     }
+    const targetType = parsed.data.targetType;
+    const targetId = parsed.data.targetId;
+    const device_fingerprint = getFingerprint(req);
 
-    if (!mongoose.Types.ObjectId.isValid(targetId)) {
-      return res.status(400).json({ error: 'Invalid target ID' });
-    }
-
-    // Get target and its fire count
-    const target = await Comment.findById(targetId).select('fire_count');
-
-    if (!target) {
+    const count = await getFireCount(targetType, targetId);
+    if (count === null) {
       return res.status(404).json({ error: 'Target not found' });
     }
 
-    // Check if user has reacted
-    const userReaction = await Reaction.findOne({
-      user_device_fingerprint: device_fingerprint,
-      target_type: targetType,
-      target_id: targetId,
-    });
+    let user_reacted = false;
+    if (device_fingerprint) {
+      const userReaction = await Reaction.findOne({
+        user_device_fingerprint: device_fingerprint,
+        target_type: targetType,
+        target_id: targetId,
+      }).lean();
+      user_reacted = !!userReaction;
+    }
 
-    res.json({
+    return res.json({
       target_type: targetType,
       target_id: targetId,
-      fire_count: target.fire_count || 0,
-      user_reacted: !!userReaction,
+      fire_count: count,
+      user_reacted,
     });
   } catch (error) {
     console.error('Get reaction error:', error);
-    res.status(500).json({ error: 'Failed to get reaction' });
+    return res.status(500).json({ error: 'Failed to get reaction' });
   }
 });
 
