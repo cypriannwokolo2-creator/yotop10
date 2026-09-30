@@ -44,3 +44,6 @@ coverage/
 *.log
 *.tsbuildinfo
 docs/handbook/build/
+
+# Local reference drops (never commit, never push)
+ref-yotop10/
