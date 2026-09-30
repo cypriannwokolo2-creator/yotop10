@@ -11,6 +11,7 @@ import { Icon } from '@/components/icons/Icon';
 import { CustomDropdown } from '@/components/CustomDropdown';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { BookmarkButton } from '@/components/BookmarkButton';
+import { FireButton } from '@/components/FireButton';
 import { ShareButton } from '@/components/ShareButton';
 import { ThisVsThatView } from '@/components/ThisVsThatView';
 import { BattleView } from '@/components/BattleView';
@@ -98,7 +99,6 @@ export default function PostDetailClient({
   const [replyForms, setReplyForms] = useState<ReplyFormState>({});
   const [selectedItemId, setSelectedItemId] = useState<string | null>(itemParam);
   const [commentError, setCommentError] = useState<string | null>(null);
-  const [reacting, setReacting] = useState(false);
   const [userReactions, setUserReactions] = useState<Set<string>>(new Set());
   const mountedRef = useRef(true);
 
@@ -120,9 +120,7 @@ export default function PostDetailClient({
 
       const allTargets = commentsData.comments.map((c: Comment) => ({ type: 'comment', id: c.id }));
       try {
-        const reactionState = await API.getReactionState(allTargets) as {
-          targets: Array<{ type: string; id: string; user_reacted: boolean }>
-        };
+        const reactionState = await API.getReactionState(allTargets);
         if (mountedRef.current) {
           const reactedIds = new Set<string>(reactionState.targets.filter(t => t.user_reacted).map(t => String(t.id)));
           setUserReactions(reactedIds);
@@ -148,8 +146,7 @@ export default function PostDetailClient({
     if (allTargets.length > 0) {
       API.getReactionState(allTargets, { signal: abortController.signal }).then((reactionState) => {
         if (!mountedRef.current) return;
-        const data = reactionState as { targets: Array<{ type: string; id: string; user_reacted: boolean }> };
-        const reactedIds = new Set<string>(data.targets.filter(t => t.user_reacted).map(t => String(t.id)));
+        const reactedIds = new Set<string>(reactionState.targets.filter(t => t.user_reacted).map(t => String(t.id)));
         setUserReactions(reactedIds);
       }).catch(() => {});
     }
@@ -214,40 +211,7 @@ export default function PostDetailClient({
     }
   };
 
-  const handleReaction = async (targetType: 'comment', targetId: string) => {
-    if (reacting) return;
-    setReacting(true);
 
-    try {
-      const data = await API.toggleReaction(targetType, targetId) as { fire_count: number; user_reacted: boolean };
-
-      if (targetType === 'comment') {
-        setComments(prev => updateCommentFireCount(prev, targetId, data.fire_count));
-      }
-
-      setUserReactions(prev => {
-        const next = new Set(prev);
-        if (data.user_reacted) {
-          next.add(targetId);
-        } else {
-          next.delete(targetId);
-        }
-        return next;
-      });
-    } catch {
-      setCommentError('Failed to react. Please try again.');
-    } finally {
-      setReacting(false);
-    }
-  };
-
-  const updateCommentFireCount = (comments: Comment[], targetId: string, newCount: number): Comment[] => {
-    return comments.map(c => ({
-      ...c,
-      fire_count: c.id === targetId ? newCount : c.fire_count,
-      replies: c.replies ? updateCommentFireCount(c.replies, targetId, newCount) : c.replies,
-    }));
-  };
 
   const getItemRank = (listItemId: string): number | null => {
     const item = items.find(i => i.id === listItemId);
@@ -300,17 +264,14 @@ export default function PostDetailClient({
             {comment.content}
           </p>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => handleReaction('comment', comment.id)}
-              disabled={reacting}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition ${
-                reacted
-                  ? 'border border-orange-500/50 bg-orange-500/10 text-orange-400'
-                  : 'border border-transparent text-zinc-500 hover:text-zinc-300'
-              }`}
-            >
-              <Icon name="Flame" size={14} color="#ea580c" /> {comment.fire_count}
-            </button>
+            <FireButton
+              key={`${comment.id}:${reacted ? 'on' : 'off'}`}
+              targetType="comment"
+              targetId={comment.id}
+              initialCount={comment.fire_count}
+              initialReacted={reacted}
+              size="sm"
+            />
             {depth < 10 && (
               <button
                 onClick={() => setReplyTo(isReplying ? null : comment.id)}
