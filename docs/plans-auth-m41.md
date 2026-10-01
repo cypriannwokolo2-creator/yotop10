@@ -1,6 +1,6 @@
 # M41 — Real Authentication System (Email/Password + OTP)
 
-> **Status**: DESIGN — awaiting Go for M41.1
+> **Status**: M41.1 COMPLETE (backend auth core shipped; M41.2 removal next)
 > **Date**: 2026-10-01
 > **Replaces**: The anonymous fingerprint-identity system (M11/M15) in full.
 

@@ -81,7 +81,7 @@ describe('FireButton', () => {
 
   it('stopPropagation so card-level links do not navigate on fire', () => {
     render(
-      <a href="/somewhere">
+      <a href="https://example.com/somewhere">
         <FireButton targetType="post" targetId="a5" initialCount={0} />
       </a>
     );

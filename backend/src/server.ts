@@ -96,7 +96,7 @@ app.use('/api/search', searchRouter);
 import analyticsRouter from './routes/analytics';
 app.use('/api/analytics', analyticsRouter);
 
-const FINGERPRINT_EXEMPT = new Set(['/api/admin', '/api/analytics']);
+const FINGERPRINT_EXEMPT = new Set(['/api/admin', '/api/analytics', '/api/auth']);
 
 for (const route of routes) {
   const middleware = FINGERPRINT_EXEMPT.has(route.path) ? [route.router] : [fingerprintMiddleware, route.router];
@@ -160,6 +160,7 @@ const startServer = async () => {
     const { initConfig, startConfigCron } = await import('./lib/systemConfig');
     const { seedPresets } = await import('./lib/seedPresets');
     const { runAdminMigration } = await import('./lib/adminAuth');
+    const { runUserAuthMigration } = await import('./lib/migrations/userAuth');
     const { processAiModerationQueue } = await import('./lib/aiModerationWorker');
 
     const asyncWrap = (fn: () => void | Promise<void>) => async () => { await fn(); };
@@ -245,6 +246,7 @@ const startServer = async () => {
     await initConfig();
     await seedPresets();
     await runAdminMigration();
+    await runUserAuthMigration();
 
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);

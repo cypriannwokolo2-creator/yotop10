@@ -643,8 +643,10 @@ router.get('/me/rate-limits', async (req, res) => {
     }
 
     // Get current counts
-    const postKey = getRateLimitKey('posts', req.user.device_fingerprint);
-    const commentKey = getRateLimitKey('comments', req.user.device_fingerprint);
+    // device_fingerprint is guaranteed by the fingerprint middleware on
+    // non-exempt routes (M41.1 made the field optional for auth users).
+    const postKey = getRateLimitKey('posts', req.user.device_fingerprint!);
+    const commentKey = getRateLimitKey('comments', req.user.device_fingerprint!);
 
     const windowStart = now - windowMs;
     

@@ -10,8 +10,24 @@ export interface IUser extends Document {
   default_username?: string;
   default_short?: string;
   custom_short?: string;
-  device_fingerprint: string;
+  device_fingerprint?: string;
   device_fingerprint_aliases?: string[];
+  // M41.1 auth fields (docs/plans-auth-m41.md §3)
+  email?: string;
+  password_hash?: string;
+  email_verified_at?: Date;
+  token_version: number;
+  trusted_devices: Array<{
+    id_hash: string;
+    created_at: Date;
+    last_seen_at: Date;
+  }>;
+  two_factor: {
+    enabled: boolean;
+    secret?: string;
+    recovery_codes_hash?: string[];
+  };
+  legacy_anonymous: boolean;
   trust_score: number;
   trust_version: number;
   trust_locked: boolean;
@@ -78,17 +94,58 @@ const userSchema = new Schema<IUser>(
       type: String,
       sparse: true,
     },
-    device_fingerprint: {
-      type: String,
-      required: true,
-      unique: true,
-    },
+  device_fingerprint: {
+    type: String,
+    // M41.1: optional + non-unique. Auth users have no fingerprint, so
+    // the M11/M15 unique constraint is dropped by the userAuth boot
+    // migration (lib/migrations/userAuth.ts). The field remains for the
+    // legacy fingerprint middleware until M41.2 removes it.
+  },
     // Retired fingerprints that still resolve to this user (e.g. after a
     // security rotation). Looked up on every request; the cookie is then
     // re-bound to device_fingerprint, so aliases are strictly transitional.
     device_fingerprint_aliases: {
       type: [String],
       default: [],
+    },
+    // M41.1 auth fields (docs/plans-auth-m41.md §3)
+    email: {
+      type: String,
+      unique: true,
+      sparse: true,
+      lowercase: true,
+      trim: true,
+    },
+    password_hash: {
+      type: String,
+    },
+    email_verified_at: {
+      type: Date,
+    },
+    token_version: {
+      type: Number,
+      default: 0,
+    },
+    trusted_devices: {
+      type: [
+        {
+          id_hash: { type: String },
+          created_at: { type: Date },
+          last_seen_at: { type: Date },
+        },
+      ],
+      default: [],
+    },
+    two_factor: {
+      enabled: { type: Boolean, default: false },
+      // TOTP secret, AES-256-GCM encrypted at rest (lib/totp.ts)
+      secret: { type: String },
+      // Hashed recovery codes (SHA-256); each is single-use
+      recovery_codes_hash: [{ type: String }],
+    },
+    legacy_anonymous: {
+      type: Boolean,
+      default: false,
     },
     is_admin: {
       type: Boolean,
