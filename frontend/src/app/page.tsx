@@ -52,10 +52,15 @@ interface DebateItem {
 interface ArticleItem {
   slug: string;
   title: string;
+  body?: string;
   cover_image?: string;
   reading_time?: number;
   author_username?: string;
   author_display_name?: string;
+  category_name?: string;
+  category_slug?: string;
+  created_at?: string;
+  published_at?: string;
 }
 
 async function fetchJson<T>(url: string, fallback: T): Promise<T> {

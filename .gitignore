@@ -48,5 +48,5 @@ docs/handbook/build/
 # Local reference drops (never commit, never push)
 ref-yotop10/
 
-# Migration backup dumps (runtime artifacts — user data, never commit)
+# Migration backup dumps (runtime artifacts, user data incl. device fingerprints — NEVER commit)
 backend/uploads/migrations-backups/

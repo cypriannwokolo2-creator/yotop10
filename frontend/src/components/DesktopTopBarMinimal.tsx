@@ -1,15 +1,40 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import HeaderBells from './HeaderBells';
 import { useSidebarStore } from '@/stores/sidebar';
 import { Logo } from './Logo';
 import { Icon } from './icons/Icon';
 
+// Reference-look primary nav (ref-yotop10/index.html .nav-menu), remapped to
+// real routes: Membership/Tags/Authors dropped (no route / no fit at h-14).
+const NICHE_LINKS = [
+  { label: 'Technology', href: '/c/technology' },
+  { label: 'Entertainment', href: '/c/creative' },
+  { label: 'Sports', href: '/c/sports' },
+  { label: 'Lifestyle', href: '/c/lifestyle' },
+] as const;
+
+const MORE_LINKS = [
+  { label: 'About', href: '/docs' },
+  { label: 'Privacy Policy', href: '/docs/privacy' },
+  { label: 'Terms of Use', href: '/docs/terms' },
+] as const;
+
+const LINK_BASE =
+  'rounded-lg px-3 py-2 text-sm font-medium text-zinc-400 transition hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500';
+
+const DROPDOWN_PANEL =
+  'invisible absolute left-0 top-full z-50 min-w-44 translate-y-1 rounded-xl border border-white/10 bg-[#141419] p-1.5 opacity-0 shadow-xl shadow-black/50 transition-all duration-150 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100';
+
+const DROPDOWN_ITEM =
+  'block rounded-lg px-3 py-2 text-sm text-zinc-400 transition hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500';
+
 export default function DesktopTopBarMinimal() {
   const router = useRouter();
+  const pathname = usePathname() ?? '';
   const [query, setQuery] = useState('');
   const open = useSidebarStore(s => s.open);
   // SSR + first render use the closed (72px) offset; store hydrates after mount.
@@ -23,13 +48,66 @@ export default function DesktopTopBarMinimal() {
     }
   };
 
+  const active = (href: string) =>
+    pathname === href || pathname.startsWith(`${href}/`);
+
+  const linkCls = (href: string) =>
+    `${LINK_BASE}${active(href) ? ' bg-white/5 text-white' : ''}`;
+
   return (
     <header className={`fixed top-0 left-0 right-0 z-30 h-14 bg-[var(--color-bg)]/95 border-b border-white/5 ${pushed ? 'md:left-60' : 'md:left-[72px]'}`}>
       <div className="flex h-full items-center gap-4 px-4 lg:px-6">
-        {/* Brand — wordmark only; the bars mark lives in the nav rail */}
-        <Link href="/" aria-label="YoTop10 home" className="shrink-0">
-          <Logo showMark={false} textSize="text-[22px]" />
-        </Link>
+        {/* Brand — wordmark only; the bars mark lives in the nav rail.
+            `Logo` already renders its own Link, so no wrapper here (a second
+            anchor nests <a> in <a> and blows up hydration). */}
+        <Logo showMark={false} textSize="text-[22px]" />
+        {/* Primary nav — reference look, xl+ only (sidebar rail covers <xl) */}
+        <nav aria-label="Primary" className="hidden shrink-0 items-center gap-0.5 xl:flex">
+          <Link href="/explore" className={linkCls('/explore')} aria-current={active('/explore') ? 'page' : undefined}>
+            Explore
+          </Link>
+          <div className="group relative">
+            <Link
+              href="/categories"
+              className={`${linkCls('/categories')} inline-flex items-center gap-1`}
+              aria-current={active('/categories') ? 'page' : undefined}
+              aria-haspopup="true"
+            >
+              Niches
+              <Icon name="ChevronDown" size={14} className="text-zinc-500" />
+            </Link>
+            <div className={DROPDOWN_PANEL}>
+              {NICHE_LINKS.map(n => (
+                <Link key={n.href} href={n.href} className={DROPDOWN_ITEM}>
+                  {n.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+          <Link href="/arguments" className={linkCls('/arguments')} aria-current={active('/arguments') ? 'page' : undefined}>
+            Arguments
+          </Link>
+          <Link href="/articles" className={linkCls('/articles')} aria-current={active('/articles') ? 'page' : undefined}>
+            Articles
+          </Link>
+          <div className="group relative">
+            <button
+              type="button"
+              className={`${LINK_BASE} inline-flex cursor-pointer items-center gap-1`}
+              aria-haspopup="true"
+            >
+              More
+              <Icon name="ChevronDown" size={14} className="text-zinc-500" />
+            </button>
+            <div className={DROPDOWN_PANEL}>
+              {MORE_LINKS.map(n => (
+                <Link key={n.href} href={n.href} className={DROPDOWN_ITEM}>
+                  {n.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </nav>
         <div className="relative flex-1 max-w-2xl">
           <Icon
             name="Search"

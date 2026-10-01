@@ -1,19 +1,26 @@
 import Link from 'next/link';
 
 /**
- * Brand mark matching cypriannwokolo2-creator/yotop10 ui/Logo:
- * red rounded square with 5 stacked white bars.
- * Top 2 bars are shorter (75%) and RIGHT-aligned, bottom 3 full width.
+ * Brand mark — pixel-matched to public/icon-512.png (the favicon).
+ * 5 rounded bars on a 512px grid, scaled into a 40x40 viewBox (x40/512):
+ * top 2 bars are shorter and right-aligned, bottom 3 are wider; every bar
+ * shares the same right edge (30.55). Fill #d24924 is sampled from the PNG.
  */
 const BARS = [
-  { x: 13, y: 3, w: 20 },
-  { x: 13, y: 10, w: 20 },
-  { x: 7, y: 17, w: 26 },
-  { x: 7, y: 24, w: 26 },
-  { x: 7, y: 31, w: 26 },
+  { x: 15, y: 1.8, w: 15.55, h: 6.02 },
+  { x: 15, y: 8.83, w: 15.55, h: 6.09 },
+  { x: 8.44, y: 15.94, w: 22.11, h: 6.72 },
+  { x: 8.44, y: 23.59, w: 22.11, h: 6.8 },
+  { x: 8.44, y: 31.41, w: 22.11, h: 7.27 },
 ] as const;
 
-const BAR_H = 5.8;
+const BAR_FILL = '#d24924';
+
+/** Corner radius sampled from the favicon: 17px on a 512px grid. */
+const BAR_RADIUS = 0.22;
+
+/** Slides the short top bars left until they line up with the wide ones. */
+const BAR_ACTIVE_X = -(15 - 8.44);
 
 const BAR_TRANSITION = 'transform 300ms cubic-bezier(0.22, 1, 0.36, 1)';
 
@@ -46,13 +53,13 @@ export function LogoMark({
             x={bar.x}
             y={bar.y}
             width={bar.w}
-            height={BAR_H}
-            rx={1.5}
-            fill="#dc2626"
+            height={bar.h}
+            rx={bar.h * BAR_RADIUS}
+            fill={BAR_FILL}
             style={
               isTopBar
                 ? {
-                    transform: active ? 'translateX(-6px)' : 'translateX(0)',
+                    transform: active ? `translateX(${BAR_ACTIVE_X}px)` : 'translateX(0)',
                     transition: BAR_TRANSITION,
                     transitionDelay: index === 1 ? '70ms' : '0ms',
                   }

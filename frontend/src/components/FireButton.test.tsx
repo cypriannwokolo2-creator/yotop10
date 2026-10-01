@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import Link from 'next/link';
 import React from 'react';
 
 const mockToggle = vi.fn();
@@ -81,9 +82,9 @@ describe('FireButton', () => {
 
   it('stopPropagation so card-level links do not navigate on fire', () => {
     render(
-      <a href="https://example.com/somewhere">
+      <Link href="https://example.com/somewhere">
         <FireButton targetType="post" targetId="a5" initialCount={0} />
-      </a>
+      </Link>
     );
     const btn = screen.getByRole('button');
     const event = new MouseEvent('click', { bubbles: true, cancelable: true });

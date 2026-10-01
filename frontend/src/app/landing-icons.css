@@ -1,0 +1,21 @@
+/* landing-icons.css — icon mirror rules for the reference landing port.
+   The extracted reference CSS sizes Font Awesome glyphs through `i` selectors
+   and font-size; this app renders Lucide <svg> and <img> brand marks instead,
+   so mirror the two extracted `i`-only rules and size the brand images here. */
+
+.ytl-landing .action-btn svg {
+  width: 0.8rem;
+  height: 0.8rem;
+}
+
+.ytl-landing .share-platform svg,
+.ytl-landing .share-platform img {
+  width: 1.2rem;
+  height: 1.2rem;
+  flex-shrink: 0;
+}
+
+.ytl-landing .social-icon img {
+  width: 1.25rem;
+  height: 1.25rem;
+}
