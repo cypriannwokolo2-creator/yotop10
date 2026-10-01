@@ -1,9 +1,9 @@
 # RAM.md — Random Access Memory: Current Task State
 
 > **Last updated**: 2026-10-02
-> **Working tree**: M42 logo=favicon changes (frontend + docs)
+> **Working tree**: clean — M42 committed (`5497a9b5`), pushed to cocor
 > **Branch**: main
-> **Latest commits**: `297a0f96 [M41.6]`, `6fe947f7 [M41.4]`, `4acb52b4 [M41.3]`
+> **Latest commits**: `5497a9b5 [M42]`, `297a0f96 [M41.6]`, `6fe947f7 [M41.4]`
 
 ---
 
