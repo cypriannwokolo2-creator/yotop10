@@ -161,6 +161,7 @@ const startServer = async () => {
     const { seedPresets } = await import('./lib/seedPresets');
     const { runAdminMigration } = await import('./lib/adminAuth');
     const { runUserAuthMigration } = await import('./lib/migrations/userAuth');
+    const { runAnonCleanupCron } = await import('./lib/anonCleanupCron');
     const { processAiModerationQueue } = await import('./lib/aiModerationWorker');
 
     const asyncWrap = (fn: () => void | Promise<void>) => async () => { await fn(); };
@@ -240,6 +241,13 @@ const startServer = async () => {
       name: 'ai-moderation',
       interval: 10 * 1000,
       handler: processAiModerationQueue,
+      deadManSwitch: true,
+    });
+
+    cronRegistry.register({
+      name: 'anon-cleanup',
+      interval: 60 * 60 * 1000,
+      handler: asyncWrap(runAnonCleanupCron),
       deadManSwitch: true,
     });
 

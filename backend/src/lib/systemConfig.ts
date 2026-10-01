@@ -28,6 +28,7 @@ export const DEFAULT_CONFIG = {
   },
   fingerprint_enabled: false,
   list_order: 'asc' as 'asc' | 'desc',
+  anon_cleanup_batch_size: 10,
   version: 1,
   updated_at: new Date(),
   updated_by: 'system',
@@ -87,6 +88,7 @@ function leanToShape(doc: Record<string, unknown>): ConfigShape {
     },
     fingerprint_enabled: (doc.fingerprint_enabled as boolean) ?? DEFAULT_CONFIG.fingerprint_enabled,
     list_order: (doc.list_order as 'asc' | 'desc') === 'desc' ? 'desc' : 'asc',
+    anon_cleanup_batch_size: (doc.anon_cleanup_batch_size as number) ?? DEFAULT_CONFIG.anon_cleanup_batch_size,
     version: (doc.version as number) ?? DEFAULT_CONFIG.version,
     updated_at: (doc.updated_at as Date) ?? DEFAULT_CONFIG.updated_at,
     updated_by: (doc.updated_by as string) ?? DEFAULT_CONFIG.updated_by,
@@ -129,6 +131,7 @@ export async function updateConfig(
     rate_limits: Partial<ConfigShape['rate_limits']>;
     trust_tiers: Partial<ConfigShape['trust_tiers']>;
     list_order: 'asc' | 'desc';
+    anon_cleanup_batch_size: number;
   }>,
   adminId: string,
 ): Promise<ConfigShape> {
@@ -183,6 +186,14 @@ export async function updateConfig(
     setOps['list_order'] = changes.list_order;
   }
 
+  if (changes.anon_cleanup_batch_size !== undefined) {
+    const batch = changes.anon_cleanup_batch_size;
+    if (!Number.isInteger(batch) || batch < 1 || batch > 1000) {
+      throw new Error('anon_cleanup_batch_size must be an integer between 1 and 1000');
+    }
+    setOps['anon_cleanup_batch_size'] = batch;
+  }
+
   if (Object.keys(setOps).length === 0) {
     return getConfig();
   }
@@ -217,7 +228,8 @@ export async function updateConfig(
       version: cachedConfig.version,
       changed_fields: Object.keys(changes.rate_limits ?? {})
         .concat(Object.keys(changes.trust_tiers ?? {}))
-        .concat(changes.list_order !== undefined ? ['list_order'] : []),
+        .concat(changes.list_order !== undefined ? ['list_order'] : [])
+        .concat(changes.anon_cleanup_batch_size !== undefined ? ['anon_cleanup_batch_size'] : []),
     },
   });
 
