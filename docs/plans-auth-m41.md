@@ -1,8 +1,15 @@
 # M41 — Real Authentication System (Email/Password + OTP)
 
-> **Status**: M41.1 COMPLETE (backend auth core shipped; M41.2 removal next)
+> **Status**: M41 COMPLETE (all sub-milestones M41.1–M41.6 shipped 2026-10-01; all CI gates green)
 > **Date**: 2026-10-01
 > **Replaces**: The anonymous fingerprint-identity system (M11/M15) in full.
+> **Deviation (M41.5)**: dedicated `/login` `/register` `/forgot-password`
+> pages (§10.5) were consolidated into the lazy `AuthModal` slide
+> steps — modal-first UX per the locked user decisions. All flows
+> (credentials→OTP, forgot-email→OTP→new-password, guest) live in
+> `frontend/src/components/AuthModal.tsx`.
+> **Open (owner)**: `BREVO_API_KEY` not yet pasted into `backend/.env`;
+> the sender runs log-only mode until then (§13 item 1).
 
 ---
 
@@ -294,9 +301,12 @@ localStorage `yotop10_guest_name` remembered), "Your comment appears as a
 guest and may be collapsed" hint.
 
 ### 10.5 New pages
-- `/login`, `/register`, `/forgot-password` — full-page versions of the
+- ~~`/login`, `/register`, `/forgot-password` — full-page versions of the
   same flows (server-rendered shells, client forms), linked from the modal
-  ("Continue in new tab" not needed — same components).
+  ("Continue in new tab" not needed — same components).~~
+  **Superseded**: implemented entirely as slide steps inside the lazy
+  `AuthModal` (credentials→OTP; forgot-email→OTP→new-password; guest)
+  — no dedicated pages were built. Modal-first UX per user decision.
 
 ### 10.6 Removal list (frontend)
 `lib/proofOfWork.ts` (+test), `lib/fingerprint.ts`, `lib/bip39Wordlist.ts`,
@@ -337,6 +347,32 @@ regenerate recovery codes. Calls §4.10 endpoints.
 
 1. **Brevo API key** — paste it so it can be added to `backend/.env`
    (gitignored; never committed). Until then the sender runs log-only.
+   **Still pending as of M41 completion (2026-10-01)** — live OTP
+   delivery untested end-to-end; all other gates pass.
 2. Defaults assumed (veto anytime): OTP 6 digits / 10 min / 5 attempts;
    session 7 days; guest comment limit 5/hour; cleanup 10 posts/hour.
 3. Register asks for a **username** (profile URLs are `/a/[username]`).
+
+---
+
+## 14. Completion record (M41.6, 2026-10-01)
+
+- Commits: `f79eb959` [M41.1], `f78e2f3c` [M41.1 merge],
+  `69910136` [M41.2], `4acb52b4` [M41.3],
+  `6fe947f7` [M41.4] frontend real-auth UI + crypto-identity removal
+  (covers M41.4–M41.5).
+- Gates (commit `6fe947f7`): backend typecheck/lint/build ✅;
+  backend tests 774 passed | 4 skipped (53 files); frontend
+  typecheck/lint (0 errors, 0 warnings)/build ✅; frontend tests
+  96 passed (12 files).
+- New frontend files: `lib/api/endpoints/auth.ts`, `stores/authModal.ts`,
+  `hooks/useRequireAuth.ts`, `components/AuthModal.tsx`.
+- Deleted (backend): `middleware/fingerprint.ts`, `routes/identity.ts`,
+  `routes/fingerprintMerge.ts`, `routes/fingerprint.ts`, identity libs,
+  `models/AuthChallenge.ts`, `models/UserDevice.ts`.
+- Deleted (frontend): `lib/proofOfWork.ts` (+test), `lib/fingerprint.ts`,
+  `lib/bip39Wordlist.ts`, `lib/identity.ts`, `components/SeedDisplayModal.tsx`,
+  `components/SecureMyAuthority.tsx`, `components/FingerprintMergeDialog.tsx`,
+  `app/claim/page.tsx`.
+- Docs synced in this milestone: `milestones.md`, `not-implemented.md`,
+  `product_spec.md`, `rom.md`, `ram.md` (this file updated too).

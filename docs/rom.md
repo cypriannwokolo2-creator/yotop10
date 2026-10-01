@@ -1037,6 +1037,7 @@ This audit analyzed 39 source files:
 | Date | Decision | Rationale |
 |------|----------|-----------|
 | 2026-09-30 | CI/CD = GitHub Actions + SSH forced-command (no registry, no PaaS) | Server builds images directly; deploy script health-gates (boot probe + 200 check) before prod swap with auto-rollback — encodes the M39.0 outage postmortem. Global flock serializes deploys across the 8 sites planned for this box; Watchtower rejected (no health gate), Coolify rejected (would fight existing compose + nginx). Details: ram.md [M39.1]. |
+| 2026-10-01 | Identity = email/password + OTP (M41); fingerprint/crypto-seed identity removed in full | The anonymous-only identity system was the recurring abuse vector (bot floods, impersonation, merge attacks — see M20/M21 entries in ram.md) and required PoW minting that hurt real users. Real auth with httpOnly JWT session cookie (pattern already proven by admin auth) + opt-in trusted devices + optional TOTP 2FA. Guests keep light interaction (comment 5/hr low-visibility, fire 20/hr) via `guest_id` cookie so the platform stays browsable without an account. Legacy anon posts are mock data — gradual 10/hour cleanup cron (M41.3) while admin composes real content. Brevo is the email provider (owner-held `BREVO_API_KEY`). Details: `docs/plans-auth-m41.md`. |
 
 ---
 
@@ -1073,6 +1074,7 @@ This audit analyzed 39 source files:
 | NEW (2026-09-15) | Layout `openGraph.url` hardcoded to apex `https://yotop10.com` | ✅ Env-driven (`NEXT_PUBLIC_SITE_URL`); structured og:image with width/height/alt/type |
 | NEW (2026-09-15) | OG image generators used Satori-incompatible CSS (`display: -webkit-box`, `WebkitLineClamp`, system fonts) | ✅ Rewritten: Satori-safe primitives (`lib/seo/ogImageLayout.tsx`), Geist TTF via module-scope loader (`lib/seo/ogFonts.ts`), `export const alt`, immutable cache headers |
 | NEW (2026-09-15) | Article detail page CSR-only — title "Article Not Found" while metadata succeeded | ✅ Refactored to SSR-fetch + `initialArticle` prop, matching post page pattern |
+| NEW (2026-10-01) | Entire fingerprint-identity subsystem (M11/M15) — source of findings 2.3, 2.6, 2.13, 3.8, 4.1, 6.10 and the bot-flood abuse vector | ✅ Removed in full by M41 (email/password + OTP auth, httpOnly session JWT, `guest_id` cookie for anonymous interactions). `middleware/fingerprint.ts`, identity routes/libs, `AuthChallenge`/`UserDevice` models, PoW bootstrap, frontend crypto-identity UI all deleted. Reactions now key on session user_id or guest_id (no shared 'unknown'). `@fingerprintjs/fingerprintjs` dependency already gone from `frontend/package.json`. Commits `f79eb959`→`6fe947f7`; design doc `docs/plans-auth-m41.md`. |
 
 ### Still Open ⏳
 | Section | Issue | Notes |
@@ -1082,8 +1084,6 @@ This audit analyzed 39 source files:
 | 2.7 | TOCTOU rate limit race | Non-atomic zRemRange/zCard/zAdd |
 | 2.8 | findOne→findOneAndUpdate race | In `users.ts` display name update |
 | 2.10 | Non-null assertion after findById | `!` in `posts.ts:488` |
-| 2.13 | 'unknown' fingerprint edge cases | Reactions still have fallback |
-| 4.1 | `any` escapes in fingerprint.ts | eslint-disable at top of file |
 | 4.2 | Rate limit type mismatch | `counter_lists` typed as string |
 | M11.C.1 | Hysteresis thresholds | Not implemented |
 | M11.C.1 | Double-blind moderation | Not implemented |
@@ -1094,6 +1094,6 @@ This audit analyzed 39 source files:
 | M10.11 | Rate limits & trust scores UI | Not implemented |
 | M13 | Arguments page | Not implemented (post-MVP) |
 | M14 | Hall of Fame | Implemented |
-| M15 | Identity Portability | Implemented |
+| M15 | Identity Portability | Removed in M41 (crypto identity replaced by email/password auth + guest sessions; legacy accounts flagged `legacy_anonymous`) |
 
 ---

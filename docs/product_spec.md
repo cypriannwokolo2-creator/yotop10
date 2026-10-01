@@ -23,7 +23,7 @@ YoTop10 is an **open publishing platform** centered on:
 - **Debates** (This vs That, Who Is Better, Best Of)
 - **Fact drops** (sourced opinion pieces disguised as ranked content)
 
-**Key Difference:** No accounts required. No login. No barriers. Anyone can submit and comment. Admin approve/reject content.
+**Key Difference:** Accounts optional (M41, 2026-10-01). Anyone can browse; guests may comment and fire with rate limits; email/password + OTP accounts unlock submitting, arguing, bookmarks, and trusted commenting. Admin approve/reject content.
 
 ---
 
@@ -54,7 +54,19 @@ YoTop10 is an **open publishing platform** centered on:
 
 ---
 
-## 5. Anonymous User System
+## 5. User & Guest System
+
+> **M41 update (2026-10-01)**: real authentication shipped —
+> email/password + OTP at registration and forgot-password,
+> new-device login OTP, trusted devices, optional 2FA (TOTP +
+> recovery codes), httpOnly `session_token` JWT cookie. The old
+> device-fingerprint/crypto-seed identity system was removed.
+> Anonymous visitors now get a `guest_id` cookie: guests may
+> comment (5/hour, low visibility, guest name 3–32 chars) and
+> fire reactions (20/hour). Legacy `a_XXXX` accounts remain
+> flagged `legacy_anonymous`; their mock posts are gradually
+> removed by the M41.3 cleanup cron (10/hour). Design doc:
+> `docs/plans-auth-m41.md`.
 
 ### User Identity Format
 
@@ -430,10 +442,7 @@ Every user can view their exact rate limit status in real-time on their profile 
 ## 14. What's Different From Original Plan
 
 ### Disabled/Commented Out (Not Deleted)
-- User registration
-- User logins (regular users)
 - Google OAuth
-- JWT for regular users
 - Follow system
 - Connection system
 - Strike system
@@ -447,9 +456,9 @@ Every user can view their exact rate limit status in real-time on their profile 
 ### Now Implemented (Originally Planned as Disabled or Post-MVP)
 
 **Core Platform:**
-- Anonymous posting (`a_XXXX` usernames via device fingerprint)
-- User profiles — anonymous `/a/[username]` with Posts/Comments/Stats tabs
-- Device fingerprinting — 3-tier system (Tier 0 machine-stable, Tier 1 browser, Tier 2 minor) via custom implementation
+- Real authentication (M41) — email/password + OTP, trusted devices, 2FA with recovery codes, httpOnly session cookie JWT
+- Guest sessions — `guest_id` cookie; comment (5/hr, low visibility) + fire (20/hr) without an account
+- User profiles — `/a/[username]` with Posts/Comments/Stats tabs (legacy `a_XXXX` anonymous accounts flagged `legacy_anonymous`)
 - Advanced comment system — nested 10-level, item-anchored, SparkScore-ranked
 - Categories — 10 parents, 300 children, full public + admin API
 - Post submission form — 903-line page with draft recovery, title similarity check, dynamic items
@@ -483,7 +492,6 @@ Every user can view their exact rate limit status in real-time on their profile 
 - Trust Score Engine V2 — rolling 50-review window, logarithmic scaling, asymmetric penalties, hysteresis thresholds (enter 1.85, exit 1.70), optimistic concurrency control
 - Smart rate limiting — 2D soft gradient with guaranteed minimums, atomic Lua script in Redis
 - Ladder Boost system — temporary rate limit boosts (4 types: post approved, comment fires, comment replies, counter list submitted)
-- Identity portability (M15) — 12-word BIP39 seed phrases, Ed25519 challenge-response, multi-device linking
 - SparkScore comment ranking — time-decay with gravity + floor, percentile thresholds, parent propagation
 - Automated flag detection — spam repetition, link-first detection, brigading detection (60s cron)
 - Double-blind moderation — reviewers never see username/trust score during review
@@ -498,8 +506,8 @@ Every user can view their exact rate limit status in real-time on their profile 
 - Clean architecture — pure functions in lib/, business logic extracted from route handlers
 
 ### What Stays Active
-- Anonymous posting (a_XXXX format)
-- Device fingerprinting
+- Guest interactions (comment + fire via `guest_id` cookie)
+- Legacy `a_XXXX` profiles (read-only history; mock posts removed gradually)
 - Advanced comment system with nesting
 - Categories (full public + admin implementation)
 - Admin dashboard with all management features

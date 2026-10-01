@@ -1,35 +1,21 @@
 # RAM.md — Random Access Memory: Current Task State
 
-> **Last updated**: 2026-10-01
-> **Working tree**: Clean at `ab224374 [M40.3]` (reverted from M41 experiments)
+> **Last updated**: 2026-10-02
+> **Working tree**: M41 docs-sync changes uncommitted (docs only)
 > **Branch**: main
-> **Latest commits**: `ab224374 [M40.3]`, `5aca8d1d [M40.3]`, `03964d3f [M40.3]`
+> **Latest commits**: `6fe947f7 [M41.4]`, `4acb52b4 [M41.3]`, `69910136 [M41.2]`
 
 ---
 
-## 🚨 CURRENT TASK: M41 — Real Authentication System
+## ✅ COMPLETED: M41 — Real Authentication System (2026-10-01 → 2026-10-02)
 
-**Active**: 2026-10-01 — replacing the anonymous fingerprint-identity system (M11/M15) with email/password auth.
+**Status**: M41.1–M41.6 all shipped; all CI gates green. Design doc + completion record: `docs/plans-auth-m41.md` (§14).
 
-**Design doc**: `docs/plans-auth-m41.md` (COMPLETE — read before coding).
+**Shipped**: email/password + OTP (registration, new-device login, forgot-password), trusted devices (password-only on trusted device), optional 2FA (TOTP + recovery codes), httpOnly `session_token` JWT cookie (7-day session, token_version), `guest_id` cookie for anonymous interactions (comment 5/hr low-visibility with guest name 3–32 chars, fire 20/hr). The fingerprint/crypto-seed identity system (M11/M15) was removed in full. Legacy `a_XXXX` accounts flagged `legacy_anonymous`; their mock posts are gradually removed by the M41.3 cleanup cron (10/hour) while admin composes real content.
 
-**User decisions**:
-1. OTP at registration + forgot-password; new-device login requires email OTP (password-only on trusted device); 2FA settings with recovery keys
-2. Guest option in modal: guests may comment/fire with rate limits + low-visibility comments; submit/arguments require login
-3. Brevo email provider (key ready — owner to paste into `backend/.env` as `BREVO_API_KEY`)
-4. Legacy anon posts are mock data → gradual removal job (10/hour); admin composes real content
-5. Crypto identity system (seed phrases, /claim, device linking, merge dialogs) — REMOVED entirely
-6. Session = httpOnly cookie JWT (same pattern as admin `admin_token`)
+**Open (owner)**: paste `BREVO_API_KEY` into `backend/.env` (gitignored, never committed) — until then the sender runs log-only mode and OTP codes appear in backend logs. Full register→OTP→login live pass requires the key.
 
-**Sub-milestones** (checkpoint after each):
-- [ ] M41.1 — Backend auth core: schemas, otp, brevo, totp, passwords, userAuth lib/middleware, User model + migration, `/api/auth/*` routes
-- [ ] M41.2 — Backend removal: fingerprint middleware, identity routes, comment + reaction guest paths
-- [ ] M41.3 — Gradual anon-post cleanup cron (SystemConfig knob)
-- [ ] M41.4 — Frontend: auth store rewrite, lazy AuthModal (slide steps), authModal store, useRequireAuth gating, guest comment name prompt
-- [ ] M41.5 — Frontend removal + pages: /login /register /forgot-password, 2FA settings, delete anon-identity UI
-- [ ] M41.6 — Final gates + live verification + docs sync
-
-**Full plan, API contract, removal lists, security checklist**: see `docs/plans-auth-m41.md`.
+**Commits**: `f79eb959`/`f78e2f3c` [M41.1], `69910136` [M41.2], `4acb52b4` [M41.3], `6fe947f7` [M41.4–M41.5], + docs-sync commit (this one).
 
 ---
 
@@ -43,14 +29,19 @@
 | Frontend lint | ✅ 0 errors, 0 warnings |
 | Backend build (`tsc`) | ✅ 0 errors |
 | Frontend build (`next build`) | ✅ Completed (build + postbuild manifest generation injected BUILD_ID) |
-| Backend tests (vitest) | ✅ 38 files, 638 tests passed |
+| Backend tests (vitest) | ✅ 774 passed, 4 skipped (53 files) |
+| Frontend tests (vitest) | ✅ 96 passed (12 files) |
 
 ---
 
 ## What Has Been Done
 
 ### Recent commits (top of main):
-1. **[M00.8]** Lower nav hide breakpoint to 980px, uncomment DynamicIsland hydration fix
+1. **[M41.4–M41.5]** Frontend real-auth UI (lazy AuthModal with slide steps, authModal store, useRequireAuth gating, 2FA settings page) + crypto-identity removal in full
+2. **[M41.3]** Gradual anon-post cleanup cron (SystemConfig `anon_cleanup_batch_size`, default 10/hour)
+3. **[M41.2]** Backend removal: fingerprint middleware + identity routes out, session+guest identity in
+4. **[M41.1]** Backend auth core: Zod schemas, OTP, Brevo sender, TOTP, passwords, userAuth lib/middleware, User model + migration, `/api/auth/*` routes
+5. **[M00.8]** Lower nav hide breakpoint to 980px, uncomment DynamicIsland hydration fix
 2. **[M00.7]** Remove faulty SW, fix responsive nav with plain CSS, comment out bottom nav
 3. **Clean up** stale docs, dead env vars, and AI artifacts
 4. **Update** product_spec.md to reflect current state
@@ -66,7 +57,7 @@
 14. **Various fixes** — theme flash, hydration, fonts, bottom nav, slide menu
 
 ### Milestones completed (all checked ✅):
-M1 (Foundation), M2 (Schema), M3 (Submit), M4 (Feed), M5 (Post Detail), M6 (Categories), M7 (Comments), M9 (Admin Auth), M10 (Admin Dashboard), M11 (User System), M12 (Search), M13 (Arguments), M14 (Hall of Fame), M15 (Identity), M17 (Moderator System)
+M1 (Foundation), M2 (Schema), M3 (Submit), M4 (Feed), M5 (Post Detail), M6 (Categories), M7 (Comments), M9 (Admin Auth), M10 (Admin Dashboard), M11 (User System), M12 (Search), M13 (Arguments), M14 (Hall of Fame), M15 (Identity — removed in M41), M17 (Moderator System), **M41 (Real Authentication System)**
 
 ### ROM issues resolved ✅ (14 of 19):
 Hardcoded JWT, orphaned setInterval, $regex injection, stub 200s, health check ordering, dynamic import on approval, module-level cron, 'unknown' fingerprint, Redis singleton, route barrel export, localStorage crashes, 425 infinite recursion, XSS in JSON-LD, Eruda safety guards
@@ -85,7 +76,7 @@ Hardcoded JWT, orphaned setInterval, $regex injection, stub 200s, health check o
 | 2.10 | Non-null assertion after findById | `!` in posts.ts:488 |
 
 ### Unfinished features:
-- **M41** — Real authentication system (IN PROGRESS — see Current Task above)
+- **M41 follow-up (owner)** — paste `BREVO_API_KEY` into `backend/.env`; then live-verify register→OTP→login end to end
 - **M5.6** — Counter-List System (The Arena): challenge/rebuttal, comparison engine, SEO governance
 - **M10.7** — Categories Management frontend: tree view, drag-drop, bulk ops, analytics
 - **M10.14** — Admin UI components: StatsChart, CategoryTree, UserBadge, SearchInput, DateRangePicker, ExportButton, ConfirmDialog
@@ -100,17 +91,30 @@ Hardcoded JWT, orphaned setInterval, $regex injection, stub 200s, health check o
 
 ## Next Steps (Priority Suggestion)
 
-1. **M41** — Execute the auth system per `docs/plans-auth-m41.md` (CURRENT TASK, above)
+1. **Logo = favicon** — make the site logo match the favicon (the favicon IS the main logo; frontend in scope)
 2. **Lock in stability** — Fix 5 remaining ROM issues (crash/data integrity)
-2. **Complete admin UI** — Categories tree view, remaining components
-3. **Build the Arena** — M5.6 Counter-List System (major feature)
-4. **Deploy & verify** — Production deployment
-5. **Post-MVP** — V2 features, theming, notifications
+3. **Complete admin UI** — Categories tree view, remaining components
+4. **Build the Arena** — M5.6 Counter-List System (major feature)
+5. **Deploy & verify** — Production deployment
+6. **Post-MVP** — V2 features, theming, notifications
 
 ---
 
 ## Latest Verification
 
+- **M41 completion (2026-10-01/02)** — real authentication system shipped across 5 commits
+  (`f79eb959`→`6fe947f7`): backend `/api/auth/*` (register/verify, login/verify/2fa,
+  forgot/reset-password, logout, me, 2FA setup/enable/disable/recovery), session = httpOnly
+  `session_token` JWT (7-day, token_version), guest = `guest_id` cookie (comment 5/hr
+  low-visibility, fire 20/hr), fingerprint/crypto-identity subsystem deleted in full
+  (middleware, identity routes, AuthChallenge/UserDevice models, PoW/bip39/fingerprint libs,
+  `/claim` page, SeedDisplayModal, SecureMyAuthority, FingerprintMergeDialog). Gates at
+  commit `6fe947f7`: backend typecheck ✅ lint ✅ build ✅ tests **774 passed | 4 skipped**
+  (53 files); frontend typecheck ✅ lint ✅ 0/0 build ✅ tests **96 passed** (12 files).
+  M41.5 deviation: dedicated /login /register /forgot-password pages consolidated into the
+  lazy AuthModal slide steps (modal-first UX per locked decision). Docs synced: milestones,
+  not-implemented, product_spec, rom, ram + plans-auth-m41 §14 completion record.
+  **Owner follow-up**: paste `BREVO_API_KEY` into `backend/.env` (log-only until then).
 - **Abuse response (M20.1–M20.3, 2026-09-14)** — bot flood (19 accounts/24h in pairs, zero-cluster
   fp collisions, 36-second handle squat) met with: simple math challenge + per-IP rate limits on
   identity creation; middleware read-only on bootstrap paths (it was minting before the route's

@@ -1,6 +1,6 @@
 # YoTop10 — Build Milestones
 
-> **Platform**: Open anonymous top 10 lists platform. No login required. Admin-only review.
+> **Platform**: Open top 10 lists platform. Login optional (email/password + OTP, M41); guests may comment/fire. Admin-only review.
 > **Stack**: MERN — MongoDB + Express + Next.js 15 + Elasticsearch
 > **Note**: All styling deferred until after MVP. Platform functions with minimal styling until launch.
 
@@ -10,11 +10,11 @@
 
 This is the simplified roadmap based on the [revert.md](./revert.md) plan. The platform transforms from a full social platform into an open Wikipedia-style platform:
 
-- **Anyone** can submit top 10 lists (anonymous, device fingerprint tracked)
+- **Anyone** can submit top 10 lists (registered users; legacy anonymous posts are mock data being gradually removed — M41.3)
 - **Anyone** can comment with nested threading (up to 10 levels)
 - **Categories** are fully organized (10 parents, 300 children)
 - **Only you** (admin) can approve/reject posts
-- **Smart rate limiting**: 50 comments/hour per user (device fingerprint)
+- **Smart rate limiting**: 50 comments/hour per user (session or guest id)
 - **Shadow Trust Score**: Rewards "scholars" (2x limits), chokes "trolls"
 
 ---
@@ -32,14 +32,9 @@ This is the simplified roadmap based on the [revert.md](./revert.md) plan. The p
 - **Profile Page**: `/a/[username]` shows all posts (Approved/Rejected/Pending with badges)
 
 ### Device Fingerprinting
-Track anonymous users using:
-- Canvas fingerprint (GPU rendering hash)
-- WebGL fingerprint (graphics capabilities hash)
-- Audio context fingerprint (audio hardware hash)
-- Screen resolution (Width x Height + color depth)
-- Timezone (UTC offset)
-- Language (browser language)
-- Installed fonts (font detection)
+> **Removed in M41** (2026-10-01): the browser-fingerprint identity system was
+> replaced in full by email/password auth + httpOnly `guest_id` cookie for
+> anonymous interactions. See `docs/plans-auth-m41.md`.
 
 ### Rate Limiting (Per User, Not IP)
 All limits use 2D soft gradient floor algorithm:
@@ -794,6 +789,7 @@ Single unified notification system that handles all user feedback across the ent
 **Specification**:
 - [x] Endpoint: `GET /api/users/me`
 - [x] Authentication: Uses `X-Device-Fingerprint` header only. No other auth required.
+  - **M41 update (2026-10-01)**: `GET /api/users/me` is now an alias of `GET /api/auth/me` (session cookie); the fingerprint header path is gone.
 - [x] Response format:
   ```typescript
   {
@@ -1038,6 +1034,13 @@ All 5 parts are implemented, tested, and merged. No open TODOs. No stubs. When M
 ---
 
 ## M15 — Identity Portability
+
+> **Removed in M41** (2026-10-01): the crypto seed-phrase identity system
+> (generate-key, claim, link, merge, `/claim` page, SecureMyAuthority) was
+> deleted in full and replaced by email/password auth + OTP. Legacy
+> fingerprint accounts are flagged `legacy_anonymous` and their mock posts are
+> gradually removed by the M41.3 cleanup cron. Items below are the historical
+> M15 record.
 
 ✅ **Philosophy**: Crypto wallet style identity. No passwords, no emails. User owns their reputation completely.
 
@@ -2046,44 +2049,44 @@ These features from the old social platform are NOT part of V1:
 > Design doc: `docs/plans-auth-m41.md`.
 
 ### M41.1 — Backend auth core
-- [ ] Zod schemas (`backend/src/schemas/auth.ts`) for all auth bodies
-- [ ] `lib/otp.ts` — 6-digit OTP, Redis storage, 10-min TTL, 5 attempts, send-rate limits
-- [ ] `lib/brevo.ts` — Brevo transactional email (log-only mode without `BREVO_API_KEY`)
-- [ ] `lib/totp.ts` — RFC 6238 TOTP + recovery codes (no new dependency)
-- [ ] `lib/passwords.ts` — bcryptjs 12-round helpers + strength validation
-- [ ] `lib/userAuth.ts` — user JWT issue/verify (httpOnly `session_token` cookie, token_version)
-- [ ] `middleware/userAuth.ts` — session → `req.user`; guest cookie → `req.guest_id`
-- [ ] User model: email, password_hash, email_verified_at, token_version, trusted_devices, two_factor, legacy_anonymous
-- [ ] Startup migration: drop device_fingerprint unique index, sparse email index, flag legacy users
-- [ ] Routes: register, register/verify, login, login/verify, login/2fa, forgot-password, reset-password, logout, me, 2fa/*
-- [ ] Unit tests (otp, totp, passwords)
+- [x] Zod schemas (`backend/src/schemas/auth.ts`) for all auth bodies
+- [x] `lib/otp.ts` — 6-digit OTP, Redis storage, 10-min TTL, 5 attempts, send-rate limits
+- [x] `lib/brevo.ts` — Brevo transactional email (log-only mode without `BREVO_API_KEY`)
+- [x] `lib/totp.ts` — RFC 6238 TOTP + recovery codes (no new dependency)
+- [x] `lib/passwords.ts` — bcryptjs 12-round helpers + strength validation
+- [x] `lib/userAuth.ts` — user JWT issue/verify (httpOnly `session_token` cookie, token_version)
+- [x] `middleware/userAuth.ts` — session → `req.user`; guest cookie → `req.guest_id`
+- [x] User model: email, password_hash, email_verified_at, token_version, trusted_devices, two_factor, legacy_anonymous
+- [x] Startup migration: drop device_fingerprint unique index, sparse email index, flag legacy users
+- [x] Routes: register, register/verify, login, login/verify, login/2fa, forgot-password, reset-password, logout, me, 2fa/*
+- [x] Unit tests (otp, totp, passwords, schemas)
 
 ### M41.2 — Backend removal + guest paths
-- [ ] Remove fingerprint middleware (minting, grace, PoW bootstrap)
-- [ ] Delete `/api/users/init`, `/api/users/challenge`, `/api/identity/*`, `/api/fingerprint/*`, merge routes
-- [ ] Delete identity libs + AuthChallenge/UserDevice models
-- [ ] Comments: session-or-guest submission (guest_name, low_visibility, 5/hr)
-- [ ] Reactions: guest fires via guest_id (20/hr)
-- [ ] `/api/users/me` alias to `/api/auth/me`
+- [x] Remove fingerprint middleware (minting, grace, PoW bootstrap)
+- [x] Delete `/api/users/init`, `/api/users/challenge`, `/api/identity/*`, `/api/fingerprint/*`, merge routes
+- [x] Delete identity libs + AuthChallenge/UserDevice models
+- [x] Comments: session-or-guest submission (guest_name, low_visibility, 5/hr)
+- [x] Reactions: guest fires via guest_id (20/hr)
+- [x] `/api/users/me` alias to `/api/auth/me`
 
 ### M41.3 — Gradual anon-post cleanup
-- [ ] `lib/anonCleanupCron.ts` — hourly batch (SystemConfig `anon_cleanup_batch_size`, default 10), oldest-first, audit-logged, self-stops at zero
-- [ ] Registered in `server.ts` via cronRegistry
+- [x] `lib/anonCleanupCron.ts` — hourly batch (SystemConfig `anon_cleanup_batch_size`, default 10), oldest-first, audit-logged, self-stops at zero
+- [x] Registered in `server.ts` via cronRegistry
 
 ### M41.4 — Frontend auth core
-- [ ] `stores/auth.ts` rewrite — session user, no PoW/fingerprint
-- [ ] `stores/authModal.ts` + `AuthModalProvider` (layout)
-- [ ] `components/AuthModal.tsx` — lazy-loaded, slide steps: credentials → OTP; forgot-password flow; guest option
-- [ ] `hooks/useRequireAuth.ts` — gate any action (auth or guest)
-- [ ] Wire gates: comment submit, FireButton, post/article submit, arguments, bookmarks, votes
-- [ ] Guest comment name prompt (localStorage remembered)
+- [x] `stores/auth.ts` rewrite — session user, no PoW/fingerprint
+- [x] `stores/authModal.ts` + `AuthModalProvider` (layout)
+- [x] `components/AuthModal.tsx` — lazy-loaded, slide steps: credentials → OTP; forgot-password flow; guest option
+- [x] `hooks/useRequireAuth.ts` — gate any action (auth or guest)
+- [x] Wire gates: comment submit, FireButton, post/article submit, arguments, bookmarks, votes
+- [x] Guest comment name prompt (localStorage remembered)
 
 ### M41.5 — Frontend removal + new pages
-- [ ] Pages: `/login`, `/register`, `/forgot-password`
-- [ ] `/settings` → Security: 2FA enable/disable + recovery key generation
-- [ ] Delete: proofOfWork, fingerprint, bip39, identity libs; AuthInitializer rewrite; SeedDisplayModal, SecureMyAuthority, FingerprintMergeDialog, /claim, settings identity sections
+- [x] Auth flows: login, register, forgot-password — implemented as slide steps inside the lazy `AuthModal` (credentials → OTP; forgot-email → OTP → new password). Dedicated `/login` `/register` `/forgot-password` pages were consolidated into the modal per the modal-first UX decision (plan §10.5 superseded).
+- [x] `/settings` → Security: 2FA enable/disable + recovery key generation (`settings/account/client.tsx`)
+- [x] Delete: proofOfWork, fingerprint, bip39, identity libs; AuthInitializer rewrite; SeedDisplayModal, SecureMyAuthority, FingerprintMergeDialog, /claim, settings identity sections
 
 ### M41.6 — Final gates + docs
-- [ ] All AGENTS.md gates (backend+frontend typecheck/lint/build, backend tests)
-- [ ] Live verification (register → OTP → login → comment; guest comment; forgot-password)
-- [ ] Docs sync: product_spec, rom, ram, not-implemented
+- [x] All AGENTS.md gates (backend+frontend typecheck/lint/build, backend tests) — backend 774 passed | 4 skipped (53 files); frontend 96 passed (12 files)
+- [~] Live verification — partial: `BREVO_API_KEY` still pending with owner (sender runs log-only mode, OTP codes in backend logs). Flow logic covered by unit tests + all CI gates green. Full register→OTP→login live pass requires the key.
+- [x] Docs sync: product_spec, rom, ram, not-implemented, milestones

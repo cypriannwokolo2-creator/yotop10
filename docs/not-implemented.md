@@ -64,11 +64,12 @@ Backend endpoints exist (17+ endpoints). Frontend needs:
 - Trust level thresholds via $R$: Scholar (R >= 7.5), Neutral (R=3.0-7.4), Entry/Troll (R < 3.0)
 - Weekly/daily arena seeding
 
-### 1.5 Auth & Stub Endpoints (Return 501)
+### 1.5 Stub Endpoints (Return 501)
 
-- `POST /api/auth/login`
-- `POST /api/auth/register`
-- `POST /api/auth/logout`
+> Auth endpoints (`/api/auth/login`, `/register`, `/logout`, plus
+> OTP/2FA/forgot-password flows) are IMPLEMENTED — M41 (2026-10-01),
+> `backend/src/routes/auth.ts`, `docs/plans-auth-m41.md`.
+
 - `GET /api/listings/*`
 - `POST /api/listings/*`
 - `PUT /api/listings/:id`
@@ -81,12 +82,7 @@ Backend endpoints exist (17+ endpoints). Frontend needs:
 - `PUT /api/users/:id`
 - `DELETE /api/users/:id`
 
-### 1.6 Identity Portability UX (M15 — Missing Pieces)
-
-- "This is your only key. We do not store this." warning UI
-- Optional JSON identity file download for seed phrase backup
-
-### 1.7 Reputation Points System
+### 1.6 Reputation Points System
 
 - `reputation_points` field on User model (additive: approval +50, fire +5, counter-list +25, HoF +100, daily visit +3)
 - `reputation_badges` field on User model
@@ -94,7 +90,7 @@ Backend endpoints exist (17+ endpoints). Frontend needs:
 - 7 unlock tiers requiring points + trust (subcategory submission at 500pts/0.5t, remove `a_` prefix at 2000pts/1.5t, queue priority at 3500pts/1.5t, authority badge at 7500pts/1.8t, auto-HoF at 15000pts/1.8t)
 - `/leaderboard` page — top users by reputation (trust >= 1.5 only)
 
-### 1.8 Admin UI Components (M10.14 — 7 Missing)
+### 1.7 Admin UI Components (M10.14 — 7 Missing)
 
 - `StatsChart` — line/bar chart component
 - `CategoryTree` — drag-drop tree view component
@@ -104,13 +100,13 @@ Backend endpoints exist (17+ endpoints). Frontend needs:
 - `ExportButton` — CSV/Excel export
 - `ConfirmDialog` — destructive action confirmation
 
-### 1.9 Moderation Phases 2-4
+### 1.8 Moderation Phases 2-4
 
 - **Phase 2**: AI Pre-Filtering — auto-reject obvious spam/gibberish
 - **Phase 3**: Scholar Fast-Track — trust 1.8+ bypasses review queue (5% spot checks)
 - **Phase 4**: Community Sovereignty — scholars vote to approve pending posts
 
-### 1.10 Admin Influencer Dashboard — The Arena (M10.15)
+### 1.9 Admin Influencer Dashboard — The Arena (M10.15)
 
 - Battle Monitor — posts sorted by `counter_count`
 - Duplicate Detection — background utility for alternate spellings
@@ -147,7 +143,6 @@ Backend endpoints exist (17+ endpoints). Frontend needs:
 - Profile page with posts/comments tabs ✅
 - Profile image upload ✅
 - **MISSING**: "Edit Display Name" on own profile
-- **MISSING**: "Secure My Authority" seed phrase section
 - **MISSING**: Stats tab (rate limit status, remaining counts, reset timers)
 - **MISSING**: Trust score badge (Scholar/Neutral/Troll) on profile header
 - **MISSING**: Privacy rules — pending/rejected posts only visible to author
@@ -220,4 +215,4 @@ unless explicit authorization to implement is given.
 | IndexNow API key hosting (`{KEY}.txt` at site root) + first live submission verification | docs/seo.md, backend/src/lib/indexnow.ts (code ready, key not yet generated) |
 | Google Search Console sitemap submission + URL Inspection validation | docs/seo.md (manual dashboard step, no code) |
 | Bing Webmaster Tools sitemap submission + IndexNow receipt check | docs/seo.md (manual dashboard step, no code) |
-| Disabled Features: registration, logins, OAuth, JWT for users, follow, connection, strike, report, communities, ephemeral threads, badges, multi-account, NextAuth, custom profiles | product_spec.md §14 |
+| Disabled Features: OAuth, follow, connection, strike, report, communities, ephemeral threads, badges, multi-account, NextAuth, custom profiles (registration/logins/JWT for users were ENABLED by M41, 2026-10-01) | product_spec.md §14 |
