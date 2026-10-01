@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect } from 'react';
-import { getFingerprint } from '@/lib/fingerprint';
 import { useAuthStore } from '@/stores/auth';
 
 export default function AuthInitializer() {
@@ -9,16 +8,12 @@ export default function AuthInitializer() {
   const initialized = useAuthStore((s) => s.initialized);
 
   useEffect(() => {
-    // Single-flight boot: exactly one identity resolution per mount.
+    // Single-flight boot: exactly one /auth/me resolution per mount.
     // fetchUser is single-flight in the store — concurrent calls share it.
-    // No polling: recovery happens explicitly (init-on-425) or on focus.
     fetchUser().catch(() => {});
 
-    // Warm the header fingerprint in the background (recovery hint only —
-    // the cookie is the authoritative identity).
-    getFingerprint().catch(() => {});
-
-    // Retry only when the user returns to a still-guest tab.
+    // Retry only when the user returns to a still-anonymous tab
+    // (e.g. they just logged in on another tab and came back).
     const onFocus = () => {
       const s = useAuthStore.getState();
       if (!s.user) fetchUser().catch(() => {});

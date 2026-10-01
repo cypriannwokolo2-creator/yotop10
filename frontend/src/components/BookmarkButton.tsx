@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Icon } from './icons/Icon';
 import { API } from '@/lib/api';
 import { toast } from '@/lib/toast';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 
 interface BookmarkButtonProps {
   postId: string;
@@ -15,6 +16,7 @@ export function BookmarkButton({ postId, initialBookmarked, contentType }: Bookm
   const [bookmarked, setBookmarked] = useState(initialBookmarked ?? false);
   const [pending, setPending] = useState(false);
   const [fetched, setFetched] = useState(false);
+  const { requireAuth } = useRequireAuth();
 
   useEffect(() => {
     if (initialBookmarked !== undefined) {
@@ -29,12 +31,8 @@ export function BookmarkButton({ postId, initialBookmarked, contentType }: Bookm
     return () => { cancelled = true; };
   }, [postId, initialBookmarked]);
 
-  const toggle = useCallback(
-    async (e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (pending) return;
-
+  const doToggle = useCallback(
+    async () => {
       const wasBookmarked = bookmarked;
       setBookmarked(!wasBookmarked);
       setPending(true);
@@ -49,12 +47,20 @@ export function BookmarkButton({ postId, initialBookmarked, contentType }: Bookm
         }
       } catch {
         setBookmarked(wasBookmarked);
-        toast.error('Something went wrong. Please try again.');
-      } finally {
-        setPending(false);
-      }
+        toast.error('Something went wrong. Please try again.');      } finally {
+      setPending(false);
+    }
+  }, [postId, bookmarked, contentType]);
+
+  const toggle = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (pending) return;
+      // Bookmarks require an account.
+      requireAuth(() => void doToggle());
     },
-    [postId, bookmarked, pending, contentType]
+    [requireAuth, doToggle, pending]
   );
 
   return (

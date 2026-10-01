@@ -14,45 +14,19 @@ export async function apiFetch<T>(
   const baseUrl = getBaseUrl();
   const url = `${baseUrl}${endpoint}`;
 
-  let deviceFingerprint: string | null = null;
-  if (typeof window !== 'undefined') {
-    try { deviceFingerprint = localStorage.getItem('yotop10_fp'); } catch { /* private browsing */ }
-  }
-
   const isFormData = options?.body instanceof FormData;
   const headers: Record<string, string> = {
     ...(!isFormData ? { 'Content-Type': 'application/json' } : {}),
     ...(options?.headers as Record<string, string> || {}),
   };
 
-  if (deviceFingerprint) {
-    headers['X-Device-Fingerprint'] = deviceFingerprint;
-  }
-
-  // Always send Tier 0 machine-stable signals for cross-browser matching
-  if (typeof window !== 'undefined') {
-    try {
-      headers['X-Tier0'] = JSON.stringify({
-        screenResolution: `${window.screen.width}x${window.screen.height}`,
-        colorDepth: window.screen.colorDepth,
-        hardwareConcurrency: navigator.hardwareConcurrency || 0,
-        timezoneOffset: new Date().getTimezoneOffset(),
-        platform: navigator.platform || 'unknown',
-        devicePixelRatio: window.devicePixelRatio,
-        maxTouchPoints: navigator.maxTouchPoints || 0,
-      });
-    } catch {}
-  }
+  // Session identity rides on the httpOnly session_token cookie
+  // (credentials: 'include'); guest identity on the guest_id cookie.
+  // No device-fingerprint headers — the fingerprint system is removed.
 
   let response: Response;
   try {
     response = await fetch(url, { ...options, headers, credentials: 'include' });
-
-    // Capture fingerprint merge token if present (cross-browser identity linking)
-    const mergeToken = response.headers.get('x-merge-token');
-    if (mergeToken && typeof window !== 'undefined') {
-      try { sessionStorage.setItem('yotop10_merge_token', mergeToken); } catch {}
-    }
   } catch (err) {
     // Network error (ECONNREFUSED, DNS failure, etc.) — backend unreachable
     throw new Error(`API Network Error: ${url} - ${(err as Error).message}`);

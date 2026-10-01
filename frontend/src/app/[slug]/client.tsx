@@ -19,6 +19,10 @@ import { CounterListSection } from '@/components/CounterListSection';
 import { AuthorityFlipBanner } from '@/components/AuthorityFlipBanner';
 import { RESERVED_ROUTES } from '@/lib/reservedRoutes';
 import { toPublicSlug } from '@/lib/username';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
+import { useAuthStore } from '@/stores/auth';
+
+const GUEST_NAME_KEY = 'yotop10_guest_name';
 
 interface ListItem {
   id: string;
@@ -154,18 +158,35 @@ export default function PostDetailClient({
     return () => { abortController.abort(); mountedRef.current = false; };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (RESERVED_ROUTES.has(slug)) {
-    return <NotFound />;
-  }
+  const { requireAuth } = useRequireAuth();
+  const authUser = useAuthStore((s) => s.user);
+  const [guestName, setGuestName] = useState('');
 
-  const handleSubmitComment = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Prefill the guest name once (remembered across visits).
+  useEffect(() => {
+    if (authUser) return;
+    try {
+      setGuestName(localStorage.getItem(GUEST_NAME_KEY) || '');
+    } catch { /* private browsing */ }
+  }, [authUser]);
+
+  const doSubmitComment = useCallback(async () => {
     if (!commentContent.trim() || submitting) return;
 
     setSubmitting(true);
 
     try {
-      await API.addComment(slug, commentContent, undefined, selectedItemId || undefined);
+      // Guests send a display name; signed-in users omit it.
+      const guest_name = authUser ? undefined : (guestName.trim() || undefined);
+      if (guest_name && (guest_name.length < 3 || guest_name.length > 32)) {
+        setCommentError('Guest name must be 3–32 characters.');
+        setSubmitting(false);
+        return;
+      }
+      await API.addComment(slug, commentContent, undefined, selectedItemId || undefined, guest_name);
+      if (guest_name) {
+        try { localStorage.setItem(GUEST_NAME_KEY, guest_name); } catch { /* ignore */ }
+      }
       setCommentContent('');
       setSelectedItemId(null);
       setPost(prev => ({ ...prev, comment_count: prev.comment_count + 1 }));
@@ -176,6 +197,13 @@ export default function PostDetailClient({
     } finally {
       setSubmitting(false);
     }
+  }, [commentContent, submitting, slug, selectedItemId, authUser, guestName, fetchComments]);
+
+  const handleSubmitComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!commentContent.trim() || submitting) return;
+    // Guests may comment (rate-limited, low visibility).
+    requireAuth(() => void doSubmitComment(), { guest: true });
   };
 
   const handleReplyContentChange = (commentId: string, content: string) => {
@@ -185,7 +213,7 @@ export default function PostDetailClient({
     }));
   };
 
-  const handleSubmitReply = async (parentCommentId: string) => {
+  const doSubmitReply = useCallback(async (parentCommentId: string) => {
     const formState = replyForms[parentCommentId];
     if (!formState?.content?.trim() || formState.submitting) return;
 
@@ -195,7 +223,8 @@ export default function PostDetailClient({
     }));
 
     try {
-      await API.addComment(slug, formState.content, parentCommentId, undefined);
+      const guest_name = authUser ? undefined : (guestName.trim() || undefined);
+      await API.addComment(slug, formState.content, parentCommentId, undefined, guest_name);
       setReplyForms(prev => ({
         ...prev,
         [parentCommentId]: { content: '', submitting: false }
@@ -209,6 +238,17 @@ export default function PostDetailClient({
         [parentCommentId]: { ...prev[parentCommentId], submitting: false }
       }));
     }
+  }, [slug, replyForms, authUser, guestName, fetchComments]);
+
+  if (RESERVED_ROUTES.has(slug)) {
+    return <NotFound />;
+  }
+
+  const handleSubmitReply = (parentCommentId: string) => {
+    const formState = replyForms[parentCommentId];
+    if (!formState?.content?.trim() || formState.submitting) return;
+    // Guests may comment (rate-limited, low visibility).
+    requireAuth(() => void doSubmitReply(parentCommentId), { guest: true });
   };
 
 
@@ -572,6 +612,21 @@ export default function PostDetailClient({
             {commentError && (
               <div role="alert" className="mb-3 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-400">
                 {commentError}
+              </div>
+            )}
+            {!authUser && (
+              <div className="mb-3.5">
+                <input
+                  type="text"
+                  value={guestName}
+                  onChange={(e) => setGuestName(e.target.value)}
+                  maxLength={32}
+                  placeholder="Your name (optional — appears as a guest)"
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-zinc-600 focus:border-orange-500/50 focus:outline-none"
+                />
+                <p className="mt-1.5 text-xs text-zinc-500">
+                  Guest comments may be collapsed and are rate-limited.
+                </p>
               </div>
             )}
             <textarea

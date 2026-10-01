@@ -7,6 +7,7 @@ import { Icon } from '@/components/icons/Icon';
 import { API } from '@/lib/api';
 import CategoryPickerModal from '@/components/CategoryPickerModal';
 import { getCategoryPath } from '@/lib/categories';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 
 const DEBATE_DRAFT_KEY = 'yotop10_debate_draft';
 
@@ -66,8 +67,9 @@ export default function DebateClient() {
       .catch(() => {});
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const { requireAuth } = useRequireAuth();
+
+  const doSubmit = async () => {
     if (!categorySlug || !title || !sideA || !sideB) {
       setError('Title, category, and both sides are required.');
       return;
@@ -105,6 +107,12 @@ export default function DebateClient() {
       } catch { /* not json */ }
       setError(msg || 'Failed to submit debate.');
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    // Posting requires an account.
+    requireAuth(() => void doSubmit());
   };
 
   return (

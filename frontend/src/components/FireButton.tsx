@@ -4,6 +4,7 @@ import { memo, useCallback, useState, type MouseEvent } from 'react';
 import { Icon } from './icons/Icon';
 import { API } from '@/lib/api';
 import { toast } from '@/lib/toast';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 
 /** Payload of POST /api/reactions (backend routes/reactions.ts). */
 export interface ToggleReactionResponse {
@@ -54,28 +55,33 @@ export const FireButton = memo(function FireButton({
   const [count, setCount] = useState(initialCount);
   const [reacted, setReacted] = useState(initialReacted);
   const [bump, setBump] = useState(false);
+  const { requireAuth } = useRequireAuth();
+
+  const doToggle = useCallback(async () => {
+    const nextReacted = !reacted;
+    const nextCount = count + (nextReacted ? 1 : -1);
+    setReacted(nextReacted);
+    setCount(nextCount);
+    setBump(true);
+
+    try {
+      const data = await API.toggleReaction(targetType, targetId) as ToggleReactionResponse;
+      onSync?.(data.fire_count, data.user_reacted);
+    } catch {
+      setReacted(!nextReacted);
+      setCount(count);
+      toast.error('Could not save your fire. Try again.');
+    }
+  }, [reacted, count, targetType, targetId, onSync]);
 
   const toggle = useCallback(
-    async (e: MouseEvent<HTMLButtonElement>) => {
+    (e: MouseEvent<HTMLButtonElement>) => {
       e.preventDefault();
       e.stopPropagation();
-
-      const nextReacted = !reacted;
-      const nextCount = count + (nextReacted ? 1 : -1);
-      setReacted(nextReacted);
-      setCount(nextCount);
-      setBump(true);
-
-      try {
-        const data = await API.toggleReaction(targetType, targetId) as ToggleReactionResponse;
-        onSync?.(data.fire_count, data.user_reacted);
-      } catch {
-        setReacted(!nextReacted);
-        setCount(count);
-        toast.error('Could not save your fire. Try again.');
-      }
+      // Guests may fire (rate-limited); everything else requires an account.
+      requireAuth(() => void doToggle(), { guest: true });
     },
-    [reacted, count, targetType, targetId, onSync]
+    [requireAuth, doToggle]
   );
 
   const height = size === 'sm' ? 'h-[34px]' : 'h-10';

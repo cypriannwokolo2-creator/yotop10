@@ -9,6 +9,7 @@ import { BookmarkButton } from './BookmarkButton';
 import { ShareButton } from './ShareButton';
 import { relativeTime } from '@/lib/dates';
 import { toPublicSlug } from '@/lib/username';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 
 interface ListItem {
   id: string;
@@ -54,7 +55,9 @@ export function ThisVsThatView({ slug, post, items }: ThisVsThatViewProps) {
   const pctA = Math.round((votesA / totalVotes) * 100);
   const pctB = 100 - pctA;
 
-  const castVote = useCallback(async (side: 'A' | 'B') => {
+  const { requireAuth } = useRequireAuth();
+
+  const doVote = useCallback(async (side: 'A' | 'B') => {
     if (pending) return;
     setPending(true);
 
@@ -97,6 +100,11 @@ export function ThisVsThatView({ slug, post, items }: ThisVsThatViewProps) {
       setPending(false);
     }
   }, [post.id, userVote, pending]);
+
+  const castVote = useCallback((side: 'A' | 'B') => {
+    // Votes require an account — no guest path.
+    requireAuth(() => void doVote(side));
+  }, [requireAuth, doVote]);
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-10 sm:pb-16">

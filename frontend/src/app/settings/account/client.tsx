@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useAuthStore } from '@/stores/auth';
-import { SecureMyAuthority } from '@/components/SecureMyAuthority';
 import { API } from '@/lib/api';
+import { toast } from '@/lib/toast';
 
 export default function AccountSettingsClient() {
   const authUser = useAuthStore(s => s.user);
@@ -25,6 +25,14 @@ export default function AccountSettingsClient() {
   });
   const [linksError, setLinksError] = useState<string | null>(null);
   const [confirmLogout, setConfirmLogout] = useState(false);
+
+  // Two-factor authentication state
+  const [twoFactor, setTwoFactor] = useState<{ enabled: boolean } | null>(null);
+  const [tfSetup, setTfSetup] = useState<{ secret_uri: string; recovery_codes: string[] } | null>(null);
+  const [tfCode, setTfCode] = useState('');
+  const [tfBusy, setTfBusy] = useState(false);
+  const [tfError, setTfError] = useState<string | null>(null);
+  const [tfNewCodes, setTfNewCodes] = useState<string[] | null>(null);
 
   const handleUpdateName = async () => {
     if (!newDisplayName.trim()) return;
@@ -75,8 +83,71 @@ export default function AccountSettingsClient() {
 
   const handleLogout = async () => {
     await logout();
-    // Force hard redirect to clear all React state + trigger fresh fingerprint
+    // Force hard redirect to clear all React state
     window.location.href = '/';
+  };
+
+  const startTwoFactorSetup = async () => {
+    setTfBusy(true);
+    setTfError(null);
+    try {
+      const data = await API.twoFactorSetup();
+      setTfSetup(data);
+      setTfNewCodes(null);
+    } catch (e) {
+      setTfError(e instanceof Error ? e.message : 'Could not start 2FA setup.');
+    } finally {
+      setTfBusy(false);
+    }
+  };
+
+  const enableTwoFactor = async () => {
+    if (tfCode.length !== 6) return;
+    setTfBusy(true);
+    setTfError(null);
+    try {
+      await API.twoFactorEnable(tfCode);
+      setTwoFactor({ enabled: true });
+      setTfSetup(null);
+      setTfCode('');
+      toast.success('Two-factor authentication enabled.');
+    } catch (e) {
+      setTfError(e instanceof Error ? e.message : 'Could not enable 2FA.');
+    } finally {
+      setTfBusy(false);
+    }
+  };
+
+  const disableTwoFactor = async () => {
+    if (tfCode.length !== 6) return;
+    setTfBusy(true);
+    setTfError(null);
+    try {
+      await API.twoFactorDisable(tfCode);
+      setTwoFactor({ enabled: false });
+      setTfCode('');
+      toast.success('Two-factor authentication disabled.');
+    } catch (e) {
+      setTfError(e instanceof Error ? e.message : 'Could not disable 2FA.');
+    } finally {
+      setTfBusy(false);
+    }
+  };
+
+  const regenerateRecoveryCodes = async () => {
+    if (tfCode.length !== 6) return;
+    setTfBusy(true);
+    setTfError(null);
+    try {
+      const data = await API.twoFactorRecovery(tfCode);
+      setTfNewCodes(data.recovery_codes);
+      setTfCode('');
+      toast.success('Recovery codes regenerated.');
+    } catch (e) {
+      setTfError(e instanceof Error ? e.message : 'Could not regenerate codes.');
+    } finally {
+      setTfBusy(false);
+    }
   };
 
   return (
@@ -205,11 +276,88 @@ export default function AccountSettingsClient() {
           )}
         </div>
 
+        {/* Two-Factor Authentication */}
+        <div className="rounded-xl border border-white/5 bg-white/[0.03] px-5 py-5">
+          <h2 className="text-xs font-bold text-white uppercase tracking-wider mb-3">Two-Factor Authentication</h2>
+          {twoFactor?.enabled ? (
+            <div className="space-y-4">
+              <p className="text-2xs text-emerald-400">Enabled — a 6-digit code is required at each new-device login.</p>
+              {tfNewCodes && (
+                <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
+                  <p className="mb-2 text-xs font-semibold text-amber-400">New recovery codes (store them safely — shown once):</p>
+                  <ul className="grid grid-cols-2 gap-1">
+                    {tfNewCodes.map(code => <li key={code} className="font-mono text-xs text-zinc-300">{code}</li>)}
+                  </ul>
+                </div>
+              )}
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={tfCode}
+                  onChange={(e) => setTfCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="6-digit code"
+                  className="w-40 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs text-zinc-100 placeholder:text-zinc-600 focus:border-orange-500 focus:outline-none"
+                />
+                <button onClick={regenerateRecoveryCodes} disabled={tfBusy} className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-xs font-medium text-zinc-300 hover:text-zinc-100 disabled:opacity-50">
+                  Regenerate recovery codes
+                </button>
+                <button onClick={disableTwoFactor} disabled={tfBusy} className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-xs font-semibold text-red-400 hover:bg-red-500/20 disabled:opacity-50">
+                  Disable 2FA
+                </button>
+              </div>
+            </div>
+          ) : tfSetup ? (
+            <div className="space-y-4">
+              <p className="text-2xs text-zinc-400">
+                Scan this URI with any TOTP app (Google Authenticator, Authy, 1Password):
+              </p>
+              <div className="break-all rounded-lg border border-white/10 bg-zinc-900 p-3 font-mono text-xs text-orange-400">
+                {tfSetup.secret_uri}
+              </div>
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3">
+                <p className="mb-2 text-xs font-semibold text-amber-400">Recovery codes (store them safely — shown once):</p>
+                <ul className="grid grid-cols-2 gap-1">
+                  {tfSetup.recovery_codes.map(code => <li key={code} className="font-mono text-xs text-zinc-300">{code}</li>)}
+                </ul>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={tfCode}
+                  onChange={(e) => setTfCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="Enter code from app"
+                  className="w-40 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs text-zinc-100 placeholder:text-zinc-600 focus:border-orange-500 focus:outline-none"
+                />
+                <button onClick={enableTwoFactor} disabled={tfBusy || tfCode.length !== 6} className="rounded-lg bg-orange-500 px-4 py-2 text-xs font-semibold text-white hover:bg-orange-600 disabled:opacity-50">
+                  Enable 2FA
+                </button>
+                <button onClick={() => setTfSetup(null)} className="rounded-lg border border-white/10 px-4 py-2 text-xs font-medium text-zinc-400 hover:text-zinc-200">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <p className="text-2xs text-zinc-400 mb-3">
+                Protect your account with a time-based code at each new-device login.
+              </p>
+              <button onClick={startTwoFactorSetup} disabled={tfBusy} className="rounded-lg bg-orange-500 px-4 py-2 text-xs font-semibold text-white hover:bg-orange-600 disabled:opacity-50">
+                {tfBusy ? 'Preparing…' : 'Enable two-factor authentication'}
+              </button>
+            </div>
+          )}
+          {tfError && <p className="mt-2 text-xs text-red-400">{tfError}</p>}
+        </div>
+
         {/* Logout */}
         <div className="rounded-xl border border-red-500/10 bg-red-500/[0.02] px-5 py-5">
           <h2 className="text-xs font-bold text-red-400 uppercase tracking-wider mb-3">Logout</h2>
           <p className="text-2xs text-zinc-600 mb-4">
-            Clears your session and generates a new anonymous identity. Your existing posts and comments remain linked to your current identity.
+            Clears your session on this device. Your posts and comments stay linked to your account.
           </p>
           {confirmLogout ? (
             <div className="flex items-center gap-3">
@@ -222,32 +370,9 @@ export default function AccountSettingsClient() {
             </div>
           ) : (
             <button onClick={() => setConfirmLogout(true)} className="rounded-xl border border-red-500/30 bg-red-500/10 px-5 py-2.5 text-xs font-semibold text-red-400 transition hover:bg-red-500/20">
-              Logout &amp; Reset Identity
+              Logout
             </button>
           )}
-        </div>
-
-        {/* Transfer Identity */}
-        <div className="rounded-xl border border-orange-500/10 bg-orange-500/[0.02] px-5 py-5">
-          <h2 className="text-xs font-bold text-orange-400 uppercase tracking-wider mb-3">Transfer Identity</h2>
-          <p className="text-2xs text-zinc-600 mb-4">
-            Generate a seed phrase to transfer your identity to another device or browser.
-          </p>
-          <SecureMyAuthority />
-        </div>
-
-        {/* Recover Identity — always visible */}
-        <div className="rounded-xl border border-white/5 bg-white/[0.02] px-5 py-5">
-          <h2 className="text-xs font-bold text-white uppercase tracking-wider mb-3">Recover Identity</h2>
-          <p className="text-2xs text-zinc-600 mb-4">
-            Already have a 12-word seed phrase? Use it to recover your identity on this device. All your posts, comments, and reputation will be restored.
-          </p>
-          <Link
-            href="/claim"
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-pink-500 px-5 py-2.5 text-xs font-semibold text-white shadow-lg shadow-orange-500/25 transition hover:shadow-xl active:scale-[0.98]"
-          >
-            Recover Identity &rarr;
-          </Link>
         </div>
       </div>
     </div>

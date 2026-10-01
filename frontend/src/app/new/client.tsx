@@ -118,7 +118,7 @@ export default function NewPostClient() {
       </div>
 
       <p className="mt-8 text-center text-3xs text-zinc-700">
-        All posts are anonymous. Your device fingerprint acts as your identity.
+        Sign in to publish — your account carries your posts and reputation.
       </p>
     </div>
   );

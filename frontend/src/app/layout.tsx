@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { Anton, Monoton, Ubuntu, Fraunces, Poppins, Oswald } from "next/font/google";
 import "./globals.css";
 import AuthInitializer from "@/components/AuthInitializer";
+import AuthModal from "@/components/AuthModal";
 import ToastContainer from "@/components/Toast";
 import AnalyticsBeacon from "@/components/AnalyticsBeacon";
 import { DynamicIsland } from "@/components/DynamicIsland";
@@ -13,7 +14,6 @@ import { DesktopSidebar } from "@/components/DesktopSidebar";
 import { ContentShell } from "@/components/ContentShell";
 import { SlideMenuRouter } from "@/components/SlideMenuRouter";
 // import PWAInstallPrompt from "@/components/PWAInstallPrompt";
-import { FingerprintMergeDetector } from "@/components/FingerprintMergeDialog";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
 
 const anton = Anton({ weight: '400', subsets: ['latin'], display: 'swap', variable: '--font-display' });
@@ -159,6 +159,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Suspense>
           <AuthInitializer />
         </Suspense>
+        <Suspense fallback={null}>
+          <AuthModal />
+        </Suspense>
         <ContentShell>{children}</ContentShell>
         <Suspense>
           <ToastContainer />
@@ -169,9 +172,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* <Suspense>
           <PWAInstallPrompt />
         </Suspense> */}
-        <Suspense fallback={<div className="h-0" />}>
-          <FingerprintMergeDetector />
-        </Suspense>
+
         <Suspense fallback={null}>
           <DynamicIsland />
         </Suspense>

@@ -25,6 +25,16 @@ vi.mock('./icons/Icon', () => ({
     React.createElement('span', { 'data-testid': `icon-${props.name}`, 'data-fill': props.fill }),
 }));
 
+vi.mock('@/hooks/useRequireAuth', () => ({
+  useRequireAuth: () => ({
+    requireAuth: (action: () => void) => {
+      action();
+      return true;
+    },
+    user: null,
+  }),
+}));
+
 import { FireButton } from './FireButton';
 
 describe('FireButton', () => {

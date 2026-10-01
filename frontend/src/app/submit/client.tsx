@@ -7,6 +7,7 @@ import { API, PostSubmission, PostSubmissionResponse, TitleCheckResponse } from 
 import { Icon } from '@/components/icons/Icon';
 import CategoryPickerModal from '@/components/CategoryPickerModal';
 import { getCategoryPath } from '@/lib/categories';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 const DRAFT_KEY = 'yotop10_submit_draft';
 const DEBOUNCE_MS = 500;
 const DRAFT_EXPIRY_MS = 3600000;
@@ -271,8 +272,9 @@ export default function SubmitClient({ initialType, parentSlug }: { initialType?
     if (field === 'title' || field === 'justification') clearError('items');
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const { requireAuth } = useRequireAuth();
+
+  const doSubmit = async () => {
     if (!validateForm()) return;
     setSubmitting(true);
     setErrors({});
@@ -320,6 +322,12 @@ export default function SubmitClient({ initialType, parentSlug }: { initialType?
       else if (body?.error) setErrors({ title: body.error as string });
       else setErrors({ title: msg || 'Failed to submit post.' });
     } finally { setSubmitting(false); }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    // Posting requires an account.
+    requireAuth(() => void doSubmit());
   };
 
   const typeHelp: Record<string, { title: string; tip: string; color: string }> = {

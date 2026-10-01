@@ -7,6 +7,7 @@ import { ArgumentBar } from './ArgumentBar';
 import { cleanTitle } from '@/lib/dates';
 import { apiFetch } from '@/lib/api/client';
 import type { ArgumentPost } from '@/lib/api/types';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 
 const POST_TYPE_CONFIG: Record<string, { label: string; bgClass: string; textClass: string }> = {
   this_vs_that: { label: 'VS', bgClass: 'bg-orange-500/10', textClass: 'text-orange-400' },
@@ -38,7 +39,9 @@ export function ArgumentCard({ argument }: ArgumentCardProps) {
   const topComment = argument.top_comments?.[0];
   const isVotable = argument.post_type === 'this_vs_that';
 
-  const handleVote = (side: 'A' | 'B') => {
+  const { requireAuth } = useRequireAuth();
+
+  const doVote = (side: 'A' | 'B') => {
     if (!isVotable) return;
     const pid = argument.id;
     if (!pid) return;
@@ -75,6 +78,11 @@ export function ArgumentCard({ argument }: ArgumentCardProps) {
       setSupportPct(argument.support_pct);
       setContradictPct(argument.contradict_pct);
     });
+  };
+
+  const handleVote = (side: 'A' | 'B') => {
+    // Votes require an account — no guest path.
+    requireAuth(() => doVote(side));
   };
 
   return (

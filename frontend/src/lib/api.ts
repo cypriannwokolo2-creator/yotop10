@@ -2,7 +2,7 @@ import { postsApi } from './api/endpoints/posts';
 import { categoriesApi } from './api/endpoints/categories';
 import { reactionsApi } from './api/endpoints/reactions';
 import { usersApi } from './api/endpoints/users';
-import { identityApi } from './api/endpoints/identity';
+import { authApi } from './api/endpoints/auth';
 import { adminApi } from './api/endpoints/admin';
 import { articlesApi } from './api/endpoints/articles';
 import { exploreApi } from './api/endpoints/explore';
@@ -20,7 +20,7 @@ export const API = {
   toggleReaction: reactionsApi.toggleReaction,
   getReactionState: reactionsApi.getReactionState,
   ...usersApi,
-  ...identityApi,
+  ...authApi,
   ...articlesApi,
   ...exploreApi,
   ...bookmarksApi,

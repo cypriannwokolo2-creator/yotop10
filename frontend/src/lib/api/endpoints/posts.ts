@@ -24,10 +24,10 @@ export const postsApi = {
   getComments: (postId: string): Promise<CommentsResponse> =>
     apiFetch(`/posts/${postId}/comments`),
 
-  addComment: (postId: string, content: string, parent_comment_id?: string, list_item_id?: string) =>
+  addComment: (postId: string, content: string, parent_comment_id?: string, list_item_id?: string, guest_name?: string) =>
     apiFetch(`/posts/${postId}/comments`, {
       method: 'POST',
-      body: JSON.stringify({ content, parent_comment_id, list_item_id }),
+      body: JSON.stringify({ content, parent_comment_id, list_item_id, guest_name }),
     }),
 
   addPost: (data: PostSubmission): Promise<PostSubmissionResponse> =>

@@ -9,7 +9,6 @@ import { formatDate } from '@/lib/dates';
 import { Icon } from '@/components/icons/Icon';
 import { useAuthStore } from '@/stores/auth';
 import { useRateLimitStore } from '@/stores/rateLimit';
-import { SecureMyAuthority } from '@/components/SecureMyAuthority';
 import { toPublicSlug } from '@/lib/username';
 
 interface UserProfile {
@@ -313,13 +312,6 @@ export default function UserProfileClient({ initialProfile }: { initialProfile: 
             </div>
           )}
 
-          {/* SecureMyAuthority — moved from bottom to rail for own profile */}
-          {isOwn && (
-            <div className="hidden lg:block">
-              <SecureMyAuthority />
-            </div>
-          )}
-
           {/* ─── MOBILE Links — after Reputation, hidden when empty (md:hidden) ─── */}
           {(profile.links?.medium || profile.links?.x || profile.links?.github) && (
             <div className="md:hidden">
@@ -531,8 +523,6 @@ export default function UserProfileClient({ initialProfile }: { initialProfile: 
         </div>
       )}
 
-      {/* ─── Secure My Authority — mobile only (desktop in rail) ─── */}
-      {isOwn && <div className="mt-8 lg:hidden"><SecureMyAuthority /></div>}
         </div>
       </div>
     </div>

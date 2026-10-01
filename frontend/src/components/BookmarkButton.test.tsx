@@ -34,6 +34,16 @@ vi.mock('./icons/Icon', () => ({
     }),
 }));
 
+vi.mock('@/hooks/useRequireAuth', () => ({
+  useRequireAuth: () => ({
+    requireAuth: (action: () => void) => {
+      action();
+      return true;
+    },
+    user: null,
+  }),
+}));
+
 import { BookmarkButton } from '@/components/BookmarkButton';
 
 describe('BookmarkButton', () => {
