@@ -3,15 +3,15 @@ import Link from 'next/link';
 /**
  * Brand mark — pixel-matched to public/icon-512.png (the favicon).
  * 5 rounded bars on a 512px grid, scaled into a 40x40 viewBox (x40/512):
- * top 2 bars are shorter and right-aligned, bottom 3 are wider; every bar
- * shares the same right edge (30.55). Fill #d24924 is sampled from the PNG.
+ * top 2 bars are shorter (right edge 30.55), bottom 3 are wider (right edge
+ * 30.47); all are right-aligned. Fill #d24924 is sampled from the PNG.
  */
 const BARS = [
-  { x: 15, y: 1.8, w: 15.55, h: 6.02 },
-  { x: 15, y: 8.83, w: 15.55, h: 6.09 },
-  { x: 8.44, y: 15.94, w: 22.11, h: 6.72 },
-  { x: 8.44, y: 23.59, w: 22.11, h: 6.8 },
-  { x: 8.44, y: 31.41, w: 22.11, h: 7.27 },
+  { x: 15, y: 1.8, w: 15.55, h: 5.94 },
+  { x: 15, y: 8.91, w: 15.55, h: 6.02 },
+  { x: 8.52, y: 16.02, w: 21.95, h: 6.64 },
+  { x: 8.52, y: 23.59, w: 21.95, h: 6.8 },
+  { x: 8.52, y: 31.48, w: 21.95, h: 7.11 },
 ] as const;
 
 const BAR_FILL = '#d24924';
@@ -20,7 +20,7 @@ const BAR_FILL = '#d24924';
 const BAR_RADIUS = 0.22;
 
 /** Slides the short top bars left until they line up with the wide ones. */
-const BAR_ACTIVE_X = -(15 - 8.44);
+const BAR_ACTIVE_X = -(15 - 8.52);
 
 const BAR_TRANSITION = 'transform 300ms cubic-bezier(0.22, 1, 0.36, 1)';
 

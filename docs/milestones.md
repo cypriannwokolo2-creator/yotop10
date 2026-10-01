@@ -2090,3 +2090,13 @@ These features from the old social platform are NOT part of V1:
 - [x] All AGENTS.md gates (backend+frontend typecheck/lint/build, backend tests) — backend 774 passed | 4 skipped (53 files); frontend 96 passed (12 files)
 - [~] Live verification — partial: `BREVO_API_KEY` still pending with owner (sender runs log-only mode, OTP codes in backend logs). Flow logic covered by unit tests + all CI gates green. Full register→OTP→login live pass requires the key.
 - [x] Docs sync: product_spec, rom, ram, not-implemented, milestones
+
+## M42 — Brand logo = favicon (2026-10-02)
+
+The favicon IS the main logo; every logo surface now renders its exact mark (geometry re-measured from `public/icon-512.png` on a 40×40 grid).
+
+- [x] OG-image `LogoMark` (`lib/seo/ogImageLayout.tsx`) rebuilt: 3-bar approximation (`[46,64,30]`, h9, r5, `#e8492b`) → exact 5-bar favicon geometry, rendered 1:1 in px (top-2 bars 15.55w short, bottom-3 21.95w wide, all right-aligned, `borderRadius = 0.22 × h`), fill `#d24924` sampled from the PNG
+- [x] `LIGHT.bar` `#e8492b` → `#d24924` (brand red sampled from the favicon; also RankRow's default accent)
+- [x] App `components/Logo.tsx` BARS corrected to the measured extents (wide bars x=8.52/w=21.95, right edge 30.47; heights 5.94/6.02/6.64/6.8/7.11; `BAR_ACTIVE_X` recomputed)
+- [x] `public/generate-icons.sh` rewritten — was generating an orange 'Y' letter on dark (never matched the shipped favicon); now draws the real 5-bar mark at 512px and derives the full favicon set
+- [x] Gates: frontend typecheck ✅ lint ✅ (0 errors, 0 warnings) build ✅

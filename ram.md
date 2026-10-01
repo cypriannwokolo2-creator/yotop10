@@ -1,9 +1,9 @@
 # RAM.md — Random Access Memory: Current Task State
 
 > **Last updated**: 2026-10-02
-> **Working tree**: M41 docs-sync changes uncommitted (docs only)
+> **Working tree**: M42 logo=favicon changes (frontend + docs)
 > **Branch**: main
-> **Latest commits**: `6fe947f7 [M41.4]`, `4acb52b4 [M41.3]`, `69910136 [M41.2]`
+> **Latest commits**: `297a0f96 [M41.6]`, `6fe947f7 [M41.4]`, `4acb52b4 [M41.3]`
 
 ---
 
@@ -91,17 +91,28 @@ Hardcoded JWT, orphaned setInterval, $regex injection, stub 200s, health check o
 
 ## Next Steps (Priority Suggestion)
 
-1. **Logo = favicon** — make the site logo match the favicon (the favicon IS the main logo; frontend in scope)
-2. **Lock in stability** — Fix 5 remaining ROM issues (crash/data integrity)
-3. **Complete admin UI** — Categories tree view, remaining components
-4. **Build the Arena** — M5.6 Counter-List System (major feature)
-5. **Deploy & verify** — Production deployment
-6. **Post-MVP** — V2 features, theming, notifications
+1. **Lock in stability** — Fix 5 remaining ROM issues (crash/data integrity)
+2. **Complete admin UI** — Categories tree view, remaining components
+3. **Build the Arena** — M5.6 Counter-List System (major feature)
+4. **Deploy & verify** — Production deployment
+5. **Post-MVP** — V2 features, theming, notifications
 
 ---
 
 ## Latest Verification
 
+- **M42 (2026-10-02) — Logo = favicon**: the favicon IS the main logo, so every
+  logo surface now renders its exact mark. OG-image `LogoMark`
+  (`lib/seo/ogImageLayout.tsx`) rebuilt from a 3-bar approximation
+  (`[46,64,30]`, h9, r5, `#e8492b`) to the favicon's measured 5-bar geometry
+  (40-grid rendered 1:1 px: top-2 bars 15.55w short, bottom-3 21.95w wide,
+  all right-aligned, r ≈ 0.22×h, fill `#d24924` sampled from `icon-512.png`);
+  `LIGHT.bar` → `#d24924` (also the RankRow default accent). App `Logo.tsx`
+  bar values corrected to the measured extents (wide bars x=8.52/w=21.95,
+  right edge 30.47 — was 8.44/22.11; heights 5.94/6.02/6.64/6.8/7.11).
+  `public/generate-icons.sh` rewritten — it generated an orange 'Y' letter that
+  never matched the shipped favicon; now draws the real 5-bar mark and derives
+  the full favicon set. Gates: frontend typecheck ✅ lint ✅ (0/0) build ✅.
 - **M41 completion (2026-10-01/02)** — real authentication system shipped across 5 commits
   (`f79eb959`→`6fe947f7`): backend `/api/auth/*` (register/verify, login/verify/2fa,
   forgot/reset-password, logout, me, 2FA setup/enable/disable/recovery), session = httpOnly

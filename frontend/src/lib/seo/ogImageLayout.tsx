@@ -170,7 +170,7 @@ export const LIGHT = {
   ink: '#111111',
   sub: '#6b7280',
   faint: '#f0f0f2',
-  bar: '#e8492b',
+  bar: '#d24924', /* favicon red, sampled from icon-512.png */
   ctaBlack: '#111111',
   ctaRed: '#d92d20',
 } as const;
@@ -206,13 +206,34 @@ export function LightFrame({ children }: { children: React.ReactNode }) {
   );
 }
 
+/* Brand mark — pixel-matched to public/icon-512.png (the favicon).
+   5 rounded bars on the favicon's 40×40 grid, rendered 1:1 in px:
+   the top 2 bars are shorter, every bar is right-aligned. Corner
+   radius is r ≈ 0.22 × bar height, sampled from the PNG. */
+const BRAND_BARS = [
+  { w: 15.55, h: 5.94 },
+  { w: 15.55, h: 6.02 },
+  { w: 21.95, h: 6.64 },
+  { w: 21.95, h: 6.8 },
+  { w: 21.95, h: 7.11 },
+] as const;
+
+const BRAND_BAR_RADIUS = 0.22;
+
 export function LogoMark() {
-  const bars = [46, 64, 30];
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-        {bars.map((w, i) => (
-          <div key={i} style={{ width: w, height: 9, borderRadius: 5, background: LIGHT.bar }} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'flex-end' }}>
+        {BRAND_BARS.map((bar, i) => (
+          <div
+            key={i}
+            style={{
+              width: bar.w,
+              height: bar.h,
+              borderRadius: bar.h * BRAND_BAR_RADIUS,
+              background: LIGHT.bar,
+            }}
+          />
         ))}
       </div>
       <span style={{ fontSize: 28, fontWeight: 700, color: LIGHT.ink }}>YoTop10</span>
