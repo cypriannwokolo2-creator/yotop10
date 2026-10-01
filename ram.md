@@ -1,9 +1,35 @@
 # RAM.md — Random Access Memory: Current Task State
 
-> **Last updated**: 2026-09-15
-> **Working tree**: Clean — committed and pushed
-> **Branch**: main → up to date with origin/main
-> **Latest commits**: `d1d0526 [M04.1]`, `122960f [M15.1]`, `dae0916 [M18.6]`, `e4d6821 [M20.3]` (+M20.1/M20.2/DOC)
+> **Last updated**: 2026-10-01
+> **Working tree**: Clean at `ab224374 [M40.3]` (reverted from M41 experiments)
+> **Branch**: main
+> **Latest commits**: `ab224374 [M40.3]`, `5aca8d1d [M40.3]`, `03964d3f [M40.3]`
+
+---
+
+## 🚨 CURRENT TASK: M41 — Real Authentication System
+
+**Active**: 2026-10-01 — replacing the anonymous fingerprint-identity system (M11/M15) with email/password auth.
+
+**Design doc**: `docs/plans-auth-m41.md` (COMPLETE — read before coding).
+
+**User decisions**:
+1. OTP at registration + forgot-password; new-device login requires email OTP (password-only on trusted device); 2FA settings with recovery keys
+2. Guest option in modal: guests may comment/fire with rate limits + low-visibility comments; submit/arguments require login
+3. Brevo email provider (key ready — owner to paste into `backend/.env` as `BREVO_API_KEY`)
+4. Legacy anon posts are mock data → gradual removal job (10/hour); admin composes real content
+5. Crypto identity system (seed phrases, /claim, device linking, merge dialogs) — REMOVED entirely
+6. Session = httpOnly cookie JWT (same pattern as admin `admin_token`)
+
+**Sub-milestones** (checkpoint after each):
+- [ ] M41.1 — Backend auth core: schemas, otp, brevo, totp, passwords, userAuth lib/middleware, User model + migration, `/api/auth/*` routes
+- [ ] M41.2 — Backend removal: fingerprint middleware, identity routes, comment + reaction guest paths
+- [ ] M41.3 — Gradual anon-post cleanup cron (SystemConfig knob)
+- [ ] M41.4 — Frontend: auth store rewrite, lazy AuthModal (slide steps), authModal store, useRequireAuth gating, guest comment name prompt
+- [ ] M41.5 — Frontend removal + pages: /login /register /forgot-password, 2FA settings, delete anon-identity UI
+- [ ] M41.6 — Final gates + live verification + docs sync
+
+**Full plan, API contract, removal lists, security checklist**: see `docs/plans-auth-m41.md`.
 
 ---
 
@@ -59,6 +85,7 @@ Hardcoded JWT, orphaned setInterval, $regex injection, stub 200s, health check o
 | 2.10 | Non-null assertion after findById | `!` in posts.ts:488 |
 
 ### Unfinished features:
+- **M41** — Real authentication system (IN PROGRESS — see Current Task above)
 - **M5.6** — Counter-List System (The Arena): challenge/rebuttal, comparison engine, SEO governance
 - **M10.7** — Categories Management frontend: tree view, drag-drop, bulk ops, analytics
 - **M10.14** — Admin UI components: StatsChart, CategoryTree, UserBadge, SearchInput, DateRangePicker, ExportButton, ConfirmDialog
@@ -73,7 +100,8 @@ Hardcoded JWT, orphaned setInterval, $regex injection, stub 200s, health check o
 
 ## Next Steps (Priority Suggestion)
 
-1. **Lock in stability** — Fix 5 remaining ROM issues (crash/data integrity)
+1. **M41** — Execute the auth system per `docs/plans-auth-m41.md` (CURRENT TASK, above)
+2. **Lock in stability** — Fix 5 remaining ROM issues (crash/data integrity)
 2. **Complete admin UI** — Categories tree view, remaining components
 3. **Build the Arena** — M5.6 Counter-List System (major feature)
 4. **Deploy & verify** — Production deployment

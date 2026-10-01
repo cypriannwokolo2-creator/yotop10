@@ -2037,3 +2037,53 @@ These features from the old social platform are NOT part of V1:
 - [x] `docs/plans-mod-system-flaws.md` — 11 flaw review
 - [x] `docs/milestones.md` — This section
 - [x] `docs/build-status.md` — Counts updated
+
+---
+
+## M41 — Real Authentication System (email/password + OTP)
+
+> Replaces the anonymous fingerprint-identity system (M11/M15) in full.
+> Design doc: `docs/plans-auth-m41.md`.
+
+### M41.1 — Backend auth core
+- [ ] Zod schemas (`backend/src/schemas/auth.ts`) for all auth bodies
+- [ ] `lib/otp.ts` — 6-digit OTP, Redis storage, 10-min TTL, 5 attempts, send-rate limits
+- [ ] `lib/brevo.ts` — Brevo transactional email (log-only mode without `BREVO_API_KEY`)
+- [ ] `lib/totp.ts` — RFC 6238 TOTP + recovery codes (no new dependency)
+- [ ] `lib/passwords.ts` — bcryptjs 12-round helpers + strength validation
+- [ ] `lib/userAuth.ts` — user JWT issue/verify (httpOnly `session_token` cookie, token_version)
+- [ ] `middleware/userAuth.ts` — session → `req.user`; guest cookie → `req.guest_id`
+- [ ] User model: email, password_hash, email_verified_at, token_version, trusted_devices, two_factor, legacy_anonymous
+- [ ] Startup migration: drop device_fingerprint unique index, sparse email index, flag legacy users
+- [ ] Routes: register, register/verify, login, login/verify, login/2fa, forgot-password, reset-password, logout, me, 2fa/*
+- [ ] Unit tests (otp, totp, passwords)
+
+### M41.2 — Backend removal + guest paths
+- [ ] Remove fingerprint middleware (minting, grace, PoW bootstrap)
+- [ ] Delete `/api/users/init`, `/api/users/challenge`, `/api/identity/*`, `/api/fingerprint/*`, merge routes
+- [ ] Delete identity libs + AuthChallenge/UserDevice models
+- [ ] Comments: session-or-guest submission (guest_name, low_visibility, 5/hr)
+- [ ] Reactions: guest fires via guest_id (20/hr)
+- [ ] `/api/users/me` alias to `/api/auth/me`
+
+### M41.3 — Gradual anon-post cleanup
+- [ ] `lib/anonCleanupCron.ts` — hourly batch (SystemConfig `anon_cleanup_batch_size`, default 10), oldest-first, audit-logged, self-stops at zero
+- [ ] Registered in `server.ts` via cronRegistry
+
+### M41.4 — Frontend auth core
+- [ ] `stores/auth.ts` rewrite — session user, no PoW/fingerprint
+- [ ] `stores/authModal.ts` + `AuthModalProvider` (layout)
+- [ ] `components/AuthModal.tsx` — lazy-loaded, slide steps: credentials → OTP; forgot-password flow; guest option
+- [ ] `hooks/useRequireAuth.ts` — gate any action (auth or guest)
+- [ ] Wire gates: comment submit, FireButton, post/article submit, arguments, bookmarks, votes
+- [ ] Guest comment name prompt (localStorage remembered)
+
+### M41.5 — Frontend removal + new pages
+- [ ] Pages: `/login`, `/register`, `/forgot-password`
+- [ ] `/settings` → Security: 2FA enable/disable + recovery key generation
+- [ ] Delete: proofOfWork, fingerprint, bip39, identity libs; AuthInitializer rewrite; SeedDisplayModal, SecureMyAuthority, FingerprintMergeDialog, /claim, settings identity sections
+
+### M41.6 — Final gates + docs
+- [ ] All AGENTS.md gates (backend+frontend typecheck/lint/build, backend tests)
+- [ ] Live verification (register → OTP → login → comment; guest comment; forgot-password)
+- [ ] Docs sync: product_spec, rom, ram, not-implemented
