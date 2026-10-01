@@ -47,3 +47,6 @@ docs/handbook/build/
 
 # Local reference drops (never commit, never push)
 ref-yotop10/
+
+# Migration rollback dumps (contain device fingerprints — NEVER commit)
+backend/uploads/migrations-backups/

@@ -1,9 +1,7 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import Link from 'next/link';
-import { cookies } from 'next/headers';
 import { PostCarouselCard } from '@/components/PostCarouselCard';
-import { LandingView } from '@/components/LandingView';
 import { DesktopCarousel } from '@/components/DesktopCarousel';
 import { HomeCategoryFeed } from '@/components/HomeCategoryFeed';
 import { HomeDebates } from '@/components/HomeDebates';
@@ -54,10 +52,15 @@ interface DebateItem {
 interface ArticleItem {
   slug: string;
   title: string;
+  body?: string;
   cover_image?: string;
   reading_time?: number;
   author_username?: string;
   author_display_name?: string;
+  category_name?: string;
+  category_slug?: string;
+  created_at?: string;
+  published_at?: string;
 }
 
 async function fetchJson<T>(url: string, fallback: T): Promise<T> {
@@ -109,23 +112,6 @@ export const metadata: Metadata = {
 export const runtime = 'nodejs';
 
 export default async function Home() {
-  // Smart homepage: brand-new visitors (no usable identity cookie) get the
-  // reference-style landing page; everyone else gets the feed. /users/me is
-  // read-only (never mints), so this check has no side effects.
-  let showLanding = true;
-  try {
-    const cookieHeader = (await cookies()).toString();
-    if (cookieHeader) {
-      const meRes = await fetch(`${API_BASE}/users/me`, {
-        headers: { cookie: cookieHeader },
-        cache: 'no-store',
-      });
-      showLanding = !meRes.ok;
-    }
-  } catch {
-    showLanding = true;
-  }
-
   const [postsData, catsData, argsData, artsData, factsData, trendingData, hofData] = await Promise.all([
     fetchJson<PostsResponse>(`${API_BASE}/posts?post_type=top_list%2Cbest_of%2Cworst_of`, { posts: [] }),
     fetchJson<{ categories: CategoryItem[] }>(`${API_BASE}/categories`, { categories: [] }),
@@ -156,19 +142,6 @@ export default async function Home() {
   const hofEntries = (hofData.featured || []).slice(0, 3);
 
   const hasContent = posts.length > 0 || debates.length > 0 || categories.some(c => c.post_count > 0) || articles.length > 0;
-
-  if (showLanding && hasContent) {
-    return (
-      <LandingView
-        posts={posts}
-        categories={categories}
-        debates={debates}
-        articles={articles}
-        trendingTerms={trendingTerms}
-        hofEntries={hofEntries}
-      />
-    );
-  }
 
   if (!hasContent) {
     return (

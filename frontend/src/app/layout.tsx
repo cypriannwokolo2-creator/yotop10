@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
-import { Anton, Monoton, Ubuntu, Fraunces } from "next/font/google";
+import { Anton, Monoton, Ubuntu, Fraunces, Poppins, Oswald } from "next/font/google";
 import "./globals.css";
 import AuthInitializer from "@/components/AuthInitializer";
 import ToastContainer from "@/components/Toast";
@@ -20,6 +20,9 @@ const anton = Anton({ weight: '400', subsets: ['latin'], display: 'swap', variab
 const monoton = Monoton({ weight: '400', subsets: ['latin'], display: 'swap', variable: '--font-accent' });
 const ubuntu = Ubuntu({ subsets: ['latin'], display: 'swap', variable: '--font-ubuntu', weight: ['300', '400', '500', '700'] });
 const fraunces = Fraunces({ subsets: ['latin'], display: 'swap', variable: '--font-serif', weight: ['400', '600', '700', '900'] });
+// Reference landing fonts (ref-yotop10 loads Poppins + Oswald from Google Fonts)
+const poppins = Poppins({ subsets: ['latin'], display: 'swap', variable: '--font-poppins', weight: ['300', '400', '500', '600', '700'] });
+const oswald = Oswald({ subsets: ['latin'], display: 'swap', variable: '--font-oswald', weight: ['300', '400', '500', '600', '700'] });
 
 export const dynamic = 'force-dynamic';
 
@@ -128,7 +131,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         }).replace(/<\//gi, '<\\/') }} />
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
-      <body className={`${anton.variable} ${monoton.variable} ${ubuntu.variable} ${fraunces.variable} min-h-screen flex flex-col bg-[var(--color-bg)] text-[#eaeaef]`} suppressHydrationWarning>
+      <body className={`${anton.variable} ${monoton.variable} ${ubuntu.variable} ${fraunces.variable} ${poppins.variable} ${oswald.variable} min-h-screen flex flex-col bg-[var(--color-bg)] text-[#eaeaef]`} suppressHydrationWarning>
         {/* Mobile top bar — 980px custom breakpoint matches DynamicIsland/SlideMenu */}
         <Suspense fallback={<div className="h-14 bg-[var(--color-bg)] animate-pulse" />}>
           <div className="hide-desktop">

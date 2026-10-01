@@ -31,7 +31,9 @@ let connectionPromise: Promise<typeof mongoose> | null = null;
 let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 10;
 
-async function resolveMongoUri(): Promise<string> {
+/** Authenticated URI for the configured cluster — also used by one-off
+ * migration scripts so credentials are resolved in exactly one place. */
+export async function resolveMongoUri(): Promise<string> {
   const username = await SecretsManager.getSecret('MONGO_USERNAME');
   const password = await SecretsManager.getSecret('MONGO_PASSWORD');
 

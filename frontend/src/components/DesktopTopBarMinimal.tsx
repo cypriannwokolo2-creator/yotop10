@@ -11,10 +11,10 @@ import { Icon } from './icons/Icon';
 // Reference-look primary nav (ref-yotop10/index.html .nav-menu), remapped to
 // real routes: Membership/Tags/Authors dropped (no route / no fit at h-14).
 const NICHE_LINKS = [
-  { label: 'Technology', href: '/categories/technology' },
-  { label: 'Entertainment', href: '/categories/creative' },
-  { label: 'Sports', href: '/categories/sports' },
-  { label: 'Lifestyle', href: '/categories/lifestyle' },
+  { label: 'Technology', href: '/c/technology' },
+  { label: 'Entertainment', href: '/c/creative' },
+  { label: 'Sports', href: '/c/sports' },
+  { label: 'Lifestyle', href: '/c/lifestyle' },
 ] as const;
 
 const MORE_LINKS = [
@@ -57,10 +57,10 @@ export default function DesktopTopBarMinimal() {
   return (
     <header className={`fixed top-0 left-0 right-0 z-30 h-14 bg-[var(--color-bg)]/95 border-b border-white/5 ${pushed ? 'md:left-60' : 'md:left-[72px]'}`}>
       <div className="flex h-full items-center gap-4 px-4 lg:px-6">
-        {/* Brand — wordmark only; the bars mark lives in the nav rail */}
-        <Link href="/" aria-label="YoTop10 home" className="shrink-0">
-          <Logo showMark={false} textSize="text-[22px]" />
-        </Link>
+        {/* Brand — wordmark only; the bars mark lives in the nav rail.
+            `Logo` already renders its own Link, so no wrapper here (a second
+            anchor nests <a> in <a> and blows up hydration). */}
+        <Logo showMark={false} textSize="text-[22px]" />
         {/* Primary nav — reference look, xl+ only (sidebar rail covers <xl) */}
         <nav aria-label="Primary" className="hidden shrink-0 items-center gap-0.5 xl:flex">
           <Link href="/explore" className={linkCls('/explore')} aria-current={active('/explore') ? 'page' : undefined}>
