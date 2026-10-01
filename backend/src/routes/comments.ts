@@ -280,9 +280,8 @@ router.patch('/:id',
 router.delete('/:id', async (req, res) => {
   try {
     const commentId = req.params?.id;
-    const deviceFingerprint = req.user?.device_fingerprint;
-    if (!deviceFingerprint || deviceFingerprint === 'unknown') {
-      return res.status(401).json({ error: 'Device identity required' });
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
     }
 
     if (!mongoose.Types.ObjectId.isValid(commentId)) {

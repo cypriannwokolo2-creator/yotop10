@@ -10,7 +10,6 @@ import { Category } from '../models/Category';
 import { getCategoryNameMap } from '../lib/categoryCache';
 import { Comment } from '../models/Comment';
 import { atomicCheckRateLimit, redis } from '../lib/redis';
-import { getFingerprintIdentity } from '../middleware/fingerprint';
 import { shouldCountView } from '../lib/viewCounting';
 import { isAcceptedImageUrl } from '../lib/uploadUrl';
 import { calculateEffectivePostLimit, getRateLimitKey } from '../lib/rateLimit';
@@ -28,9 +27,9 @@ const router: Router = Router();
 
 const RATE_LIMIT_WINDOW_MS = parseInt(process.env.RATE_LIMIT_WINDOW_MS || '3600000', 10);
 
-const checkRateLimit = async (fingerprint: string, trustScore: number = 1.0, postType?: string, userId?: string, trustLevel?: string): Promise<{ allowed: boolean; remaining: number; resetTime: number; maxRequests: number }> => {
+const checkRateLimit = async (identityKey: string, trustScore: number = 1.0, postType?: string, userId?: string, trustLevel?: string): Promise<{ allowed: boolean; remaining: number; resetTime: number; maxRequests: number }> => {
   try {
-    const key = getRateLimitKey('posts', fingerprint);
+    const key = getRateLimitKey('posts', identityKey);
     const windowMs = RATE_LIMIT_WINDOW_MS;
 
     let maxRequests = calculateEffectivePostLimit(trustScore, postType, trustLevel);
@@ -426,11 +425,11 @@ router.get('/:idOrSlug', async (req, res) => {
       return res.status(404).json({ error: 'Post not found' });
     }
 
-    // Unique view counting: same fingerprint + same post = 1 view per 30 min.
+    // Unique view counting: same visitor + same post = 1 view per 30 min.
     // Only real human opens count — metadata/OG/prefetch/bot fetches and the
     // author's own opens are served the stored count without incrementing.
-    const viewerFp = req.user?.device_fingerprint || req.headers['x-device-fingerprint'] as string || req.ip || 'unknown';
-    const viewerIdentity = getFingerprintIdentity(req);
+    const viewerFp = req.user?.user_id || req.guest_id || req.ip || 'unknown';
+    const viewerIdentity = req.user;
     const isAuthorView = !!viewerIdentity?.user_id && (post as { author_id?: string }).author_id === viewerIdentity.user_id;
     const viewKey = `post_view:${post._id}:${viewerFp}`;
     const alreadyViewed = await redis.get(viewKey);
@@ -537,7 +536,6 @@ router.post('/', ...validatePostSubmission as any[], async (req, res) => {
       category_slug,
       items,
       author_display_name,
-      device_fingerprint,
     } = req.body;
 
     // Resolve category slug (dual-accept during transition)
@@ -619,12 +617,11 @@ router.post('/', ...validatePostSubmission as any[], async (req, res) => {
     }
 
     // ─── Rate limit check (after validation — only valid submissions consume quota) ───
-    const fingerprint = req.user?.device_fingerprint || req.fingerprint || device_fingerprint;
-    if (!fingerprint) {
-      return res.status(401).json({ error: 'Device identity required for posting' });
+    const submitIdentity = req.user?.user_id;
+    if (!submitIdentity) {
+      return res.status(401).json({ error: 'Sign in required for posting' });
     }
-    const userId = req.user?.user_id;
-    const rateLimitResult = await checkRateLimit(fingerprint, effectiveTrustScore, post_type, userId, (req.user as any)?.trust_level);
+    const rateLimitResult = await checkRateLimit(submitIdentity, effectiveTrustScore, post_type, submitIdentity, (req.user as any)?.trust_level);
     if (!rateLimitResult.allowed) {
       return res.status(429).json({
         error: `Rate limit exceeded. You can submit ${rateLimitResult.maxRequests ?? 4} posts per hour.`,
@@ -820,6 +817,7 @@ router.post('/:idOrSlug/comments', [
   body('content').trim().notEmpty().withMessage('Content is required').isLength({ max: 2000 }).withMessage('Content must be less than 2000 characters'),
   body('list_item_id').optional().isMongoId().withMessage('Invalid list item ID'),
   body('parent_comment_id').optional().isMongoId().withMessage('Invalid parent comment ID'),
+  body('guest_name').optional().trim().isLength({ min: 3, max: 32 }).withMessage('Guest name must be between 3 and 32 characters'),
 ], async (req: any, res: any) => {
   try {
     const errors = validationResult(req);
@@ -828,10 +826,16 @@ router.post('/:idOrSlug/comments', [
     }
 
     const { idOrSlug } = req.params;
-    const { content, list_item_id, parent_comment_id } = req.body;
-    const deviceFingerprint = req.user?.device_fingerprint;
-    if (!deviceFingerprint || deviceFingerprint === 'unknown') {
-      return res.status(401).json({ error: 'Device identity required' });
+    const { content, list_item_id, parent_comment_id, guest_name } = req.body;
+
+    // M41.2: comment identity is EITHER a session user OR a guest.
+    // Guests are identified by the httpOnly guest_id cookie
+    // (req.guest_id) — a guest_id in the body is never trusted
+    // over the cookie the site itself issued.
+    const sessionUser = req.user;
+    const guestId = sessionUser ? undefined : req.guest_id;
+    if (!sessionUser && (!guestId || !guest_name)) {
+      return res.status(401).json({ error: 'Sign in or provide a guest name to comment' });
     }
 
     let post: { _id: { toString(): string }; author_id?: string } | null = null;
@@ -850,24 +854,36 @@ router.post('/:idOrSlug/comments', [
       return res.status(403).json({ error: 'Comments are locked for this post.' });
     }
 
-    const user = req.user!;
-    const fingerprint = deviceFingerprint;
-
-    if (user.restricted_until && new Date() < new Date(user.restricted_until)) {
-      const remaining = Math.ceil((new Date(user.restricted_until).getTime() - Date.now()) / 60000);
-      return res.status(429).json({ error: `Account restricted. Resumes in ${remaining} minutes.`, resetTime: user.restricted_until });
-    }
-
-    const rateLimitKey = getRateLimitKey('comments', fingerprint);
     const windowMs = 60 * 60 * 1000;
-    const trustScore = Number.isFinite(user.trust_score) && user.trust_score > 0 ? user.trust_score : 1.0;
-    let limit = Math.max(5, Math.floor(20 * trustScore));
-    if (!Number.isFinite(limit)) { limit = 20; }
+    let rateLimitKey: string;
+    let limit: number;
+    let authorId: string;
+    let authorName: string;
 
-    const activeBoost = await getActiveBoost(user.user_id);
-    if (activeBoost?.comments && Number.isFinite(activeBoost.comments)) {
-      limit += activeBoost.comments;
+    if (sessionUser) {
+      // Signed-in user: trust-scaled limit (20 × trust, min 5).
+      const user = sessionUser;
+      if (user.restricted_until && new Date() < new Date(user.restricted_until)) {
+        const remaining = Math.ceil((new Date(user.restricted_until).getTime() - Date.now()) / 60000);
+        return res.status(429).json({ error: `Account restricted. Resumes in ${remaining} minutes.`, resetTime: user.restricted_until });
+      }
+      rateLimitKey = getRateLimitKey('comments', user.user_id);
+      const trustScore = Number.isFinite(user.trust_score) && user.trust_score > 0 ? user.trust_score : 1.0;
+      limit = Math.max(5, Math.floor(20 * trustScore));
       if (!Number.isFinite(limit)) { limit = 20; }
+      const activeBoost = await getActiveBoost(user.user_id);
+      if (activeBoost?.comments && Number.isFinite(activeBoost.comments)) {
+        limit += activeBoost.comments;
+        if (!Number.isFinite(limit)) { limit = 20; }
+      }
+      authorId = user.user_id;
+      authorName = user.custom_display_name || user.username;
+    } else {
+      // Guest: flat 5 comments/hour (M41.2 §7).
+      rateLimitKey = getRateLimitKey('comments', guestId as string);
+      limit = 5;
+      authorId = guestId as string;
+      authorName = String(guest_name).trim();
     }
 
     const { allowed } = await atomicCheckRateLimit(rateLimitKey, windowMs, limit);
@@ -910,14 +926,19 @@ router.post('/:idOrSlug/comments', [
       list_item_id: list_item_id || undefined,
       parent_comment_id: parent_comment_id || undefined,
       depth,
-      author_id: user.user_id,
-      author_username: user.custom_display_name || user.username,
-      author_display_name: user.custom_display_name || user.username,
+      author_id: authorId,
+      author_username: authorName,
+      author_display_name: authorName,
       content,
       fire_count: 0,
       reply_count: 0,
       spark_score: initialSparkScore,
       last_engaged_at: now,
+      // M41.2 guest markers — sessions leave these at defaults.
+      is_guest: !sessionUser,
+      guest_name: sessionUser ? null : authorName,
+      low_visibility: !sessionUser,
+      guest_fingerprint_key: sessionUser ? null : (guestId as string),
     });
 
     indexComment(comment as unknown as Record<string, unknown>);
@@ -1002,13 +1023,13 @@ router.post('/:id/vote', async (req, res) => {
       return;
     }
 
-    const fingerprint = (req as any).fingerprint || req.headers['x-device-fingerprint'] as string;
-    if (!fingerprint) {
-      res.status(400).json({ error: 'Device fingerprint required for voting' });
+    const voterId = req.user?.user_id;
+    if (!voterId) {
+      res.status(401).json({ error: 'Sign in required for voting' });
       return;
     }
 
-    const voteKey = `vote:post:${id}:fp:${fingerprint}`;
+    const voteKey = `vote:post:${id}:user:${voterId}`;
     const existingVote = await redis.get(voteKey);
 
     if (existingVote === side) {
@@ -1217,10 +1238,10 @@ router.post('/compare/:original/:counter/vote', async (req, res) => {
     const { vote } = req.body;
     if (!vote || !['original', 'counter'].includes(vote)) return res.status(400).json({ error: 'Vote must be "original" or "counter"' });
 
-    const fingerprint = (req as any).fingerprint || req.headers['x-device-fingerprint'] as string;
-    if (!fingerprint) return res.status(400).json({ error: 'Fingerprint required' });
+    const voterId = req.user?.user_id;
+    if (!voterId) return res.status(401).json({ error: 'Sign in required for voting' });
 
-    const voteKey = `better_list:${original._id}:${counter._id}:fp:${fingerprint}`;
+    const voteKey = `better_list:${original._id}:${counter._id}:user:${voterId}`;
     const existing = await redis.get(voteKey);
     if (existing) return res.status(409).json({ error: 'Already voted' });
 

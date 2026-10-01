@@ -5,7 +5,7 @@ import crypto from 'crypto';
 import { Article } from '../models/Article';
 import { redis } from '../lib/redis';
 import { logAudit } from '../lib/auditWriter';
-import { getClientIp, getFingerprintIdentity } from '../middleware/fingerprint';
+import { getClientIp } from '../middleware/userAuth';
 import { shouldCountView } from '../lib/viewCounting';
 import { isAcceptedImageUrl } from '../lib/uploadUrl';
 
@@ -142,15 +142,11 @@ router.get('/:slug', async (req, res) => {
       return res.status(404).json({ error: 'Article not found' });
     }
 
-    // Unique view counting: same fingerprint + same article = 1 view per 30 min.
+    // Unique view counting: same visitor + same article = 1 view per 30 min.
     // Only real human opens count — metadata/OG/prefetch/bot fetches and the
     // author's own opens are served the stored count without incrementing.
-    const viewerFp =
-      req.user?.device_fingerprint ||
-      (req.headers['x-device-fingerprint'] as string) ||
-      req.ip ||
-      'unknown';
-    const viewerIdentity = getFingerprintIdentity(req);
+    const viewerFp = req.user?.user_id || req.guest_id || req.ip || 'unknown';
+    const viewerIdentity = req.user;
     const isAuthorView = !!viewerIdentity?.user_id && article.author_id === viewerIdentity.user_id;
     const viewKey = `article_view:${article._id}:${viewerFp}`;
     const alreadyViewed = await redis.get(viewKey);
@@ -189,7 +185,7 @@ router.get('/:slug', async (req, res) => {
   }
 });
 
-// POST /api/articles — Submit article (fingerprint auth)
+// POST /api/articles — Submit article (session auth)
 router.post('/', ...validateArticleSubmission as any[], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -199,10 +195,10 @@ router.post('/', ...validateArticleSubmission as any[], async (req, res) => {
 
     const { title, body: articleBody, category_slug, cover_image, sources } = req.body;
 
-    // Fingerprint auth required
+    // Session auth required
     const user = req.user;
-    if (!user || !user.device_fingerprint || user.device_fingerprint === 'unknown') {
-      return res.status(401).json({ error: 'Device identity required for submission' });
+    if (!user) {
+      return res.status(401).json({ error: 'Sign in required for submission' });
     }
 
     if (user.restricted_until && new Date() < new Date(user.restricted_until)) {

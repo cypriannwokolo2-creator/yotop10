@@ -7,7 +7,6 @@ import { ListItem } from '../models/ListItem';
 import { computeExploreScore, trackExploreView, type ExploreSignals } from '../lib/exploreScore';
 import { getCategoryNameMap } from '../lib/categoryCache';
 import { redis } from '../lib/redis';
-import { getFingerprintIdentity } from '../middleware/fingerprint';
 import { shouldCountView } from '../lib/viewCounting';
 import { orderItemsForDisplay } from '../lib/listOrder';
 
@@ -276,9 +275,9 @@ router.post('/view', async (req: any, res: any) => {
     if (!shouldCountView(req)) {
       return res.json({ success: true, counted: false });
     }
-    const identity = getFingerprintIdentity(req);
+    const identity = req.user;
     if (!identity?.user_id) {
-      return res.status(401).json({ error: 'Identity required' });
+      return res.status(401).json({ error: 'Sign in required' });
     }
     const targetId = post_id.trim();
     const target =

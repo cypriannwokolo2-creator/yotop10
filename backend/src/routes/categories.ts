@@ -4,7 +4,7 @@ import { Category } from '../models/Category';
 import { Post } from '../models/Post';
 import { adminAuthMiddleware } from '../lib/adminAuth';
 import { logAudit } from '../lib/auditWriter';
-import { getClientIp } from '../middleware/fingerprint';
+import { getClientIp } from '../middleware/userAuth';
 
 const router: Router = Router();
 

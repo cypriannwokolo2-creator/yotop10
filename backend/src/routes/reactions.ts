@@ -3,8 +3,9 @@
  * Fire reaction engine (M40.1) — generalized to comment | post | list_item.
  *
  * Invariants:
- * - One reaction per (fingerprint, target_type, target_id) — enforced by the
+ * - One reaction per (identity, target_type, target_id) — enforced by the
  *   Reaction compound unique index; toggle is delete-first to avoid TOCTOU.
+ *   Identity = session user_id, or guest_id for anonymous visitors (M41.2).
  * - fire_count on the target model is the single source of truth for counts;
  *   it is updated atomically with $inc in the same flow as the Reaction doc.
  * - Side effects per target type:
@@ -12,7 +13,8 @@
  *                 + boost grant at exactly 3 fires (legacy behavior preserved)
  *     post      → last_engaged_at + ES reindex
  *     list_item → fire counter only (list items are not ES-indexed)
- * - Rate limited per fingerprint (lib/fireRateLimit) before any DB work.
+ * - Rate limited per identity (lib/fireRateLimit) before any DB work;
+ *   guests get a tight 20/hour budget, signed users the default limits.
  * - All Mongoose calls run through per-type switches so every call site is on
  *   a concrete model — union-of-models method calls do not typecheck.
  */
@@ -36,11 +38,16 @@ const router: Router = Router();
 
 type TargetType = 'comment' | 'post' | 'list_item';
 
-const getFingerprint = (req: Request): string | undefined => {
-  const fp = req.user?.device_fingerprint || req.fingerprint;
-  if (!fp || fp === 'unknown') return undefined;
-  return fp;
+/** Reaction identity: session user_id, or the guest_id cookie for anonymous visitors. */
+const getReactionIdentity = (req: Request): string | undefined => {
+  const id = req.user?.user_id || req.guest_id;
+  if (!id || id === 'unknown') return undefined;
+  return id;
 };
+
+/** Guests get a 20/hour fire budget; signed-in users keep the default limits. */
+const fireBudget = (req: Request): { limit?: number; windowMs?: number } =>
+  req.user ? {} : { limit: 20, windowMs: 60 * 60 * 1000 };
 
 /** Atomically bump fire_count (+ side-effect fields) on the concrete model. */
 async function bumpFireCount(
@@ -164,12 +171,12 @@ function zodMessage(err: { issues: Array<{ message: string }> }): string {
 // POST /api/reactions - Toggle fire reaction on comment | post | list_item
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const device_fingerprint = getFingerprint(req);
-    if (!device_fingerprint) {
-      return res.status(401).json({ error: 'Device identity required for reactions' });
+    const identity = getReactionIdentity(req);
+    if (!identity) {
+      return res.status(401).json({ error: 'Identity required for reactions' });
     }
 
-    const rate = consumeFire(device_fingerprint);
+    const rate = consumeFire(identity, fireBudget(req));
     if (!rate.allowed) {
       res.setHeader('Retry-After', Math.ceil(rate.retryAfterMs / 1000).toString());
       return res.status(429).json({ error: 'Too many reactions, slow down', retry_after_ms: rate.retryAfterMs });
@@ -189,7 +196,7 @@ router.post('/', async (req: Request, res: Response) => {
 
     // Atomic delete-first toggle: prevents TOCTOU race via unique compound index.
     const removed = await Reaction.findOneAndDelete({
-      user_device_fingerprint: device_fingerprint,
+      user_device_fingerprint: identity,
       target_type: targetType,
       target_id,
     });
@@ -200,7 +207,7 @@ router.post('/', async (req: Request, res: Response) => {
     } else {
       try {
         await Reaction.create({
-          user_device_fingerprint: device_fingerprint,
+          user_device_fingerprint: identity,
           target_type: targetType,
           target_id,
           reaction_type: 'fire',
@@ -245,9 +252,9 @@ router.post('/', async (req: Request, res: Response) => {
 // GET /api/reactions/state - Check reaction status for multiple targets
 router.get('/state', async (req: Request, res: Response) => {
   try {
-    const device_fingerprint = getFingerprint(req);
-    if (!device_fingerprint) {
-      return res.status(401).json({ error: 'Device identity required' });
+    const identity = getReactionIdentity(req);
+    if (!identity) {
+      return res.status(401).json({ error: 'Identity required' });
     }
 
     const parsed = reactionStateQuerySchema.safeParse(req.query);
@@ -262,7 +269,7 @@ router.get('/state', async (req: Request, res: Response) => {
 
     const targetIds = parsedTargets.map((t) => new mongoose.Types.ObjectId(t.id));
     const userReactions = await Reaction.find({
-      user_device_fingerprint: device_fingerprint,
+      user_device_fingerprint: identity,
       target_id: { $in: targetIds },
     }).lean();
 
@@ -291,7 +298,7 @@ router.get('/:targetType/:targetId', async (req: Request, res: Response) => {
     }
     const targetType = parsed.data.targetType;
     const targetId = parsed.data.targetId;
-    const device_fingerprint = getFingerprint(req);
+    const identity = getReactionIdentity(req);
 
     const count = await getFireCount(targetType, targetId);
     if (count === null) {
@@ -299,9 +306,9 @@ router.get('/:targetType/:targetId', async (req: Request, res: Response) => {
     }
 
     let user_reacted = false;
-    if (device_fingerprint) {
+    if (identity) {
       const userReaction = await Reaction.findOne({
-        user_device_fingerprint: device_fingerprint,
+        user_device_fingerprint: identity,
         target_type: targetType,
         target_id: targetId,
       }).lean();

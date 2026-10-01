@@ -3,8 +3,6 @@ import { Router } from 'express';
 import authRouter from './auth';
 import categoriesRouter from './categories';
 import commentsRouter from './comments';
-import fingerprintRouter from './fingerprint';
-import identityRouter from './identity';
 import listingsRouter from './listings';
 import postsRouter from './posts';
 import reactionsRouter from './reactions';
@@ -30,8 +28,6 @@ export const routes: RouteDefinition[] = [
   { path: '/api/auth',        router: authRouter },
   { path: '/api/categories',  router: categoriesRouter },
   { path: '/api/comments',    router: commentsRouter },
-  { path: '/api/fingerprint', router: fingerprintRouter },
-  { path: '/api/identity',    router: identityRouter },
   { path: '/api/listings',    router: listingsRouter },
   { path: '/api/posts',       router: postsRouter },
   { path: '/api/reactions',   router: reactionsRouter },

@@ -11,7 +11,7 @@ import { ListItem } from '../models/ListItem';
 import { Notification, createNotification } from '../models/Notification';
 import { AuditLog } from '../models/AuditLog';
 import { logAudit, getAuditStats } from '../lib/auditWriter';
-import { getClientIp } from '../middleware/fingerprint';
+import { getClientIp } from '../middleware/userAuth';
 import {
   adminAuthMiddleware,
   generateAdminToken,
@@ -3905,47 +3905,6 @@ router.get('/posts/:id', async (req, res) => {
   } catch (error) {
     console.error('Error fetching admin post:', error);
     res.status(500).json({ code: 'SERVER_ERROR', error: 'Failed to fetch post' });
-  }
-});
-
-// ── Fingerprint Settings (super_admin only) ──
-
-router.get('/settings/fingerprint', async (req: any, res: any) => {
-  try {
-    if (req.admin?.role !== 'super_admin') return res.status(403).json({ error: 'Super admin required' });
-    const doc = await _SystemConfig.findOne({ key: 'global' }).lean();
-    res.json({ fingerprint_enabled: (doc as any)?.fingerprint_enabled ?? false });
-  } catch {
-    res.status(500).json({ error: 'Failed' });
-  }
-});
-
-router.put('/settings/fingerprint', async (req: any, res: any) => {
-  try {
-    if (req.admin?.role !== 'super_admin') return res.status(403).json({ error: 'Super admin required' });
-    const { fingerprint_enabled } = req.body;
-    if (typeof fingerprint_enabled !== 'boolean') return res.status(400).json({ error: 'fingerprint_enabled must be boolean' });
-
-    await _SystemConfig.findOneAndUpdate(
-      { key: 'global' },
-      { $set: { fingerprint_enabled, updated_at: new Date(), updated_by: req.admin.username } },
-      { upsert: true }
-    );
-
-    // Invalidate config cache
-    try { await redis.del('config:fingerprint_enabled'); } catch { /* cache clear failed */ }
-
-    logAudit({
-      admin_id: req.admin.id,
-      action: 'update_fingerprint_setting',
-      ip: getClientIp(req),
-      metadata: { fingerprint_enabled },
-      user_agent: req.headers['user-agent'] || '',
-    });
-
-    res.json({ success: true, fingerprint_enabled });
-  } catch {
-    res.status(500).json({ error: 'Failed' });
   }
 });
 

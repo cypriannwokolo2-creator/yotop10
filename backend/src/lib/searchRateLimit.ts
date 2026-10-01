@@ -1,6 +1,6 @@
 import { RequestHandler } from 'express';
 import { atomicCheckRateLimit } from './redis';
-import { getClientIp } from '../middleware/fingerprint';
+import { getClientIp } from '../middleware/userAuth';
 
 interface RateLimitConfig {
   maxRequests: number;

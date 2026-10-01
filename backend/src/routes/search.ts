@@ -113,7 +113,7 @@ router.get(
         query: q,
         normalized_query: q.toLowerCase().trim(),
         query_length: q.length,
-        fingerprint: (req as any).fingerprint || null,
+        fingerprint: req.guest_id || null,
         session_id: req.headers['x-session-id'] as string || 'unknown',
         filters_applied: {
           ...(category_slug ? { category_slug } : {}),
@@ -214,7 +214,7 @@ router.post('/click', async (req, res) => {
       result_position: req.body.result_position || 1,
       result_score: req.body.result_score || 0,
       query: req.body.query || '',
-      fingerprint: (req as any).fingerprint || null,
+      fingerprint: req.guest_id || null,
       session_id: req.headers['x-session-id'] as string || 'unknown',
       click_time_ms: req.body.click_time_ms || 0,
       timestamp: new Date(),

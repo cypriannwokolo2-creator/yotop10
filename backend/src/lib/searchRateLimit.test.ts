@@ -11,7 +11,7 @@ vi.mock('./redis', () => ({
   atomicCheckRateLimit: mockAtomicCheckRateLimit,
 }));
 
-vi.mock('../middleware/fingerprint', () => ({
+vi.mock('../middleware/userAuth', () => ({
   getClientIp: mockGetClientIp,
 }));
 

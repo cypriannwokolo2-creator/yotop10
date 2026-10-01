@@ -22,6 +22,13 @@ export interface IComment extends Document {
   content_history: Array<{ content: string; changed_at: Date }>;
   flag_type: string | null;
   flag_evidence: Record<string, unknown> | null;
+  // M41.2: guest (anonymous) comments. Guests may comment with a
+  // display name; their comments are flagged low-visibility and are
+  // subject to tighter rate limits. Sessions never set these fields.
+  is_guest: boolean;
+  guest_name: string | null;
+  low_visibility: boolean;
+  guest_fingerprint_key: string | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -95,6 +102,11 @@ const commentSchema = new Schema<IComment>(
     content_history: { type: [{ content: String, changed_at: Date }], default: [] },
     flag_type: { type: String, default: null },
     flag_evidence: { type: Schema.Types.Mixed, default: null },
+    // M41.2 guest comment markers (see IComment above)
+    is_guest: { type: Boolean, default: false, index: true },
+    guest_name: { type: String, default: null },
+    low_visibility: { type: Boolean, default: false },
+    guest_fingerprint_key: { type: String, default: null, index: true },
   },
   {
     timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },

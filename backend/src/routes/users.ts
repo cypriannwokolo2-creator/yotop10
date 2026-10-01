@@ -11,175 +11,27 @@ import { isUsernameAvailable, recordUsernameChange } from '../lib/usernameServic
 import { calculateEffectivePostLimit, calculateEffectiveCommentLimit, RateLimitStatus, getRateLimitKey } from '../lib/rateLimit';
 import { getCategoryNameMap } from '../lib/categoryCache';
 import { checkAndPromoteUser } from '../lib/trustScore';
-import { redis, atomicCheckRateLimit } from '../lib/redis';
-import { findUserByFingerprint, createUserForFingerprint, getClientIp, isLowEntropyFingerprint, isCookieBound, isDeniedFingerprint } from '../middleware/fingerprint';
-import { issuePowChallenge, verifyPowChallenge } from '../lib/proofOfWork';
-import { initIdentitySchema } from '../schemas/identity';
-import { isIdentityMature } from '../lib/identityMaturity';
+import { redis } from '../lib/redis';
+import { buildMeResponse } from '../lib/userAuth';
 import { toShortUsername, toCustomShort, toDefaultShort, isDefaultFormat } from '../lib/username';
 
 const router: Router = Router();
 
 /**
- * M11.A: GET /api/users/me
- * Returns current user context for authenticated fingerprint
+ * GET /api/users/me
+ * Returns the current user context. Alias of GET /api/auth/me —
+ * same handler (buildMeResponse) so both paths return an
+ * identical shape. Requires a session (401 when logged out).
  */
 router.get('/me', async (req, res) => {
   if (!req.user) {
-    // Grace path fallback: if fingerprint is present but req.user wasn't set (race / old cookie),
-    // try to hydrate from DB before failing. Mirrors fingerprintMiddleware Branch A logic.
-    if (req.fingerprint) {
-      try {
-        const u = await User.findOne({ device_fingerprint: req.fingerprint });
-        if (u) {
-          (req as any).user = {
-            user_id: u.user_id,
-            username: u.username,
-            custom_display_name: u.custom_display_name,
-            device_fingerprint: u.device_fingerprint,
-            trust_score: u.trust_score,
-            trust_locked: u.trust_locked,
-            rate_limit_override: u.rate_limit_override,
-            is_admin: u.is_admin,
-            restricted_until: u.restricted_until || null,
-            created_at: u.created_at,
-          };
-        }
-      } catch { /* fingerprint lookup failed */ }
-    }
-    if (!req.user) {
-      return res.status(425).json({ error: 'User identity still initializing', retry_after: 0.5 });
-    }
+    return res.status(401).json({ error: 'Not authenticated' });
   }
-
   try {
-    // Check and promote/demote user based on age/activity
-    await checkAndPromoteUser(req.user.user_id).catch(() => {});
-    // Fetch user for profile_image_url + bio/links
-    const userDoc = await User.findOne({ user_id: req.user.user_id }).select('profile_image_url bio links').lean() as unknown as { profile_image_url?: string; bio?: string; links?: { medium?: string; x?: string; github?: string } } | null;
-
-    // Count posts with status breakdown
-    const userPosts = await Post.aggregate([
-      { $match: { author_id: req.user.user_id } },
-      {
-        $group: {
-          _id: '$status',
-          count: { $sum: 1 }
-        }
-      }
-    ]);
-
-    // Count total comments
-    const commentCount = await Comment.countDocuments({ author_id: req.user.user_id });
-
-    // Process post counts
-    const postCounts = userPosts.reduce((acc: Record<string, number>, item: { _id: string; count: number }) => {
-      acc[item._id] = item.count;
-      return acc;
-    }, {} as Record<string, number>);
-
-    const postsApproved = postCounts.approved || 0;
-    const postsRejected = postCounts.rejected || 0;
-    const postCount = postsApproved + postsRejected + (postCounts.pending_review || 0);
-
-    // Determine trust level (stored on user, computed with hysteresis)
-    const trustLevel: 'troll' | 'neutral' | 'scholar' = (req.user as unknown as Record<string, unknown>).trust_level as 'troll' | 'neutral' | 'scholar' || 'neutral';
-
-    // Return full user context
-    res.json({
-      user_id: req.user.user_id,
-      username: req.user.custom_display_name || req.user.username,
-      custom_display_name: req.user.custom_display_name || null,
-      profile_image_url: userDoc?.profile_image_url || null,
-      bio: userDoc?.bio || "",
-      links: userDoc?.links || {},
-      trust_score: req.user.trust_score,
-      trust_level: trustLevel,
-      post_count: postCount,
-      comment_count: commentCount,
-      posts_approved: postsApproved,
-      posts_rejected: postsRejected,
-      created_at: req.user.created_at,
-      first_seen_at: req.user.created_at,
-    });
-
+    res.json(await buildMeResponse(req.user));
   } catch (error) {
     console.error('GET /users/me error:', error);
     res.status(500).json({ error: 'Failed to fetch user data' });
-  }
-});
-
-/**
- * M11.A1: GET /api/users/challenge
- * Issues a proof-of-effort challenge ({challenge_id, difficulty}) that POST
- * /init must solve with a valid nonce. Public. Rate-limited per IP.
- */
-router.get('/challenge', async (req, res) => {
-  try {
-    const ip = getClientIp(req);
-    const rl = await atomicCheckRateLimit(`rl:challenge:${ip}`, 600000, 30);
-    if (!rl.allowed) {
-      return res.status(429).json({ error: 'Too many challenges. Slow down.' });
-    }
-    return res.json(await issuePowChallenge());
-  } catch (error) {
-    console.error('GET /users/challenge error:', error);
-    return res.status(500).json({ error: 'Failed to issue challenge' });
-  }
-});
-
-/**
- * M11.A2: POST /api/users/init
- * Explicit identity bootstrap — the ONLY read-safe way to mint an identity.
- * Minting requires the cookie this site previously issued (proof of a real
- * ongoing visit — one-shot scripts carry none) PLUS a solved proof-of-effort
- * challenge. Recovery of a known identity needs no challenge.
- * Public. Returns the user summary, same shape as GET /me core fields.
- */
-router.post('/init', async (req, res) => {
-  try {
-    // The identity is bound to the cookie we issued, never to a bare header:
-    // when the request carries no identity the middleware fills req.fingerprint
-    // with a fresh grace value, and that must NEVER be minted — otherwise any
-    // anonymous hit could create junk users.
-    const cookieFp = req.cookies?.device_fingerprint as string | undefined;
-    if (!cookieFp) {
-      return res.status(428).json({ error: 'Confirm this device first: reload the page once, then retry.' });
-    }
-    const fingerprint = cookieFp;
-    if (isDeniedFingerprint(fingerprint)) {
-      return res.status(403).json({ error: 'Identity blocked for abuse. Clear site data and retry.' });
-    }
-    const ip = getClientIp(req);
-    const rl = await atomicCheckRateLimit(`rl:init:${ip}`, 3600000, 5);
-    if (!rl.allowed) {
-      return res.status(429).json({ error: 'Too many identities from this address.' });
-    }
-    let user = await findUserByFingerprint(fingerprint);
-    if (!user) {
-      // New identity: prove effort first.
-      const parsed = initIdentitySchema.safeParse(req.body || {});
-      if (!parsed.success) {
-        return res.status(400).json({ error: 'A solved challenge is required to create an identity.' });
-      }
-      if (!(await verifyPowChallenge(parsed.data.challenge_id, parsed.data.nonce))) {
-        return res.status(403).json({ error: 'Challenge failed. Fetch a new one and retry.' });
-      }
-      if (isLowEntropyFingerprint(fingerprint)) {
-        console.warn(`[Abuse] Low-entropy identity claim from ${ip}`);
-      }
-      user = await createUserForFingerprint(req, res, fingerprint);
-    }
-    return res.json({
-      user_id: user.user_id,
-      username: user.custom_display_name || user.username,
-      custom_display_name: user.custom_display_name || null,
-      trust_score: user.trust_score,
-      created_at: user.created_at,
-    });
-  } catch (error) {
-    console.error('POST /users/init error:', error);
-    return res.status(500).json({ error: 'Failed to initialize identity' });
   }
 });
 
@@ -270,18 +122,18 @@ router.patch('/me', ...validateDisplayName as any[], async (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    // Renames permanently mutate identity: require a cookie-bound session so a
-    // bare presented fingerprint cannot squat or steal handles.
-    if (!isCookieBound(req)) {
-      return res.status(428).json({ error: 'Confirm this device first: reload the page once, then retry.' });
-    }
-
     // Renames unlock with maturity: farmed accounts cannot squat handles.
+    // (7 days after joining, or once the account is trusted — score >= 1.0.)
     const renameSubject = await User.findOne({ user_id: req.user.user_id }).select('created_at trust_score').lean() as unknown as { created_at?: Date; trust_score?: number } | null;
     if (!renameSubject) {
       return res.status(404).json({ error: 'User not found' });
     }
-    if (!isIdentityMature(renameSubject.created_at, renameSubject.trust_score)) {
+    const renameAgeMs = renameSubject.created_at instanceof Date
+      ? Date.now() - renameSubject.created_at.getTime()
+      : Date.now() - new Date(String(renameSubject.created_at ?? '')).getTime();
+    const renameMature = (!Number.isNaN(renameAgeMs) && renameAgeMs >= 7 * 24 * 3600 * 1000)
+      || (typeof renameSubject.trust_score === 'number' && renameSubject.trust_score >= 1.0);
+    if (!renameMature) {
       return res.status(403).json({ error: 'Renames unlock 7 days after joining, or once your account is trusted.' });
     }
 
@@ -642,11 +494,10 @@ router.get('/me/rate-limits', async (req, res) => {
       if (Number.isFinite(activeBoost.comments)) commentLimit += activeBoost.comments;
     }
 
-    // Get current counts
-    // device_fingerprint is guaranteed by the fingerprint middleware on
-    // non-exempt routes (M41.1 made the field optional for auth users).
-    const postKey = getRateLimitKey('posts', req.user.device_fingerprint!);
-    const commentKey = getRateLimitKey('comments', req.user.device_fingerprint!);
+    // Get current counts — rate-limit keys are per user_id (M41.2:
+    // the fingerprint identity system is retired; sessions are the identity).
+    const postKey = getRateLimitKey('posts', req.user.user_id);
+    const commentKey = getRateLimitKey('comments', req.user.user_id);
 
     const windowStart = now - windowMs;
     

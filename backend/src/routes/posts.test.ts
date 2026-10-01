@@ -32,21 +32,43 @@ vi.mock('../lib/titleSimilarityV2', () => ({
 import { atomicCheckRateLimit } from '../lib/redis';
 import postsRouter from '../routes/posts';
 
-function createApp() {
+const SESSION_USER = {
+  user_id: 'user-test-1',
+  username: 'tester',
+  custom_display_name: 'Tester',
+  trust_score: 1.0,
+  trust_locked: false,
+  is_admin: false,
+  restricted_until: null,
+  rate_limit_override: null,
+};
+
+function createApp(session = false) {
   const app = express();
   app.use(express.json());
 
   app.use((req, _res, next) => {
-    if (!req.user && !req.fingerprint) {
-      next();
-    } else {
-      next();
+    if (session) {
+      req.user = SESSION_USER;
     }
+    next();
   });
 
   app.use('/api/posts', postsRouter);
   return app;
 }
+
+const SUBMISSION_BODY = {
+  title: 'Top 10 Test Post Title',
+  post_type: 'top_list',
+  intro: 'Test intro',
+  category_slug: 'tech',
+  items: [
+    { rank: 1, title: 'Item 1', justification: 'Justification' },
+    { rank: 2, title: 'Item 2', justification: 'Justification 2' },
+    { rank: 3, title: 'Item 3', justification: 'Justification 3' },
+  ],
+};
 
 describe('POST /api/posts — rate limit integrity', () => {
   beforeEach(() => {
@@ -54,43 +76,21 @@ describe('POST /api/posts — rate limit integrity', () => {
     vi.mocked(atomicCheckRateLimit).mockResolvedValue({ allowed: true, remaining: 10 });
   });
 
-  it('returns 401 when fingerprint is missing', async () => {
-    const res = await request(createApp())
+  it('returns 401 when no session user is present', async () => {
+    const res = await request(createApp(false))
       .post('/api/posts')
-      .send({
-        title: 'Top 10 Test Post Title',
-        post_type: 'top_list',
-        intro: 'Test intro',
-        category_slug: 'tech',
-        items: [
-          { rank: 1, title: 'Item 1', justification: 'Justification' },
-          { rank: 2, title: 'Item 2', justification: 'Justification 2' },
-          { rank: 3, title: 'Item 3', justification: 'Justification 3' },
-        ],
-      });
+      .send(SUBMISSION_BODY);
 
     expect(res.status).toBe(401);
-    expect(res.body.error).toContain('Device identity');
+    expect(res.body.error).toContain('Sign in required');
   });
 
   it('rejects when rate limit exceeded', async () => {
     vi.mocked(atomicCheckRateLimit).mockResolvedValue({ allowed: false, remaining: 0 });
 
-    const res = await request(createApp())
+    const res = await request(createApp(true))
       .post('/api/posts')
-      .set('x-device-fingerprint', 'test-fp-123')
-      .send({
-        title: 'Top 10 Test Post Title',
-        post_type: 'top_list',
-        intro: 'Test intro',
-        category_slug: 'tech',
-        items: [
-          { rank: 1, title: 'Item 1', justification: 'Justification' },
-          { rank: 2, title: 'Item 2', justification: 'Justification 2' },
-          { rank: 3, title: 'Item 3', justification: 'Justification 3' },
-        ],
-        device_fingerprint: 'test-fp-123',
-      });
+      .send(SUBMISSION_BODY);
 
     expect(res.status).toBe(429);
     expect(res.body.error).toContain('Rate limit exceeded');

@@ -61,13 +61,16 @@ const UPLOAD_DIR = path.resolve(__dirname, '../uploads');
 fs.mkdir(UPLOAD_DIR, { recursive: true }).catch(() => {});
 app.use('/uploads', express.static(UPLOAD_DIR));
 
-import { fingerprintMiddleware } from './middleware/fingerprint';
-import fingerprintMergeRouter from './routes/fingerprintMerge';
+import { userAuthMiddleware } from './middleware/userAuth';
 
 import { healthRegistry } from './lib/healthCheck';
 import { cronRegistry } from './lib/cronRegistry';
 
-app.use('/api/fingerprint', fingerprintMergeRouter);
+// M41.2: global identity middleware — resolves verified sessions
+// (req.session + req.user) and mints the guest_id cookie for anonymous
+// visitors (req.guest_id). Write paths fail closed (401) when the
+// route requires a session; guest-allowed routes check req.guest_id.
+app.use('/api', userAuthMiddleware);
 
 app.get('/api/health', async (_req, res) => {
   try {
@@ -92,15 +95,12 @@ app.get('/api/metrics', (_req, res) => {
 import searchRouter from './routes/search';
 app.use('/api/search', searchRouter);
 
-// Analytics visit beacon (no fingerprint required)
+// Analytics visit beacon
 import analyticsRouter from './routes/analytics';
 app.use('/api/analytics', analyticsRouter);
 
-const FINGERPRINT_EXEMPT = new Set(['/api/admin', '/api/analytics', '/api/auth']);
-
 for (const route of routes) {
-  const middleware = FINGERPRINT_EXEMPT.has(route.path) ? [route.router] : [fingerprintMiddleware, route.router];
-  (app.use as any)(route.path, ...middleware);
+  (app.use as any)(route.path, route.router);
   console.log(`Mounted route: ${route.path}`);
 }
 

@@ -31,13 +31,13 @@ declare global {
         permissions_version: number;
         token_version: number;
       };
-      fingerprint?: string;
-      // How the identity was presented: cookie (bound browser), header
-      // (recovery hint only), or grace (freshly minted, anonymous).
-      fingerprintSource?: 'cookie' | 'header' | 'grace';
       // M41.1: verified email/password session identity (set by
       // middleware/userAuth.ts). Absent when logged out.
       session?: SessionUser;
+      // M41.2: anonymous visitor id from the guest_id cookie. Set on
+      // every request (the middleware mints the cookie when absent).
+      // Never corresponds to a user record.
+      guest_id?: string;
     }
   }
 }

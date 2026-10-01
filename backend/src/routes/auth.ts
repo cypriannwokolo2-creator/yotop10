@@ -2,8 +2,7 @@ import { Router, type Request, type Response } from 'express';
 import { redis } from '../lib/redis';
 import { AppError } from '../lib/errors';
 import { logAudit } from '../lib/auditWriter';
-import { getClientIp } from '../middleware/fingerprint';
-import { userAuthMiddleware } from '../middleware/userAuth';
+import { getClientIp, userAuthMiddleware } from '../middleware/userAuth';
 import {
   authRegisterSchema,
   authRegisterVerifySchema,

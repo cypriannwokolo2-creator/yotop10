@@ -144,9 +144,10 @@ vi.mock('../lib/auditWriter', () => ({
   getAuditStats: vi.fn(),
 }));
 
-vi.mock('../middleware/fingerprint', () => ({
-  fingerprintMiddleware: (_req: unknown, _res: unknown, next: () => void) => next(),
+vi.mock('../middleware/userAuth', () => ({
+  userAuthMiddleware: (_req: unknown, _res: unknown, next: () => void) => next(),
   getClientIp: vi.fn(() => '127.0.0.1'),
+  generateGuestId: vi.fn(() => 'test-guest-id'),
 }));
 
 vi.mock('../lib/redis', () => ({
