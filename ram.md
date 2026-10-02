@@ -1,9 +1,9 @@
 # RAM.md — Random Access Memory: Current Task State
 
 > **Last updated**: 2026-10-02
-> **Working tree**: clean — [M41.7] committed and pushed to cocor (see git log for hash)
+> **Working tree**: clean — [M41.7] committed (`f843946e`), pushed to cocor
 > **Branch**: main
-> **Latest commits**: `[M41.7]` (this commit), `773f0892 [M42]`, `5497a9b5 [M42]`
+> **Latest commits**: `f843946e [M41.7]`, `773f0892 [M42]`, `5497a9b5 [M42]`
 
 ---
 
