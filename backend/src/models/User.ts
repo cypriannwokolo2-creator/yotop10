@@ -77,10 +77,19 @@ const userSchema = new Schema<IUser>(
     custom_display_name: {
       type: String,
       sparse: true,
+      // ROM 2.8: canonical display-name slot. Unique so two
+      // concurrent renames to the same name cannot both commit
+      // (the route's findOne availability check alone is racy).
+      // Enforced at boot by the userAuth migration so it exists
+      // even when autoIndex is off.
+      unique: true,
     },
     short_username: {
       type: String,
       sparse: true,
+      // ROM 2.8: canonical short-handle slot. Unique for the
+      // same reason as custom_display_name.
+      unique: true,
     },
     default_username: {
       type: String,
@@ -222,7 +231,9 @@ const userSchema = new Schema<IUser>(
 // Indexes for efficient queries
 userSchema.index({ updated_at: -1 });
 userSchema.index({ trust_score: 1 });
-userSchema.index({ short_username: 1 }, { sparse: true });
+// short_username's index comes from the field-level unique
+// declaration above; declaring it again here would collide on
+// the index name with different options.
 userSchema.index({ default_short: 1 }, { sparse: true });
 userSchema.index({ custom_short: 1 }, { sparse: true });
 userSchema.index({ default_username: 1 }, { sparse: true });

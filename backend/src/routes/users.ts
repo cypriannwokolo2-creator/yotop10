@@ -186,17 +186,30 @@ router.patch('/me', ...validateDisplayName as any[], async (req, res) => {
       (updateFields as Record<string, unknown>).default_username = displayName;
     }
 
-    const updatedUser = await User.findOneAndUpdate(
-      {
-        user_id: req.user.user_id,
-        $or: [
-          { custom_display_name: oldUsername },
-          { custom_display_name: { $exists: false }, username: oldUsername },
-        ],
-      },
-      updateFields,
-      { new: true }
-    );
+    // ROM 2.8: the availability pre-checks above are findOne-based,
+    // so a concurrent rename can pass them and commit first. The
+    // UNIQUE indexes on custom_display_name/short_username make the
+    // insert side atomic — the loser of the race gets E11000 here
+    // and is told the name is taken instead of corrupting state.
+    let updatedUser;
+    try {
+      updatedUser = await User.findOneAndUpdate(
+        {
+          user_id: req.user.user_id,
+          $or: [
+            { custom_display_name: oldUsername },
+            { custom_display_name: { $exists: false }, username: oldUsername },
+          ],
+        },
+        updateFields,
+        { new: true }
+      );
+    } catch (error) {
+      if (error instanceof Error && 'code' in error && error.code === 11000) {
+        return res.status(409).json({ error: 'Display name already taken' });
+      }
+      throw error;
+    }
 
     if (!updatedUser) {
       return res.status(409).json({ error: 'Display name was changed by another request. Please try again.' });

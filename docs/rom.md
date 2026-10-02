@@ -281,6 +281,7 @@
   end
   ```
 - **Prevention**: All rate limit check+increment operations must be atomic (Lua script or Redis MULTI/EXEC). Document this rule.
+- **Status (2026-10-02)**: RESOLVED. `atomicCheckRateLimit()` in `lib/redis.ts` runs clean→count→add inside one `RATE_LIMIT_LUA` script via `redis.eval()`; used by the posts, OTP, and search rate paths.
 
 ### 2.8 [HIGH] Race Condition Between `findOne` and `findOneAndUpdate` — `users.ts:119-121`
 
@@ -290,6 +291,7 @@
 - **What happens**: Two requests to change the display name arrive simultaneously. Request A reads `oldUsername = "a_abc1"`, Request B reads `oldUsername = "a_abc1"`. Request A writes `"a_newname"`. Request B writes `"a_othername"`. The username history records BOTH as changing from `"a_abc1"`, but one of them actually changed from `"a_newname"`. History is incorrect.
 - **Fix**: Use `findOneAndUpdate` with the current value as a filter: `{ user_id: X, custom_display_name: oldValue }`. If the filter doesn't match (because another request changed it), the update returns null, and we respond with 409 Conflict. Also: the history record should capture the actual PREVIOUS value from the returned document's pre-update state.
 - **Prevention**: All read-then-write patterns must use atomic operations. Document this rule.
+- **Status (2026-10-02, [M41.7])**: RESOLVED at the DB level. Unique sparse indexes on `custom_display_name` and `short_username` (`models/User.ts`; boot migration `lib/migrations/userAuth.ts` drops+recreates them idempotently, skipping if duplicates pre-exist) turn any concurrent same-handle rename into an atomic single-winner contest. `routes/users.ts` catches E11000 → 409 "Display name already taken"; `lib/userAuth.ts` `createAuthUser()` retries on E11000 with a fresh 4-hex suffix (≤5 attempts) so registration can never collide. Live race test: two concurrent PATCHes → exactly one 200 (`a_racetest`), one 409.
 
 ### 2.9 [HIGH] Dynamic Import on Every Post Approval — `admin.ts:229`
 
@@ -307,6 +309,7 @@
 - **How noticed**: Searched for TypeScript non-null assertion operator `!` on async calls.
 - **What happens**: If the post was deleted between creation (line 465) and this re-read (line 488), `findById` returns `null`. The `!` tells TypeScript "trust me, it's not null" — but it can be. The next access (line 494: `post._id` on the response) throws `TypeError: Cannot read properties of null (reading '_id')`. 500 crash.
 - **Fix**: Add a null check: `if (!post) return res.status(500).json({ error: 'Post creation failed' });` or use the already-created `post` variable from line 465 instead of re-fetching.
+- **Status (2026-10-02)**: RESOLVED. No `post!.` / `findById(...)!` non-null assertions remain in `routes/posts.ts`.
 - **Prevention**: Ban non-null assertions on async function results. ESLint rule: `@typescript-eslint/no-non-null-assertion: error`.
 
 ### 2.11 [HIGH] Random ETag Defeats HTTP Caching — `posts.ts:86`
@@ -1054,7 +1057,10 @@ This audit analyzed 39 source files:
 | 2.4 | MongoDB $regex injection | ✅ Exact-match query only |
 | 2.5 | Stub 200 OKs | ✅ All return 501 Not Implemented |
 | 2.6 | Health check behind middleware | ✅ Mounted before fingerprint middleware |
+| 2.7 | TOCTOU rate limit race | ✅ Atomic Lua check+increment (`atomicCheckRateLimit`, `lib/redis.ts`) |
+| 2.8 | findOne→findOneAndUpdate race | ✅ Unique sparse handle indexes (atomic single-winner) + E11000→409 + registration retry |
 | 2.9 | Dynamic import on every approval | ✅ Moved to top-level import |
+| 2.10 | Non-null assertion after findById | ✅ Assertions removed from `routes/posts.ts` |
 | 2.12 | Module-level cron init | ✅ Centralized in `server.ts` |
 | 2.13 | 'unknown' fingerprint shared | ✅ Returns 401 for missing fingerprint |
 | 2.16 | ES/Redis clients scoped to function | ✅ Both singletons exported |
@@ -1082,9 +1088,6 @@ This audit analyzed 39 source files:
 |---------|-------|-------|
 | 1.9 (P2.3) | MongoDB replica set for transactions | `withTransaction()` crashes on standalone |
 | 1.10 | Orphaned comments on deletion | Grandchildren may be orphaned |
-| 2.7 | TOCTOU rate limit race | Non-atomic zRemRange/zCard/zAdd |
-| 2.8 | findOne→findOneAndUpdate race | In `users.ts` display name update |
-| 2.10 | Non-null assertion after findById | `!` in `posts.ts:488` |
 | 4.2 | Rate limit type mismatch | `counter_lists` typed as string |
 | M11.C.1 | Hysteresis thresholds | Not implemented |
 | M11.C.1 | Double-blind moderation | Not implemented |

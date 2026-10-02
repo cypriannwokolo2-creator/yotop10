@@ -1,9 +1,9 @@
 # RAM.md — Random Access Memory: Current Task State
 
 > **Last updated**: 2026-10-02
-> **Working tree**: clean — M42 committed (`5497a9b5`), pushed to cocor
+> **Working tree**: clean — [M41.7] committed and pushed to cocor (see git log for hash)
 > **Branch**: main
-> **Latest commits**: `5497a9b5 [M42]`, `297a0f96 [M41.6]`, `6fe947f7 [M41.4]`
+> **Latest commits**: `[M41.7]` (this commit), `773f0892 [M42]`, `5497a9b5 [M42]`
 
 ---
 
@@ -59,21 +59,18 @@
 ### Milestones completed (all checked ✅):
 M1 (Foundation), M2 (Schema), M3 (Submit), M4 (Feed), M5 (Post Detail), M6 (Categories), M7 (Comments), M9 (Admin Auth), M10 (Admin Dashboard), M11 (User System), M12 (Search), M13 (Arguments), M14 (Hall of Fame), M15 (Identity — removed in M41), M17 (Moderator System), **M41 (Real Authentication System)**
 
-### ROM issues resolved ✅ (14 of 19):
-Hardcoded JWT, orphaned setInterval, $regex injection, stub 200s, health check ordering, dynamic import on approval, module-level cron, 'unknown' fingerprint, Redis singleton, route barrel export, localStorage crashes, 425 infinite recursion, XSS in JSON-LD, Eruda safety guards
+### ROM issues resolved ✅ (17 of 19):
+Hardcoded JWT, orphaned setInterval, $regex injection, stub 200s, health check ordering, dynamic import on approval, module-level cron, 'unknown' fingerprint, Redis singleton, route barrel export, localStorage crashes, 425 infinite recursion, XSS in JSON-LD, Eruda safety guards, atomic rate limits (2.7), display-name rename race (2.8), non-null assertion after findById (2.10)
 
 ---
 
 ## What Remains Open
 
-### Still open ROM issues (5 marked ⏳):
+### Still open ROM issues (2 marked ⏳):
 | # | Issue | Notes |
 |---|-------|-------|
 | 1.9 | MongoDB replica set for transactions | `withTransaction()` crashes on standalone |
 | 1.10 | Orphaned comments on deletion | Grandchildren may be orphaned |
-| 2.7 | TOCTOU rate limit race | Non-atomic zRemRange/zCard/zAdd |
-| 2.8 | findOne→findOneAndUpdate race | Display name update in users.ts |
-| 2.10 | Non-null assertion after findById | `!` in posts.ts:488 |
 
 ### Unfinished features:
 - **M41 follow-up (owner)** — paste `BREVO_API_KEY` into `backend/.env`; then live-verify register→OTP→login end to end
@@ -91,7 +88,7 @@ Hardcoded JWT, orphaned setInterval, $regex injection, stub 200s, health check o
 
 ## Next Steps (Priority Suggestion)
 
-1. **Lock in stability** — Fix 5 remaining ROM issues (crash/data integrity)
+1. **Lock in stability** — Fix 2 remaining ROM issues (crash/data integrity)
 2. **Complete admin UI** — Categories tree view, remaining components
 3. **Build the Arena** — M5.6 Counter-List System (major feature)
 4. **Deploy & verify** — Production deployment
@@ -101,6 +98,7 @@ Hardcoded JWT, orphaned setInterval, $regex injection, stub 200s, health check o
 
 ## Latest Verification
 
+- **M41.7 (2026-10-02) — Display-name rename race closed (ROM 2.8)**: the TOCTOU between reading and writing `custom_display_name` can no longer lose silently. Unique sparse indexes on `custom_display_name` and `short_username` (`models/User.ts`) make same-handle renames an atomic single-winner contest at the DB level; the boot migration (`lib/migrations/userAuth.ts`) drops+recreates both indexes idempotently (pre-scans for duplicates, skips with a warning if any exist — pre-fix scan found 0). `routes/users.ts` catches E11000 → 409 "Display name already taken"; `lib/userAuth.ts` `createAuthUser()` retries on E11000 with a fresh 4-hex suffix (≤5 attempts) so simultaneous registrations can never collide. Live end-to-end: register→OTP→verify→rename all 200; concurrent race test — two simultaneous PATCHes to 'racetest' → A=200 (`a_racetest`), B=409 (exactly one winner). Gates: backend typecheck ✅ lint ✅ build ✅ tests **774 passed | 4 skipped**; frontend typecheck ✅ lint ✅ build ✅ (frontend gates run on the host — `Dockerfile.dev` never ships `.eslintrc.json`, so `pnpm lint` inside the container cannot resolve the project config).
 - **M42 (2026-10-02) — Logo = favicon**: the favicon IS the main logo, so every
   logo surface now renders its exact mark. OG-image `LogoMark`
   (`lib/seo/ogImageLayout.tsx`) rebuilt from a 3-bar approximation

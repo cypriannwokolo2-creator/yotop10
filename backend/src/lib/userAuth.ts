@@ -257,32 +257,47 @@ export async function createAuthUser(input: {
   // collisions the same way the fingerprint minter does.
   let shortUsername = toDefaultShort(input.username);
   let defaultShort = shortUsername;
+  let lastError: unknown;
   for (let attempt = 0; attempt < 5; attempt += 1) {
     const collision = await User.findOne({
       $or: [{ short_username: shortUsername }, { default_short: defaultShort }],
     }).select('_id').lean();
-    if (!collision) break;
+    if (!collision) {
+      try {
+        return await User.create({
+          user_id,
+          username: input.username,
+          short_username: shortUsername,
+          default_username: input.username,
+          default_short: defaultShort,
+          email,
+          email_verified_at: new Date(),
+          password_hash: input.password_hash,
+          token_version: 0,
+          trusted_devices: [],
+          two_factor: { enabled: false, recovery_codes_hash: [] },
+          trust_score: 1.0,
+          is_admin: false,
+          legacy_anonymous: false,
+        });
+      } catch (err) {
+        lastError = err;
+        // ROM 2.8: short_username is uniquely indexed, so a
+        // racing registration can claim the short name between
+        // the check above and this insert. Retry with a fresh
+        // suffix; anything else is a real failure.
+        if (!(err instanceof Error && 'code' in err && err.code === 11000)) {
+          throw err;
+        }
+      }
+    }
     const suffix = crypto.randomBytes(2).toString('hex');
     shortUsername = `${toDefaultShort(input.username)}${suffix}`;
     defaultShort = shortUsername;
   }
-
-  return User.create({
-    user_id,
-    username: input.username,
-    short_username: shortUsername,
-    default_username: input.username,
-    default_short: defaultShort,
-    email,
-    email_verified_at: new Date(),
-    password_hash: input.password_hash,
-    token_version: 0,
-    trusted_devices: [],
-    two_factor: { enabled: false, recovery_codes_hash: [] },
-    trust_score: 1.0,
-    is_admin: false,
-    legacy_anonymous: false,
-  });
+  throw lastError instanceof Error
+    ? lastError
+    : new Error('Failed to allocate a unique short username');
 }
 
 /* ------------------------------------------------------------------ */
