@@ -1,9 +1,19 @@
 # RAM.md — Random Access Memory: Current Task State
 
 > **Last updated**: 2026-10-02
-> **Working tree**: clean — [M41.7] committed (`f843946e`), pushed to cocor
+> **Working tree**: clean — [M43.1] committed (`cabca7bd`), pushed to cocor as cypriannwokolo2-creator
 > **Branch**: main
-> **Latest commits**: `f843946e [M41.7]`, `773f0892 [M42]`, `5497a9b5 [M42]`
+> **Latest commits**: `cabca7bd [M43.1]`, `b5dddd8b [M41.7]`, `f843946e [M41.7]`
+
+---
+
+## ✅ COMPLETED: M43.1 — README overhaul + cocor-tech alignment (2026-10-02)
+
+**Shipped** (`cabca7bd`, authored by cypriannwokolo2-creator): README rewritten — every badge, issue, handbook, and release URL now points at `cocor-tech/yotop10` (was nekwasar/yotop10). Handbook v1 (PDF + EPUB) published as the `handbook-v1` release on cocor-tech so the links resolve. Added descriptive sections for humans and AI agents/bots: how it works (browse → submit → review → debate → trust), identity & trust model (M41 session/guest cookies), architecture & repo layout, milestone status (M1–M42 shipped, open items), CI/CD auto-deploy note, and a "For AI agents and bots" onboarding section (AGENTS.md → ram.md → `[MXX.X]` commit format → never push main without owner go-ahead).
+
+**Remote state**: `cocor` (cocor-tech/yotop10, private) is the canonical repo and production deploy source — local main == cocor main (`cabca7bd`). `origin` (nekwasar/yotop10, public) remains diverged (local ahead 928 / behind 868) — untouched. `cypriannwokolo2-creator/yotop10` holds an unrelated project (no merge base with local main); making local main "the one version" there requires a destructive force-push — NOT done, awaiting owner decision.
+
+**Auth note**: owner-supplied cypriannwokolo2-creator classic token (GH_TOKEN, full repo scope) used for the push; not stored on disk. Default gh/git identity remains nekwasar.
 
 ---
 
